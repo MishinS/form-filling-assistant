@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Form-Filling Assistant — Web
 
-## Getting Started
+Production Next.js 14 (App Router) + TypeScript + Tailwind recreation of the
+Form-Filling Assistant hi-fi prototype. Upload invoices / contracts / quotes →
+extract fields → fill a template (first: «Платёжное требование» ПТ-Ф15) →
+export. RU/EN bilingual. Accent `#0b5394`.
 
-First, run the development server:
+## This slice
+
+**Mock-first UI** (handoff phases 1–2): every screen rendered on typed seed
+data — shell, dashboard, fill wizard (upload → processing → review → done),
+templates gallery, field-to-cell mapping editor, and sources/settings stubs.
+
+Out of scope here (later phases): real document parsing, LLM extraction,
+Excel/PDF export, auth, and a live database. The Drizzle schema in
+`lib/db/schema.ts` is authored as the persistence contract but **not wired** to
+a runtime DB.
+
+## Develop
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev     # dev server on http://localhost:3000
+npm run build   # production build
+npm run start   # serve the production build
+npm test        # Vitest unit tests (logic: contrast, i18n)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Layout
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `app/(app)/` — routed screens behind the Sidebar + Topbar shell.
+- `components/` — ported UI (primitives, shell, dashboard, wizard, review, templates).
+- `lib/seed/pt.ts` — typed seed (ПТ template, fields with real cell addresses, history).
+- `lib/i18n.tsx` — RU/EN provider + `useI18n()` hook.
+- `lib/types.ts`, `lib/db/schema.ts` — domain types + Drizzle persistence contract.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Reference
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Spec: `../docs/superpowers/specs/2026-06-01-ffa-web-scaffold-design.md`
+- Plan: `../docs/superpowers/plans/2026-06-01-ffa-web-scaffold.md`
+- Prototype (visual ground truth): `../fill_forms/design_handoff_form_filling/`
