@@ -11,6 +11,7 @@ export async function parsePdf(buf: Buffer): Promise<ParseResult> {
   pagesText.forEach((raw, i) => {
     const page = i + 1;
     const trimmed = (raw ?? "").trim();
+    // Empty after trim ⇒ no extractable text layer (image-only / scanned page) → flag for phase-4 OCR.
     if (trimmed) blocks.push({ text: trimmed, locator: { kind: "pdf", page } });
     else scannedPages.push(page);
   });
