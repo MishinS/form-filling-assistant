@@ -7,7 +7,15 @@ export const maxDuration = 60;
 type Source = { fileId: string; url: string; name: string; mime: string };
 
 export async function POST(req: Request): Promise<Response> {
-  const { sources } = (await req.json()) as { sources: Source[] };
+  let sources: Source[];
+  try {
+    ({ sources } = (await req.json()) as { sources: Source[] });
+  } catch {
+    return NextResponse.json({ error: "Некорректное тело запроса" }, { status: 400 });
+  }
+  if (!Array.isArray(sources)) {
+    return NextResponse.json({ error: "Ожидается поле sources: []" }, { status: 400 });
+  }
 
   const docs: ParsedDoc[] = await Promise.all(
     sources.map(async (s) => {
@@ -23,7 +31,7 @@ export async function POST(req: Request): Promise<Response> {
           pages: 0,
           blocks: [],
           scannedPages: [],
-          warnings: [`Не удалось обработать файл: ${(e as Error).message}`],
+          warnings: [`Не удалось обработать файл: ${e instanceof Error ? e.message : String(e)}`],
         };
       }
     }),
