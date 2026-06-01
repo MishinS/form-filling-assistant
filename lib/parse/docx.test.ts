@@ -9,6 +9,6 @@ describe("parseDocx", () => {
     expect(res.blocks.map(b => b.text)).toEqual(["Contract terms", "Net 30 days"]);
     expect(res.blocks[0].locator).toEqual({ kind: "docx", block: 0 });
     expect(res.blocks[1].locator).toEqual({ kind: "docx", block: 1 });
-    expect(res.pages).toBe(2);
+    expect(res.pages).toBe(1); // docx has no recoverable page count → reported as 1
   });
 });

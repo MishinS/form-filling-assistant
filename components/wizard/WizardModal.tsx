@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Logo, Icon, Btn } from "@/components/primitives";
 import { TEMPLATES } from "@/lib/seed/pt";
-import { uploadToBlob, formatSize, type UploadFile } from "@/lib/upload/client";
+import { uploadToBlob, formatSize, inferMime, type UploadFile } from "@/lib/upload/client";
 import type { ParsedDoc } from "@/lib/parse/types";
 import Stepper from "./Stepper";
 import TemplatePick from "./TemplatePick";
@@ -30,7 +30,7 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
     for (const file of picked) {
       const fileId = nextId();
       const entry: UploadFile = {
-        fileId, name: file.name, mime: file.type, size: formatSize(file.size),
+        fileId, name: file.name, mime: inferMime(file), size: formatSize(file.size),
         blobUrl: "", pages: 0, scanned: false, status: "uploading", progress: 0,
       };
       setFiles(fs => [...fs, entry]);
