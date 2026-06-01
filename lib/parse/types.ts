@@ -1,7 +1,7 @@
 export type Locator =
   | { kind: "pdf"; page: number }            // page: 1-indexed (matches PDF viewer/`scannedPages` convention)
   | { kind: "xlsx"; sheet: string; cell: string }
-  | { kind: "docx"; block: number };         // block: 0-indexed paragraph index in the document body
+  | { kind: "docx"; block: number };         // block: 0-indexed position among non-empty parsed paragraphs
 
 export interface ParsedBlock {
   text: string;
