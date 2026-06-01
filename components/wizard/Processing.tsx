@@ -37,7 +37,9 @@ export default function Processing({ sources, onDone, onBack }: Props) {
         setError((e as Error).message);
       }
     })();
-  }, [sources, onDone, t]);
+    // Run exactly once on mount (ref-guarded); sources/onDone/t are captured intentionally.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (error) {
     return (
