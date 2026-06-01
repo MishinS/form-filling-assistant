@@ -5,8 +5,8 @@ import { MIME } from "@/lib/parse/types";
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB — matches the drop_hint UI string
 
 export async function POST(request: Request): Promise<Response> {
-  const body = (await request.json()) as HandleUploadBody;
   try {
+    const body = (await request.json()) as HandleUploadBody;
     const json = await handleUpload({
       body,
       request,
