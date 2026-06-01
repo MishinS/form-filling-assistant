@@ -39,6 +39,7 @@ export interface SourceFile {
   size: string;
   pages: number;
   blobKey: string | null;
+  scanned?: boolean;
 }
 
 export interface ExtractedValue {
