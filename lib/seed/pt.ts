@@ -60,6 +60,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   drop_sub:        { ru: "или нажмите, чтобы выбрать — PDF, Excel, Word", en: "or click to browse — PDF, Excel, Word" },
   drop_hint:       { ru: "Счета · Договоры · Коммерческие предложения · до 20 МБ", en: "Invoices · Contracts · Quotes · up to 20 MB" },
   files_added:     { ru: "Добавленные файлы", en: "Added files" },
+  upload_failed:   { ru: "Ошибка", en: "Failed" },
   start_process:   { ru: "Начать обработку", en: "Start processing" },
   proc_parse:      { ru: "Парсинг документов", en: "Parsing documents" },
   proc_parse_d:    { ru: "Текст, таблицы и метаданные извлекаются локально", en: "Text, tables and metadata extracted locally" },

@@ -1,21 +1,42 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Icon, FileGlyph } from "@/components/primitives";
-import type { UiSourceFile } from "@/lib/seed/pt";
+import { MIME } from "@/lib/parse/types";
+import type { UploadFile } from "@/lib/upload/client";
 
-type Props = { files: UiSourceFile[]; onAdd: () => void; onRemove: (id: string) => void };
+const ACCEPT = `${MIME.pdf},${MIME.xlsx},${MIME.docx}`;
 
-export default function Dropzone({ files, onAdd, onRemove }: Props) {
+function glyphFor(mime: string): string {
+  if (mime === MIME.pdf) return "pdf";
+  if (mime === MIME.xlsx) return "xls";
+  return "doc";
+}
+
+type Props = {
+  files: UploadFile[];
+  onPick: (files: File[]) => void;
+  onRemove: (id: string) => void;
+};
+
+export default function Dropzone({ files, onPick, onRemove }: Props) {
   const { t } = useI18n();
   const [drag, setDrag] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+
+  const pick = (list: FileList | null) => {
+    if (list && list.length) onPick(Array.from(list));
+  };
+
   return (
     <div>
+      <input ref={input} type="file" accept={ACCEPT} multiple hidden
+        onChange={e => { pick(e.target.files); e.target.value = ""; }} />
       <div
         onDragOver={e => { e.preventDefault(); setDrag(true); }}
         onDragLeave={() => setDrag(false)}
-        onDrop={e => { e.preventDefault(); setDrag(false); onAdd(); }}
-        onClick={onAdd}
+        onDrop={e => { e.preventDefault(); setDrag(false); pick(e.dataTransfer.files); }}
+        onClick={() => input.current?.click()}
         style={{ borderRadius: "var(--r-lg)", cursor: "pointer", textAlign: "center",
           padding: "44px 24px",
           border: `1.5px dashed ${drag ? "var(--line-strong)" : "var(--line-2)"}`,
@@ -42,17 +63,29 @@ export default function Dropzone({ files, onAdd, onRemove }: Props) {
           </div>
           <div className="col gap-8">
             {files.map(f => (
-              <div key={f.id} className="row gap-12 fade-in" style={{ padding: "11px 13px", borderRadius: "var(--r-md)",
+              <div key={f.fileId} className="row gap-12 fade-in" style={{ padding: "11px 13px", borderRadius: "var(--r-md)",
                 background: "var(--surface-2)", border: "1px solid var(--line)" }}>
-                <FileGlyph type={f.type} size={34} />
+                <FileGlyph type={glyphFor(f.mime)} size={34} />
                 <div className="grow" style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</div>
-                  <div className="mono dim" style={{ fontSize: 11 }}>{f.size} · {f.pages} {f.pages === 1 ? "стр." : "стр."}</div>
+                  <div className="mono dim" style={{ fontSize: 11 }}>
+                    {f.size}{f.pages ? ` · ${f.pages} стр.` : ""}{f.scanned ? " · скан" : ""}
+                  </div>
                 </div>
-                <div className="row gap-6" style={{ color: "var(--ok)" }}>
-                  <Icon name="checkc" size={15} /><span style={{ fontSize: 11.5, fontWeight: 600 }}>OK</span>
-                </div>
-                <button onClick={e => { e.stopPropagation(); onRemove(f.id); }} className="muted"
+                {f.status === "uploading" && (
+                  <div className="row gap-6 muted"><Icon name="spin" size={14} className="spin" /><span style={{ fontSize: 11.5 }}>{f.progress}%</span></div>
+                )}
+                {f.status === "ok" && (
+                  <div className="row gap-6" style={{ color: "var(--ok)" }}>
+                    <Icon name="checkc" size={15} /><span style={{ fontSize: 11.5, fontWeight: 600 }}>OK</span>
+                  </div>
+                )}
+                {f.status === "error" && (
+                  <div className="row gap-6" style={{ color: "var(--bad)" }} title={f.error}>
+                    <Icon name="alert" size={15} /><span style={{ fontSize: 11.5, fontWeight: 600 }}>{t("upload_failed")}</span>
+                  </div>
+                )}
+                <button onClick={e => { e.stopPropagation(); onRemove(f.fileId); }} className="muted"
                   style={{ width: 26, height: 26, borderRadius: 7, display: "grid", placeItems: "center" }}
                   onMouseEnter={e => e.currentTarget.style.background = "var(--surface-hi)"}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
