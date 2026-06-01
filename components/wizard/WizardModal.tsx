@@ -1,5 +1,76 @@
+"use client";
+import { useState, useRef } from "react";
+import { useI18n } from "@/lib/i18n";
+import { Logo, Icon, Btn } from "@/components/primitives";
+import { SOURCE_FILES, TEMPLATES, type UiSourceFile } from "@/lib/seed/pt";
+import Stepper from "./Stepper";
+import TemplatePick from "./TemplatePick";
+import Dropzone from "./Dropzone";
+import Processing from "./Processing";
+import DoneStep from "./DoneStep";
+import ReviewStep from "@/components/review/ReviewStep";
+
 export function WizardModal({ start, onClose }: { start: number; onClose: () => void }) {
-  void start;
-  void onClose;
-  return null;
+  const { t, lang } = useI18n();
+  const [step, setStep] = useState(start);
+  const [tpl, setTpl] = useState("pt");
+  const [files, setFiles] = useState<UiSourceFile[]>(start >= 2 ? SOURCE_FILES.slice() : []);
+  const seedIdx = useRef(0);
+
+  const addFile = () => {
+    setFiles(f => {
+      const next = SOURCE_FILES[seedIdx.current % SOURCE_FILES.length];
+      seedIdx.current++;
+      if (f.find(x => x.id === next.id)) return f;
+      return [...f, next];
+    });
+  };
+  const removeFile = (id: string) => setFiles(f => f.filter(x => x.id !== id));
+  const canStart = !!tpl && files.length > 0;
+  const curTpl = TEMPLATES.find(x => x.id === tpl);
+
+  return (
+    <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(6,9,8,.72)", backdropFilter: "blur(8px)",
+      display: "grid", placeItems: "center", padding: 28 }}>
+      <div style={{ width: "min(1080px, 100%)", maxHeight: "92vh", background: "var(--bg)", border: "1px solid var(--line-2)",
+        borderRadius: "var(--r-xl)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 40px 120px rgba(0,0,0,.6)" }}>
+        {/* header */}
+        <div className="row" style={{ justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid var(--line)", gap: 24 }}>
+          <div className="row gap-12" style={{ minWidth: 0 }}>
+            <span style={{ width: 30, height: 30, borderRadius: 8, background: "var(--surface-3)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center" }}><Logo size={15} /></span>
+            <div className="col" style={{ lineHeight: 1.15 }}>
+              <span style={{ fontSize: 14, fontWeight: 600 }}>{t("new_fill")}</span>
+              <span className="mono dim" style={{ fontSize: 10.5 }}>{curTpl ? (lang === "ru" ? curTpl.name_ru : curTpl.name_en) : ""}</span>
+            </div>
+          </div>
+          <Stepper step={step} />
+          <button onClick={onClose} className="muted" style={{ width: 34, height: 34, borderRadius: 9, display: "grid", placeItems: "center", border: "1px solid var(--line-2)" }}><Icon name="x" size={15} /></button>
+        </div>
+
+        {/* body */}
+        <div className="row" style={{ flex: 1, minHeight: 0, alignItems: "stretch" }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: "28px 32px" }}>
+            {step === 0 && (
+              <div className="col gap-24" style={{ maxWidth: 760, margin: "0 auto" }}>
+                <TemplatePick selected={tpl} onSelect={setTpl} />
+                <Dropzone files={files} onAdd={addFile} onRemove={removeFile} />
+              </div>
+            )}
+            {step === 1 && <Processing onDone={() => setStep(2)} />}
+            {step === 2 && <ReviewStep />}
+            {step === 3 && <DoneStep onClose={onClose} />}
+          </div>
+        </div>
+
+        {/* footer */}
+        {step !== 1 && step !== 3 && (
+          <div className="row" style={{ justifyContent: "space-between", padding: "16px 24px", borderTop: "1px solid var(--line)", background: "var(--surface-1)" }}>
+            <Btn variant="quiet" size="md" icon="arrowL" onClick={() => step === 0 ? onClose() : setStep(step - 1)}>{t("back")}</Btn>
+            {step === 0 && <Btn variant="primary" size="md" iconRight="arrowR" disabled={!canStart} onClick={() => setStep(1)}>{t("start_process")}</Btn>}
+            {step === 2 && <Btn variant="primary" size="md" icon="check" onClick={() => setStep(3)}>{t("confirm_fill")}</Btn>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
