@@ -97,6 +97,10 @@ export const STR: Record<string, { ru: string; en: string }> = {
   add_field:       { ru: "Добавить поле", en: "Add field" },
   preview:         { ru: "Предпросмотр документа", en: "Document preview" },
   save:            { ru: "Сохранить", en: "Save" },
+  parse_empty:     { ru: "Не удалось извлечь текст ни из одного файла", en: "No text could be extracted from any file" },
+  parse_failed:    { ru: "Обработка не удалась", en: "Processing failed" },
+  processing_title:{ ru: "Обрабатываем документы", en: "Processing documents" },
+  processing_sub:  { ru: "Извлекаем текст из файлов", en: "Extracting text from files" },
 };
 
 export const STATUS: Record<StatusKey, { key: string; tone: "ok" | "warn" | "info" | "muted" | "bad" }> = {

@@ -1,72 +1,65 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import { Icon } from "@/components/primitives";
+import { Icon, Btn } from "@/components/primitives";
+import type { UploadFile } from "@/lib/upload/client";
+import type { ParsedDoc } from "@/lib/parse/types";
 
-export default function Processing({ onDone }: { onDone: () => void }) {
-  const { t, lang } = useI18n();
-  const stages = [
-    { k: "proc_parse", d: "proc_parse_d", icon: "layers" },
-    { k: "proc_extract", d: "proc_extract_d", icon: "sparkle" },
-    { k: "proc_fill", d: "proc_fill_d", icon: "grid" },
-  ];
-  const [active, setActive] = useState(0);
-  const [pct, setPct] = useState(0);
+type Props = {
+  sources: UploadFile[];
+  onDone: (docs: ParsedDoc[]) => void;
+  onBack: () => void;
+};
+
+export default function Processing({ sources, onDone, onBack }: Props) {
+  const { t } = useI18n();
+  const [error, setError] = useState<string | null>(null);
+  const started = useRef(false);
+
   useEffect(() => {
-    let raf = 0;
-    const start = performance.now();
-    const dur = 4200;
-    const stageCount = stages.length;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / dur);
-      setPct(p);
-      setActive(Math.min(stageCount - 1, Math.floor(p * stageCount)));
-      if (p < 1) raf = requestAnimationFrame(tick); else setTimeout(onDone, 450);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return (
-    <div className="fade-in" style={{ maxWidth: 560, margin: "0 auto", padding: "20px 0" }}>
-      <div style={{ position: "relative", width: 84, height: 84, margin: "8px auto 30px" }}>
-        <svg width="84" height="84" viewBox="0 0 84 84" style={{ transform: "rotate(-90deg)" }}>
-          <circle cx="42" cy="42" r="38" fill="none" stroke="var(--line-2)" strokeWidth="3" />
-          <circle cx="42" cy="42" r="38" fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round"
-            strokeDasharray={2 * Math.PI * 38} strokeDashoffset={2 * Math.PI * 38 * (1 - pct)} style={{ transition: "stroke-dashoffset .1s linear" }} />
-        </svg>
-        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-          <span className="display tnum" style={{ fontSize: 20, fontWeight: 600 }}>{Math.round(pct * 100)}%</span>
+    if (started.current) return;
+    started.current = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/parse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sources: sources.map(f => ({ fileId: f.fileId, url: f.blobUrl, name: f.name, mime: f.mime })),
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const { docs } = (await res.json()) as { docs: ParsedDoc[] };
+        const allEmpty = docs.length > 0 && docs.every(d => d.blocks.length === 0);
+        if (allEmpty) { setError(t("parse_empty")); return; }
+        onDone(docs);
+      } catch (e) {
+        setError((e as Error).message);
+      }
+    })();
+  }, [sources, onDone, t]);
+
+  if (error) {
+    return (
+      <div className="col gap-16" style={{ maxWidth: 460, margin: "60px auto 0", textAlign: "center" }}>
+        <div style={{ width: 56, height: 56, margin: "0 auto", borderRadius: 14, display: "grid", placeItems: "center",
+          background: "var(--bad-bg)", color: "var(--bad)" }}><Icon name="alert" size={26} /></div>
+        <div style={{ fontWeight: 600, fontSize: 16 }}>{t("parse_failed")}</div>
+        <div className="muted" style={{ fontSize: 13 }}>{error}</div>
+        <div className="row" style={{ justifyContent: "center" }}>
+          <Btn variant="quiet" size="md" icon="arrowL" onClick={onBack}>{t("back")}</Btn>
         </div>
       </div>
-      <div className="col gap-10">
-        {stages.map((s, i) => {
-          const state = i < active ? "done" : i === active ? "active" : "wait";
-          return (
-            <div key={s.k} className="row gap-13" style={{ gap: 13, padding: "14px 16px", borderRadius: "var(--r-md)",
-              background: state === "active" ? "var(--surface-2)" : "transparent",
-              border: `1px solid ${state === "active" ? "var(--line-2)" : "transparent"}`,
-              opacity: state === "wait" ? .45 : 1, transition: "all .3s" }}>
-              <span style={{ width: 34, height: 34, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
-                background: state === "done" ? "var(--ok-bg)" : "var(--surface-3)",
-                color: state === "done" ? "var(--ok)" : "var(--text)", border: "1px solid var(--line-2)" }}>
-                {state === "done" ? <Icon name="check" size={16} stroke={2.2} />
-                  : state === "active" ? <Icon name="spin" size={17} className="spin" />
-                  : <Icon name={s.icon} size={16} />}
-              </span>
-              <div className="grow">
-                <div style={{ fontWeight: 600, fontSize: 13.5 }}>{t(s.k)}</div>
-                <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{t(s.d)}</div>
-              </div>
-              {state === "active" && <Icon name="spin" size={14} className="spin" style={{ color: "var(--text-3)" }} />}
-            </div>
-          );
-        })}
+    );
+  }
+
+  return (
+    <div className="col gap-16" style={{ maxWidth: 460, margin: "80px auto 0", textAlign: "center" }}>
+      <div className="spin" style={{ width: 56, height: 56, margin: "0 auto", color: "var(--accent)" }}>
+        <Icon name="spin" size={56} stroke={1.5} />
       </div>
-      <div className="row gap-8 dim" style={{ justifyContent: "center", marginTop: 22, fontSize: 11.5 }}>
-        <Icon name="bolt" size={12} />
-        <span className="mono">{lang === "ru" ? "Бесплатная LLM" : "Free LLM"} · free model · on-device parse</span>
-      </div>
+      <div style={{ fontWeight: 600, fontSize: 16 }}>{t("processing_title")}</div>
+      <div className="muted" style={{ fontSize: 13 }}>{t("processing_sub")} · {sources.length}</div>
     </div>
   );
 }
