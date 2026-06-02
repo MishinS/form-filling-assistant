@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useI18n } from "@/lib/i18n";
+import { ModelContext } from "@/components/shell/AppShell";
 import { Logo, Icon, Btn } from "@/components/primitives";
 import { TEMPLATES } from "@/lib/seed/pt";
 import { uploadToBlob, formatSize, inferMime, type UploadFile } from "@/lib/upload/client";
@@ -24,7 +25,7 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
   const [docs, setDocs] = useState<ParsedDoc[]>([]);
   const [values, setValues] = useState<ExtractedValue[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
-  const MODEL = "moonshotai/kimi-k2.6:free";
+  const { model: MODEL } = useContext(ModelContext);
 
   const patch = (id: string, p: Partial<UploadFile>) =>
     setFiles(fs => fs.map(f => (f.fileId === id ? { ...f, ...p } : f)));

@@ -4,18 +4,26 @@ import { createContext, useState, type ReactNode } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import { WizardModal } from "@/components/wizard/WizardModal";
+import { DEFAULT_MODEL } from "@/lib/extract/llm/catalog";
 
 export const WizardTrigger = createContext<{ openNew: () => void; openReview: () => void }>({
   openNew: () => {},
   openReview: () => {},
 });
 
+export const ModelContext = createContext<{ model: string; setModel: (id: string) => void }>({
+  model: DEFAULT_MODEL,
+  setModel: () => {},
+});
+
 export default function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [wizardStart, setWizardStart] = useState<number | null>(null);
+  const [model, setModel] = useState(DEFAULT_MODEL);
   const route = pathname.split("/")[1] || "fills";
   return (
+    <ModelContext.Provider value={{ model, setModel }}>
     <WizardTrigger.Provider value={{ openNew: () => setWizardStart(0), openReview: () => setWizardStart(2) }}>
       <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
         <Sidebar route={route} onNavigate={(id) => router.push(`/${id}`)} onNewFill={() => setWizardStart(0)} />
@@ -26,5 +34,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
         {wizardStart !== null && <WizardModal start={wizardStart} onClose={() => setWizardStart(null)} />}
       </div>
     </WizardTrigger.Provider>
+    </ModelContext.Provider>
   );
 }

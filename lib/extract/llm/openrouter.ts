@@ -1,21 +1,16 @@
 import type { ExtractionModel, LlmFieldResult } from "./types";
 import { ModelNotConfigured } from "./types";
 import type { ExtractField } from "../fields";
+import { FREE_MODEL_IDS } from "./catalog";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
-// Curated free models with usable Russian, tried in order when the primary is a
-// ":free" slug. We fall back client-side (not via OpenRouter's `models[]`) because
-// that only retries on 429/5xx — a 400 from a model that rejects response_format
-// would otherwise abort the whole chain. Slugs rotate; refresh against
-// https://openrouter.ai/models?max_price=0 when extraction stops working.
-const FREE_FALLBACKS = [
-  "moonshotai/kimi-k2.6:free",
-  "qwen/qwen3-next-80b-a3b-instruct:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "openai/gpt-oss-120b:free",
-  "z-ai/glm-4.5-air:free",
-];
+// Curated free models tried in order when the primary is a ":free" slug. Single
+// source of truth is the shared catalog (also drives the sidebar picker). We fall
+// back client-side (not via OpenRouter's `models[]`) because that only retries on
+// 429/5xx — a 400 from a model that rejects response_format would otherwise abort
+// the whole chain.
+const FREE_FALLBACKS = FREE_MODEL_IDS;
 
 // Tolerate models that wrap JSON in a ```json fence despite response_format.
 function parseFields(txt: string): LlmFieldResult[] {

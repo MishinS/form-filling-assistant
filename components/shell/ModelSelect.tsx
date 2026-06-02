@@ -1,21 +1,16 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Icon } from "@/components/primitives";
-
-const LLM_MODELS = [
-  { id: "gemini",     name: "Gemini 2.0 Flash",   provider: "Google AI Studio", badge: "free" },
-  { id: "groq",       name: "Llama 3.3 70B",      provider: "Groq",             badge: "free" },
-  { id: "openrouter", name: "OpenRouter :free",   provider: "мульти-модель",    badge: "free" },
-  { id: "local",      name: "Ollama (локально)",  provider: "self-host",        badge: "0 ₽" },
-];
+import { FREE_MODELS } from "@/lib/extract/llm/catalog";
+import { ModelContext } from "./AppShell";
 
 export default function ModelSelect() {
   const { lang } = useI18n();
+  const { model: sel, setModel } = useContext(ModelContext);
   const [open, setOpen] = useState(false);
-  const [sel, setSel] = useState("gemini");
   const ref = useRef<HTMLDivElement>(null);
-  const cur = LLM_MODELS.find(m => m.id === sel)!;
+  const cur = FREE_MODELS.find(m => m.id === sel) ?? FREE_MODELS[0];
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("mousedown", h);
@@ -31,10 +26,10 @@ export default function ModelSelect() {
         <div className="fade-in" style={{ position: "absolute", bottom: "calc(100% + 6px)", left: 0, right: 0, zIndex: 30,
           background: "var(--surface-hi)", border: "1px solid var(--line-strong)", borderRadius: "var(--r-md)",
           padding: 5, boxShadow: "0 18px 50px rgba(0,0,0,.55)" }}>
-          {LLM_MODELS.map(m => {
+          {FREE_MODELS.map(m => {
             const on = m.id === sel;
             return (
-              <button key={m.id} onClick={() => { setSel(m.id); setOpen(false); }}
+              <button key={m.id} onClick={() => { setModel(m.id); setOpen(false); }}
                 className="row gap-10" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)",
                   background: on ? "var(--surface-2)" : "transparent", transition: "background .12s" }}
                 onMouseEnter={e => { if (!on) e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
@@ -45,7 +40,7 @@ export default function ModelSelect() {
                   <div className="mono dim" style={{ fontSize: 10 }}>{m.provider}</div>
                 </div>
                 <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--ok)", background: "var(--ok-bg)",
-                  borderRadius: 99, padding: "2px 7px", flex: "none" }}>{m.badge}</span>
+                  borderRadius: 99, padding: "2px 7px", flex: "none" }}>free</span>
                 {on && <Icon name="check" size={13} stroke={2.2} style={{ color: "var(--text)", flex: "none" }} />}
               </button>
             );
