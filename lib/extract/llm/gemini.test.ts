@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { geminiModel } from "./gemini";
 import { ModelNotConfigured } from "./types";
 import { PT_FIELDS } from "../fields";
