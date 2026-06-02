@@ -23,7 +23,8 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [docs, setDocs] = useState<ParsedDoc[]>([]);
   const [values, setValues] = useState<ExtractedValue[]>([]);
-  const MODEL = "gemini-2.0-flash";
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const MODEL = "moonshotai/kimi-k2.6:free";
 
   const patch = (id: string, p: Partial<UploadFile>) =>
     setFiles(fs => fs.map(f => (f.fileId === id ? { ...f, ...p } : f)));
@@ -51,9 +52,10 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
     setStep(1);
   };
 
-  const onExtracted = (vals: ExtractedValue[], parsed: ParsedDoc[]) => {
+  const onExtracted = (vals: ExtractedValue[], parsed: ParsedDoc[], warns: string[]) => {
     setDocs(parsed);
     setValues(vals);
+    setWarnings(warns);
     setFiles(fs => fs.map(f => {
       const d = parsed.find(p => p.fileId === f.fileId);
       return d ? { ...f, pages: d.pages, scanned: d.scannedPages.length > 0 } : f;
@@ -89,7 +91,7 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
               </div>
             )}
             {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} onDone={onExtracted} onBack={() => setStep(0)} />}
-            {step === 2 && <ReviewStep values={values} docs={docs} />}
+            {step === 2 && <ReviewStep values={values} docs={docs} warnings={warnings} />}
             {step === 3 && <DoneStep onClose={onClose} />}
           </div>
         </div>

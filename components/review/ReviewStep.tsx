@@ -9,9 +9,9 @@ import type { ExtractedValue } from "@/lib/types";
 import type { ParsedDoc } from "@/lib/parse/types";
 import FieldRow from "./FieldRow";
 
-type Props = { values?: ExtractedValue[]; docs?: ParsedDoc[]; fields?: ExtractField[] };
+type Props = { values?: ExtractedValue[]; docs?: ParsedDoc[]; fields?: ExtractField[]; warnings?: string[] };
 
-export default function ReviewStep({ values, docs = [], fields = PT_FIELDS }: Props) {
+export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warnings = [] }: Props) {
   const { t, lang } = useI18n();
   const rows: PtField[] = values ? buildRows(fields, values, docs) : SEED_FIELDS;
   const [vals, setVals] = useState<Record<string, string>>(() => Object.fromEntries(rows.map(f => [f.id, f.value])));
@@ -32,6 +32,18 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS }: Pr
           </Tag>
         )}
       </div>
+
+      {warnings.length > 0 && (
+        <div className="col gap-8" role="alert" style={{ marginTop: 16, padding: "12px 14px", borderRadius: "var(--r-lg)",
+          background: "var(--bad-bg)", border: "1px solid rgba(224,108,108,.35)" }}>
+          <div className="row gap-8" style={{ color: "var(--bad)", fontSize: 13, fontWeight: 600 }}>
+            <Icon name="alert" size={14} />{t("review_warn")}
+          </div>
+          <ul className="muted" style={{ margin: 0, paddingLeft: 26, fontSize: 12.5, lineHeight: 1.5 }}>
+            {warnings.map((w, i) => <li key={i}>{w}</li>)}
+          </ul>
+        </div>
+      )}
 
       {PT_GROUPS.map(g => {
         const fieldsInGroup = rows.filter(f => f.group === g.id);

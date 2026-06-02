@@ -10,7 +10,7 @@ type Props = {
   sources: UploadFile[];
   model: string;
   templateId: string;
-  onDone: (values: ExtractedValue[], docs: ParsedDoc[]) => void;
+  onDone: (values: ExtractedValue[], docs: ParsedDoc[], warnings: string[]) => void;
   onBack: () => void;
 };
 
@@ -44,8 +44,8 @@ export default function Processing({ sources, model, templateId, onDone, onBack 
           body: JSON.stringify({ templateId, model, docs }),
         });
         if (!ex.ok) throw new Error(`HTTP ${ex.status}`);
-        const { values } = (await ex.json()) as { values: ExtractedValue[] };
-        onDone(values, docs);
+        const { values, warnings } = (await ex.json()) as { values: ExtractedValue[]; warnings?: string[] };
+        onDone(values, docs, warnings ?? []);
       } catch (e) {
         setError((e as Error).message);
       }
