@@ -4,16 +4,20 @@ import { useI18n } from "@/lib/i18n";
 import { Icon, Btn } from "@/components/primitives";
 import type { UploadFile } from "@/lib/upload/client";
 import type { ParsedDoc } from "@/lib/parse/types";
+import type { ExtractedValue } from "@/lib/types";
 
 type Props = {
   sources: UploadFile[];
-  onDone: (docs: ParsedDoc[]) => void;
+  model: string;
+  templateId: string;
+  onDone: (values: ExtractedValue[], docs: ParsedDoc[]) => void;
   onBack: () => void;
 };
 
-export default function Processing({ sources, onDone, onBack }: Props) {
+export default function Processing({ sources, model, templateId, onDone, onBack }: Props) {
   const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
+  const [stage, setStage] = useState<"parse" | "extract">("parse");
   const started = useRef(false);
 
   useEffect(() => {
@@ -32,12 +36,21 @@ export default function Processing({ sources, onDone, onBack }: Props) {
         const { docs } = (await res.json()) as { docs: ParsedDoc[] };
         const allEmpty = docs.length > 0 && docs.every(d => d.blocks.length === 0);
         if (allEmpty) { setError(t("parse_empty")); return; }
-        onDone(docs);
+
+        setStage("extract");
+        const ex = await fetch("/api/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ templateId, model, docs }),
+        });
+        if (!ex.ok) throw new Error(`HTTP ${ex.status}`);
+        const { values } = (await ex.json()) as { values: ExtractedValue[] };
+        onDone(values, docs);
       } catch (e) {
         setError((e as Error).message);
       }
     })();
-    // Run exactly once on mount (ref-guarded); sources/onDone/t are captured intentionally.
+    // Run exactly once on mount (ref-guarded); props are captured intentionally.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -60,8 +73,8 @@ export default function Processing({ sources, onDone, onBack }: Props) {
       <div className="spin" style={{ width: 56, height: 56, margin: "0 auto", color: "var(--accent)" }}>
         <Icon name="spin" size={56} stroke={1.5} />
       </div>
-      <div style={{ fontWeight: 600, fontSize: 16 }}>{t("processing_title")}</div>
-      <div className="muted" style={{ fontSize: 13 }}>{t("processing_sub")} · {sources.length}</div>
+      <div style={{ fontWeight: 600, fontSize: 16 }}>{stage === "parse" ? t("proc_parse") : t("proc_extract")}</div>
+      <div className="muted" style={{ fontSize: 13 }}>{stage === "parse" ? t("proc_parse_d") : t("proc_extract_d")}</div>
     </div>
   );
 }

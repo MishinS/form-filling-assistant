@@ -5,6 +5,7 @@ import { Logo, Icon, Btn } from "@/components/primitives";
 import { TEMPLATES } from "@/lib/seed/pt";
 import { uploadToBlob, formatSize, inferMime, type UploadFile } from "@/lib/upload/client";
 import type { ParsedDoc } from "@/lib/parse/types";
+import type { ExtractedValue } from "@/lib/types";
 import Stepper from "./Stepper";
 import TemplatePick from "./TemplatePick";
 import Dropzone from "./Dropzone";
@@ -20,8 +21,9 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
   const [step, setStep] = useState(start);
   const [tpl, setTpl] = useState("pt");
   const [files, setFiles] = useState<UploadFile[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [docs, setDocs] = useState<ParsedDoc[]>([]); // populated after parse; consumed by ReviewStep in phase 4
+  const [docs, setDocs] = useState<ParsedDoc[]>([]);
+  const [values, setValues] = useState<ExtractedValue[]>([]);
+  const MODEL = "gemini-2.0-flash";
 
   const patch = (id: string, p: Partial<UploadFile>) =>
     setFiles(fs => fs.map(f => (f.fileId === id ? { ...f, ...p } : f)));
@@ -49,8 +51,9 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
     setStep(1);
   };
 
-  const onParsed = (parsed: ParsedDoc[]) => {
+  const onExtracted = (vals: ExtractedValue[], parsed: ParsedDoc[]) => {
     setDocs(parsed);
+    setValues(vals);
     setFiles(fs => fs.map(f => {
       const d = parsed.find(p => p.fileId === f.fileId);
       return d ? { ...f, pages: d.pages, scanned: d.scannedPages.length > 0 } : f;
@@ -85,8 +88,8 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
                 <Dropzone files={files} onPick={onPick} onRemove={removeFile} />
               </div>
             )}
-            {step === 1 && <Processing sources={uploaded} onDone={onParsed} onBack={() => setStep(0)} />}
-            {step === 2 && <ReviewStep />}
+            {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} onDone={onExtracted} onBack={() => setStep(0)} />}
+            {step === 2 && <ReviewStep values={values} docs={docs} />}
             {step === 3 && <DoneStep onClose={onClose} />}
           </div>
         </div>
