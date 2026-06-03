@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Tag, Icon } from "@/components/primitives";
 import { PT_FIELDS, PT_GROUPS, type ExtractField } from "@/lib/extract/fields";
@@ -9,13 +9,22 @@ import type { ExtractedValue } from "@/lib/types";
 import type { ParsedDoc } from "@/lib/parse/types";
 import FieldRow from "./FieldRow";
 
-type Props = { values?: ExtractedValue[]; docs?: ParsedDoc[]; fields?: ExtractField[]; warnings?: string[] };
+type Props = { values?: ExtractedValue[]; docs?: ParsedDoc[]; fields?: ExtractField[]; warnings?: string[]; onChange?: (values: ExtractedValue[]) => void };
 
-export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warnings = [] }: Props) {
+export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warnings = [], onChange }: Props) {
   const { t, lang } = useI18n();
   const rows: PtField[] = values ? buildRows(fields, values, docs) : SEED_FIELDS;
   const [vals, setVals] = useState<Record<string, string>>(() => Object.fromEntries(rows.map(f => [f.id, f.value])));
   const [hover, setHover] = useState<string | null>(null);
+  useEffect(() => {
+    onChange?.(rows.map(r => ({
+      fieldId: r.id,
+      value: vals[r.id] ?? "",
+      confidence: r.conf,
+      source: { fileId: null, locator: r.src?.loc ?? "" },
+    })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vals]);
   const lowCount = rows.filter(f => f.conf === "low").length;
   const confLabel = (lvl: PtField["conf"]) => t(lvl === "high" ? "conf_high" : lvl === "med" ? "conf_med" : "conf_low");
 

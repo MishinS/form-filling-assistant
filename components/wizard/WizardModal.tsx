@@ -25,6 +25,7 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
   const [docs, setDocs] = useState<ParsedDoc[]>([]);
   const [values, setValues] = useState<ExtractedValue[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [reviewValues, setReviewValues] = useState<ExtractedValue[]>([]);
   const { model: MODEL } = useContext(ModelContext);
 
   const patch = (id: string, p: Partial<UploadFile>) =>
@@ -92,7 +93,7 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
               </div>
             )}
             {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} onDone={onExtracted} onBack={() => setStep(0)} />}
-            {step === 2 && <ReviewStep values={values} docs={docs} warnings={warnings} />}
+            {step === 2 && <ReviewStep values={values} docs={docs} warnings={warnings} onChange={setReviewValues} />}
             {step === 3 && <DoneStep onClose={onClose} />}
           </div>
         </div>
