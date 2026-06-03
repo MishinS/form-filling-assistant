@@ -56,8 +56,8 @@ export function planWrites(values: ExtractedValue[]): CellWrite[] {
     if (row.due !== null) {
       writes.push({ sheet: "График оплат", ref: "E5", mode: "number", value: row.due });
     }
-    writes.push({ sheet: "ПТ", ref: "D13", mode: "formulaCache", value: total });      // = SUM(D5:D5)
-    writes.push({ sheet: "ПТ", ref: "D15", mode: "formulaCache", value: row.amount });  // = D5
+    writes.push({ sheet: "ПТ", ref: "D13", mode: "formulaCache", value: total });      // ='График оплат'!D6 (=SUM total)
+    writes.push({ sheet: "ПТ", ref: "D15", mode: "formulaCache", value: row.amount });  // ='График оплат'!D5
   }
 
   return writes;

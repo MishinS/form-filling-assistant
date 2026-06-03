@@ -26,4 +26,9 @@ describe("parseDateSerial", () => {
     expect(parseDateSerial("2026-04-30")).toBeNull();
     expect(parseDateSerial("")).toBeNull();
   });
+  it("rejects out-of-range days/months instead of rolling over", () => {
+    expect(parseDateSerial("31.04.2026")).toBeNull(); // April has 30 days
+    expect(parseDateSerial("29.02.2025")).toBeNull(); // not a leap year
+    expect(parseDateSerial("01.13.2026")).toBeNull(); // no month 13
+  });
 });

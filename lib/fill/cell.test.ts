@@ -26,6 +26,14 @@ describe("writeCell", () => {
   it("throws when the target cell is absent", () => {
     expect(() => writeCell('<row r="1"></row>', "Z9", "string", "x")).toThrow(/Z9/);
   });
+
+  it("does not treat `$` in the value as a replacement pattern", () => {
+    const xml = '<row r="9"><c r="D9" s="50" t="inlineStr"><is><t>old</t></is></c></row>';
+    const out = writeCell(xml, "D9", "string", "Pay $& $1 bonus");
+    expect(out).toContain("Pay $&amp; $1 bonus"); // $& / $1 kept literally, & escaped
+    expect(out).not.toContain("<t>old</t>");
+    expect(out.match(/<c r="D9"/g)).toHaveLength(1); // matched cell NOT re-injected
+  });
 });
 
 describe("setFormulaCache", () => {

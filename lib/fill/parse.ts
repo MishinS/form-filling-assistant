@@ -19,8 +19,9 @@ export function parseDateSerial(raw: string): number | null {
   const m = raw?.trim().match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
   if (!m) return null;
   const d = +m[1], mo = +m[2], y = +m[3];
-  const utc = Date.UTC(y, mo - 1, d);
-  if (Number.isNaN(utc)) return null;
-  const serial = Math.round((utc - EXCEL_EPOCH) / 86400000);
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  // Reject rollovers like "31.04.2026" (Date.UTC would silently roll to 01.05).
+  if (dt.getUTCDate() !== d || dt.getUTCMonth() !== mo - 1 || dt.getUTCFullYear() !== y) return null;
+  const serial = Math.round((dt.getTime() - EXCEL_EPOCH) / 86400000);
   return serial > 0 ? serial : null;
 }

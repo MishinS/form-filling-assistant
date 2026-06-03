@@ -26,7 +26,9 @@ export function writeCell(
     mode === "string"
       ? `<c r="${ref}"${s} t="inlineStr"><is><t xml:space="preserve">${esc(String(value))}</t></is></c>`
       : `<c r="${ref}"${s}><v>${value}</v></c>`;
-  return xml.replace(m[0], rebuilt);
+  // Function-form replacement so `$` in `value` (e.g. "$&") is not treated as a
+  // String.replace special pattern, which would inject the matched cell back in.
+  return xml.replace(m[0], () => rebuilt);
 }
 
 /** Refresh the cached <v> of a formula cell (keep the <f>), so non-recalculating viewers show it. */
@@ -42,5 +44,6 @@ export function setFormulaCache(xml: string, ref: string, value: number): string
   } else {
     inner = `${inner}<v>${value}</v>`;
   }
-  return xml.replace(m[0], `<c r="${ref}"${attrs}>${inner}</c>`);
+  const rebuilt = `<c r="${ref}"${attrs}>${inner}</c>`;
+  return xml.replace(m[0], () => rebuilt);
 }
