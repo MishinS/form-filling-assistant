@@ -15,7 +15,7 @@ export function fillPtXlsx(templateBytes: Uint8Array, values: ExtractedValue[]):
     byFile.set(file, arr);
   }
 
-  for (const [file, ws] of byFile) {
+  for (const [file, ws] of Array.from(byFile)) {
     const entry = files[file];
     if (!entry) throw new Error(`Template missing ${file}`);
     let xml = strFromU8(entry);
