@@ -94,7 +94,7 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
             )}
             {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} onDone={onExtracted} onBack={() => setStep(0)} />}
             {step === 2 && <ReviewStep values={values} docs={docs} warnings={warnings} onChange={setReviewValues} />}
-            {step === 3 && <DoneStep onClose={onClose} />}
+            {step === 3 && <DoneStep onClose={onClose} templateId={tpl} values={reviewValues} />}
           </div>
         </div>
 
