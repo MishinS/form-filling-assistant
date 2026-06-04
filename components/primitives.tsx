@@ -98,15 +98,15 @@ export function Btn({ children, variant = "ghost", size = "md", icon, iconRight,
 }
 
 /* ---- Pill / Tag / Badge ---- */
-type TagProps = { children: ReactNode; tone?: "line" | "solid" | "mono"; style?: CSSProperties };
-export function Tag({ children, tone = "line", style }: TagProps) {
+type TagProps = { children: ReactNode; tone?: "line" | "solid" | "mono"; style?: CSSProperties; title?: string };
+export function Tag({ children, tone = "line", style, title }: TagProps) {
   const tones = {
     line:  { color: "var(--text-2)", background: "transparent", border: "1px solid var(--line-2)" },
     solid: { color: "var(--text)",  background: "var(--surface-3)", border: "1px solid var(--line)" },
     mono:  { color: "var(--text-2)", background: "var(--surface-1)", border: "1px solid var(--line)", fontFamily: "var(--font-mono)" },
   }[tone];
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, height: 24, padding: "0 9px",
+    <span title={title} style={{ display: "inline-flex", alignItems: "center", gap: 5, height: 24, padding: "0 9px",
       borderRadius: "var(--pill)", fontSize: 11.5, fontWeight: 600, letterSpacing: ".01em", ...tones, ...style }}>
       {children}
     </span>

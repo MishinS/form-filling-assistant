@@ -1,14 +1,14 @@
 "use client";
 import { useI18n } from "@/lib/i18n";
-import type { MappingRow } from "@/lib/seed/pt";
+import type { ExtractField } from "@/lib/extract/fields";
 
-type Props = { rows: MappingRow[]; sel: string };
+type Props = { fields: ExtractField[]; sel: string };
 
-export default function MiniSheet({ rows, sel }: Props) {
+export default function MiniSheet({ fields, sel }: Props) {
   const { lang } = useI18n();
   const lines = [
     { head: true as const, label: lang === "ru" ? "ПЛАТЁЖНОЕ ТРЕБОВАНИЕ" : "PAYMENT REQUEST", id: "__head", cell: "" },
-    ...rows.map(r => ({ head: false as const, id: r.id, label: lang === "ru" ? r.label_ru : r.label_en, cell: r.cell.replace("ПТ!", "") })),
+    ...fields.map(f => ({ head: false as const, id: f.id, label: lang === "ru" ? f.label_ru : f.label_en, cell: f.cell.replace("ПТ!", "") })),
   ];
   return (
     <div style={{ padding: 16 }}>
