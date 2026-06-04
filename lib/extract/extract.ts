@@ -27,6 +27,7 @@ export async function extractFields(
   for (const f of fields) {
     if (f.strategy !== "rule" || !f.rule) continue;
     const rule = RULES[f.rule];
+    if (!rule) continue; // unknown rule key (untrusted input) — skip rather than throw
     let value: ExtractedValue | null = null;
     for (const d of docs) {
       const hit = rule(d.blocks);

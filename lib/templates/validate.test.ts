@@ -23,4 +23,12 @@ describe("parseFieldList", () => {
     const input = [{ ...PT_FIELDS[0], cell: "D9" }];
     expect(parseFieldList(input)?.[0].cell).toBe("ПТ!D9");
   });
+  it("rejects an unknown rule key (would crash the regex pass)", () => {
+    const bad = [{ ...PT_FIELDS[2], strategy: "rule", rule: "bogus" }]; // f3 is a rule field
+    expect(parseFieldList(bad)).toBeNull();
+  });
+  it("accepts a field with no rule (rule is optional)", () => {
+    const ok = parseFieldList([{ ...PT_FIELDS[0] }]); // f1 is an llm field, no rule
+    expect(ok?.[0].rule).toBeUndefined();
+  });
 });
