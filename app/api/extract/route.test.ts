@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { PT_FIELDS } from "@/lib/extract/fields";
 
+vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
 vi.mock("@/lib/extract/extract", () => ({
   extractFields: vi.fn(async () => ({
     values: [{ fieldId: "f3", value: "Счёт №8 от 02.06.2026", confidence: "high", source: { fileId: "u1", locator: "стр. 1" } }],
@@ -9,6 +9,8 @@ vi.mock("@/lib/extract/extract", () => ({
 }));
 
 import { POST } from "./route";
+import { auth } from "@/auth";
+import { PT_FIELDS } from "@/lib/extract/fields";
 
 function req(body: unknown) {
   return new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) });
@@ -25,6 +27,12 @@ describe("POST /api/extract", () => {
   it("rejects a malformed body with 400", async () => {
     const res = await POST(req({ model: 123, docs: "nope" }));
     expect(res.status).toBe(400);
+  });
+
+  it("401s without a session", async () => {
+    (auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+    const res = await POST(req({ model: "m", docs: [] }));
+    expect(res.status).toBe(401);
   });
 });
 

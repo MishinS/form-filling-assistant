@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { unauthorized } from "@/lib/auth/guard";
 import { extractFields } from "@/lib/extract/extract";
 import { parseFieldList } from "@/lib/templates/validate";
 import type { ParsedDoc } from "@/lib/parse/types";
@@ -8,6 +10,7 @@ export const maxDuration = 60;
 type Body = { templateId?: string; model: string; docs: ParsedDoc[]; fields?: unknown };
 
 export async function POST(req: Request): Promise<Response> {
+  if (!(await auth())) return unauthorized();
   let body: Body;
   try {
     body = (await req.json()) as Body;
