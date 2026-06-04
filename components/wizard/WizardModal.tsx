@@ -1,7 +1,7 @@
 "use client";
 import { useState, useContext } from "react";
 import { useI18n } from "@/lib/i18n";
-import { ModelContext } from "@/components/shell/AppShell";
+import { ModelContext, TemplateMappingContext } from "@/components/shell/AppShell";
 import { Logo, Icon, Btn } from "@/components/primitives";
 import { TEMPLATES } from "@/lib/seed/pt";
 import { uploadToBlob, formatSize, inferMime, type UploadFile } from "@/lib/upload/client";
@@ -27,6 +27,7 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
   const [warnings, setWarnings] = useState<string[]>([]);
   const [reviewValues, setReviewValues] = useState<ExtractedValue[]>([]);
   const { model: MODEL } = useContext(ModelContext);
+  const { fields } = useContext(TemplateMappingContext);
 
   const patch = (id: string, p: Partial<UploadFile>) =>
     setFiles(fs => fs.map(f => (f.fileId === id ? { ...f, ...p } : f)));
@@ -92,9 +93,9 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
                 <Dropzone files={files} onPick={onPick} onRemove={removeFile} />
               </div>
             )}
-            {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} onDone={onExtracted} onBack={() => setStep(0)} />}
-            {step === 2 && <ReviewStep values={values} docs={docs} warnings={warnings} onChange={setReviewValues} />}
-            {step === 3 && <DoneStep onClose={onClose} templateId={tpl} values={reviewValues} />}
+            {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} fields={fields} onDone={onExtracted} onBack={() => setStep(0)} />}
+            {step === 2 && <ReviewStep values={values} docs={docs} fields={fields} warnings={warnings} onChange={setReviewValues} />}
+            {step === 3 && <DoneStep onClose={onClose} templateId={tpl} values={reviewValues} fields={fields} />}
           </div>
         </div>
 

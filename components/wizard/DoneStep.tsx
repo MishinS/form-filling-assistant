@@ -3,10 +3,11 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Icon, Tag, Btn } from "@/components/primitives";
 import type { ExtractedValue } from "@/lib/types";
+import type { ExtractField } from "@/lib/extract/fields";
 
-type Props = { onClose: () => void; templateId: string; values: ExtractedValue[] };
+type Props = { onClose: () => void; templateId: string; values: ExtractedValue[]; fields: ExtractField[] };
 
-export default function DoneStep({ onClose, templateId, values }: Props) {
+export default function DoneStep({ onClose, templateId, values, fields }: Props) {
   const { t, lang } = useI18n();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -21,7 +22,7 @@ export default function DoneStep({ onClose, templateId, values }: Props) {
       const res = await fetch("/api/fill", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId, values }),
+        body: JSON.stringify({ templateId, values, fields }),
       });
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();

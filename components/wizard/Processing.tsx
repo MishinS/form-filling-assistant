@@ -5,16 +5,18 @@ import { Icon, Btn } from "@/components/primitives";
 import type { UploadFile } from "@/lib/upload/client";
 import type { ParsedDoc } from "@/lib/parse/types";
 import type { ExtractedValue } from "@/lib/types";
+import type { ExtractField } from "@/lib/extract/fields";
 
 type Props = {
   sources: UploadFile[];
   model: string;
   templateId: string;
+  fields: ExtractField[];
   onDone: (values: ExtractedValue[], docs: ParsedDoc[], warnings: string[]) => void;
   onBack: () => void;
 };
 
-export default function Processing({ sources, model, templateId, onDone, onBack }: Props) {
+export default function Processing({ sources, model, templateId, fields, onDone, onBack }: Props) {
   const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<"parse" | "extract">("parse");
@@ -41,7 +43,7 @@ export default function Processing({ sources, model, templateId, onDone, onBack 
         const ex = await fetch("/api/extract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ templateId, model, docs }),
+          body: JSON.stringify({ templateId, model, docs, fields }),
         });
         if (!ex.ok) throw new Error(`HTTP ${ex.status}`);
         const { values, warnings } = (await ex.json()) as { values: ExtractedValue[]; warnings?: string[] };
