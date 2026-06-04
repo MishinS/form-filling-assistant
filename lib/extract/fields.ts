@@ -37,3 +37,32 @@ export const PT_GROUPS = [
   { id: "pay",   ru: "Платёж",    en: "Payment" },
   { id: "terms", ru: "Условия",   en: "Terms" },
 ] as const;
+
+/** Amount fields whose cells (ПТ!D13/D15) are driven by «График оплат» formulas — cell is not editable. */
+export const SCHEDULE_LOCKED_FIELDS = ["f4", "f7"] as const;
+
+export function isCellLocked(fieldId: string): boolean {
+  return (SCHEDULE_LOCKED_FIELDS as readonly string[]).includes(fieldId);
+}
+
+/** Build a new manual field with the next free `fN` id, given the current field list. */
+export function newManualField(
+  existing: ExtractField[],
+  init: { label_ru: string; label_en: string; kind: FieldKind; cell: string },
+): ExtractField {
+  let max = 0;
+  for (const f of existing) {
+    const m = f.id.match(/^f(\d+)$/);
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  return {
+    id: `f${max + 1}`,
+    group: "req",
+    label_ru: init.label_ru,
+    label_en: init.label_en,
+    cell: init.cell,
+    kind: init.kind,
+    required: false,
+    strategy: "manual",
+  };
+}
