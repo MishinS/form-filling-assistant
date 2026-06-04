@@ -110,6 +110,8 @@ export const STR: Record<string, { ru: string; en: string }> = {
   tpl_reset:       { ru: "Сбросить", en: "Reset" },
   mapping_saved:   { ru: "Сохранено", en: "Saved" },
   mapping_unsaved: { ru: "Несохранённые изменения", en: "Unsaved changes" },
+  mapping_saving:  { ru: "Сохранение…", en: "Saving…" },
+  mapping_save_err:{ ru: "Не удалось сохранить — изменения только в этой сессии", en: "Save failed — changes apply to this session only" },
   cell_invalid:    { ru: "Неверный адрес ячейки", en: "Invalid cell address" },
   cell_sheet_pt:   { ru: "Только лист ПТ", en: "Sheet ПТ only" },
   cell_dupe:       { ru: "Ячейка уже используется", en: "Cell already used" },

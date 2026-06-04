@@ -27,6 +27,8 @@ export default function MappingEditor({ templateId }: { templateId: string }) {
   const editable = templateId === "pt";
   const [draft, setDraft] = useState<ExtractField[]>(saved);
   const [sel, setSel] = useState(saved[0]?.id ?? "");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   const rows = editable ? draft : saved;
   const dirty = editable && JSON.stringify(draft) !== JSON.stringify(saved);
@@ -64,16 +66,48 @@ export default function MappingEditor({ templateId }: { templateId: string }) {
     setDraft(d => [...d, f]);
     setSel(f.id);
   };
-  const save = () => {
+  const save = async () => {
     // Normalize cells on save (bare → ПТ!…)
     const normalized = draft.map(f => {
       const r = validateCellRef(f.cell);
       return r.ok ? { ...f, cell: r.normalized } : f;
     });
-    setFields(normalized);
+    setFields(normalized);   // session-live immediately
     setDraft(normalized);
+    setErr(null);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/mappings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateId, fields: normalized }),
+      });
+      if (!res.ok) setErr(t("mapping_save_err"));
+    } catch {
+      setErr(t("mapping_save_err"));
+    } finally {
+      setSaving(false);
+    }
   };
-  const reset = () => { resetFields(); setDraft(PT_FIELDS); setSel(PT_FIELDS[0].id); };
+  const reset = async () => {
+    resetFields();              // revert the session immediately
+    setDraft(PT_FIELDS);
+    setSel(PT_FIELDS[0].id);
+    setErr(null);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/mappings", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateId }),
+      });
+      if (!res.ok) setErr(t("mapping_save_err"));
+    } catch {
+      setErr(t("mapping_save_err"));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="fade-in" style={{ padding: "28px 36px 56px", maxWidth: 1280, margin: "0 auto" }}>
@@ -92,10 +126,12 @@ export default function MappingEditor({ templateId }: { templateId: string }) {
         </div>
         {editable && (
           <div className="row gap-10" style={{ alignItems: "center" }}>
-            {dirty && <span className="mono dim" style={{ fontSize: 11, color: "var(--warn)" }}>{t("mapping_unsaved")}</span>}
-            <Btn variant="ghost" size="md" onClick={reset}>{t("tpl_reset")}</Btn>
-            <Btn variant="ghost" size="md" icon="plus" onClick={add}>{t("add_field")}</Btn>
-            <Btn variant="primary" size="md" icon="check" disabled={!canSave} onClick={save}>{t("save")}</Btn>
+            {err && <span className="mono" style={{ fontSize: 11, color: "var(--bad)" }}>{err}</span>}
+            {!err && saving && <span className="mono dim" style={{ fontSize: 11 }}>{t("mapping_saving")}</span>}
+            {!saving && dirty && <span className="mono dim" style={{ fontSize: 11, color: "var(--warn)" }}>{t("mapping_unsaved")}</span>}
+            <Btn variant="ghost" size="md" onClick={reset} disabled={saving}>{t("tpl_reset")}</Btn>
+            <Btn variant="ghost" size="md" icon="plus" onClick={add} disabled={saving}>{t("add_field")}</Btn>
+            <Btn variant="primary" size="md" icon="check" disabled={!canSave || saving} onClick={save}>{saving ? t("mapping_saving") : t("save")}</Btn>
           </div>
         )}
       </div>
