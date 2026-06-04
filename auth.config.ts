@@ -4,6 +4,10 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig: NextAuthConfig = {
+  // Trust the Host header. Required for self-hosted `next start` (and any non-Vercel
+  // host): without it production auth() throws UntrustedHost and returns a truthy
+  // error object instead of null — which would silently bypass truthiness guards.
+  trustHost: true,
   pages: { signIn: "/login" },
   session: { strategy: "jwt" },
   providers: [], // real provider added in auth.ts
