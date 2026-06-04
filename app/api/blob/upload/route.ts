@@ -1,10 +1,13 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { unauthorized } from "@/lib/auth/guard";
 import { MIME } from "@/lib/parse/types";
 
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB — matches the drop_hint UI string
 
 export async function POST(request: Request): Promise<Response> {
+  if (!(await auth())) return unauthorized();
   try {
     const body = (await request.json()) as HandleUploadBody;
     const json = await handleUpload({

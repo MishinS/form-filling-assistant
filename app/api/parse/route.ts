@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { unauthorized } from "@/lib/auth/guard";
 import { parseDocument } from "@/lib/parse";
 import type { ParsedDoc } from "@/lib/parse/types";
 
@@ -7,6 +9,7 @@ export const maxDuration = 60;
 type Source = { fileId: string; url: string; name: string; mime: string };
 
 export async function POST(req: Request): Promise<Response> {
+  if (!(await auth())) return unauthorized();
   let sources: Source[];
   try {
     ({ sources } = (await req.json()) as { sources: Source[] });

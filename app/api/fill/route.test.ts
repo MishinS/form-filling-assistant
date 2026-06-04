@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { vi } from "vitest";
+vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
 import { POST } from "./route";
 import type { ExtractedValue } from "@/lib/types";
 import { PT_FIELDS } from "@/lib/extract/fields";
@@ -45,5 +47,15 @@ describe("/api/fill field validation", () => {
   it("200s with a valid fields list", async () => {
     const res = await call({ templateId: "pt", values: [], fields: PT_FIELDS });
     expect(res.status).toBe(200);
+  });
+});
+
+import { auth as fillAuth } from "@/auth";
+
+describe("/api/fill auth", () => {
+  it("401s without a session", async () => {
+    (fillAuth as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+    const res = await POST(new Request("http://t/api/fill", { method: "POST", body: JSON.stringify({ templateId: "pt", values: [] }) }));
+    expect(res.status).toBe(401);
   });
 });

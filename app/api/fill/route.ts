@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { auth } from "@/auth";
+import { unauthorized } from "@/lib/auth/guard";
 import type { ExtractedValue } from "@/lib/types";
 import { fillPtXlsx } from "@/lib/fill/xlsx";
 import { parseFieldList } from "@/lib/templates/validate";
@@ -10,6 +12,7 @@ const sanitize = (s: string) =>
   s.replace(/[\/\\:*?"<>|]+/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
 
 export async function POST(req: Request): Promise<Response> {
+  if (!(await auth())) return unauthorized();
   let body: { templateId?: string; values?: ExtractedValue[]; fields?: unknown };
   try {
     body = await req.json();

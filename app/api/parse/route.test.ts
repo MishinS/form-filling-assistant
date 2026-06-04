@@ -7,6 +7,8 @@ vi.mock("@/lib/parse", () => ({
   }),
 }));
 
+vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
+
 import { POST } from "./route";
 
 beforeEach(() => {
@@ -30,5 +32,15 @@ describe("POST /api/parse", () => {
     expect(ok.warnings).toEqual([]);
     expect(bad.blocks).toEqual([]);
     expect(bad.warnings[0]).toContain("Не удалось обработать");
+  });
+});
+
+import { auth as parseAuth } from "@/auth";
+
+describe("/api/parse auth", () => {
+  it("401s without a session", async () => {
+    (parseAuth as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+    const res = await POST(req({ sources: [] }));
+    expect(res.status).toBe(401);
   });
 });
