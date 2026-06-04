@@ -9,7 +9,10 @@ export default function LoginForm() {
   const { t } = useI18n();
   const router = useRouter();
   const params = useSearchParams();
-  const callbackUrl = params.get("callbackUrl") || "/";
+  // Only allow same-origin relative paths — guards against open-redirect, since
+  // redirect:false bypasses NextAuth's own callbackUrl sanitisation.
+  const rawCallback = params.get("callbackUrl") || "/";
+  const callbackUrl = rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
