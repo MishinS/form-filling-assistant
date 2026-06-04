@@ -15,7 +15,10 @@ export default function TemplateGallery() {
           <h1 style={{ fontSize: 38 }}>{t("tpl_h")}</h1>
           <p className="muted" style={{ fontSize: 15, marginTop: 14, maxWidth: 520 }}>{t("tpl_sub")}</p>
         </div>
-        <Btn variant="primary" size="md" icon="plus">{t("new_template")}</Btn>
+        <div className="col" style={{ alignItems: "flex-end", gap: 4 }}>
+          <Btn variant="primary" size="md" icon="plus" disabled>{t("new_template")}</Btn>
+          <span className="mono dim" style={{ fontSize: 10.5 }}>{t("soon")}</span>
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginTop: 40 }}>
@@ -47,16 +50,15 @@ export default function TemplateGallery() {
           </Card>
         ))}
 
-        {/* new template tile */}
-        <button style={{ borderRadius: "var(--r-lg)", border: "1.5px dashed var(--line-2)", background: "transparent",
-          minHeight: 210, display: "grid", placeItems: "center", color: "var(--text-3)", transition: "all .15s" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--line-strong)"; e.currentTarget.style.color = "var(--text-2)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--line-2)"; e.currentTarget.style.color = "var(--text-3)"; }}>
+        {/* new template tile — creation out of scope for this slice */}
+        <div style={{ borderRadius: "var(--r-lg)", border: "1.5px dashed var(--line-2)", background: "transparent",
+          minHeight: 210, display: "grid", placeItems: "center", color: "var(--text-3)", opacity: .5, cursor: "default" }}>
           <div className="col gap-10" style={{ alignItems: "center" }}>
             <span style={{ width: 44, height: 44, borderRadius: 12, display: "grid", placeItems: "center", border: "1px solid var(--line-2)" }}><Icon name="plus" size={20} /></span>
             <span style={{ fontSize: 13, fontWeight: 600 }}>{t("new_template")}</span>
+            <span className="mono dim" style={{ fontSize: 10.5 }}>{t("soon")}</span>
           </div>
-        </button>
+        </div>
       </div>
     </div>
   );
