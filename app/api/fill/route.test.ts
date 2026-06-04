@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { POST } from "./route";
 import type { ExtractedValue } from "@/lib/types";
+import { PT_FIELDS } from "@/lib/extract/fields";
 
 const ev = (fieldId: string, value: string): ExtractedValue => ({
   fieldId, value, confidence: "high", source: { fileId: null, locator: "" },
@@ -28,5 +29,21 @@ describe("POST /api/fill", () => {
   it("400 on malformed body", async () => {
     const res = await POST(new Request("http://t/api/fill", { method: "POST", body: "not json" }));
     expect(res.status).toBe(400);
+  });
+});
+
+describe("/api/fill field validation", () => {
+  const call = (body: unknown) =>
+    POST(new Request("http://t/api/fill", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }));
+
+  it("400s on a malformed fields list", async () => {
+    const res = await call({ templateId: "pt", values: [], fields: [{ id: "f1", cell: "9D" }] });
+    expect(res.status).toBe(400);
+  });
+  it("200s with a valid fields list", async () => {
+    const res = await call({ templateId: "pt", values: [], fields: PT_FIELDS });
+    expect(res.status).toBe(200);
   });
 });
