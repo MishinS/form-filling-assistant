@@ -39,6 +39,8 @@ export const STR: Record<string, { ru: string; en: string }> = {
   stat_month:      { ru: "В этом месяце",   en: "This month" },
   stat_time:       { ru: "Сэкономлено времени", en: "Time saved" },
   stat_acc:        { ru: "Средняя точность", en: "Avg. accuracy" },
+  stat_last:       { ru: "Последнее", en: "Last fill" },
+  fills_empty:     { ru: "Пока нет заполнений", en: "No fills yet" },
   recent:          { ru: "Недавние заполнения", en: "Recent fills" },
   col_doc:         { ru: "Документ",     en: "Document" },
   col_template:    { ru: "Шаблон",       en: "Template" },

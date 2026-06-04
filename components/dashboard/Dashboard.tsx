@@ -2,20 +2,22 @@
 import { useContext } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Eyebrow, Btn } from "@/components/primitives";
-import { HISTORY, TEMPLATES } from "@/lib/seed/pt";
+import { TEMPLATES } from "@/lib/seed/pt";
+import type { HistoryRowData } from "@/lib/db/map";
+import type { FillStats } from "@/lib/db/fills";
+import { formatFillDate } from "@/lib/db/map";
 import { WizardTrigger } from "@/components/shell/AppShell";
 import RecentRow from "./RecentRow";
 
-export default function Dashboard() {
+export default function Dashboard({ fills, stats }: { fills: HistoryRowData[]; stats: FillStats }) {
   const { t, lang } = useI18n();
-  const { openNew, openReview } = useContext(WizardTrigger);
+  const { openNew } = useContext(WizardTrigger);
   const tplName = (id: string) => { const x = TEMPLATES.find(v => v.id === id); return x ? (lang === "ru" ? x.name_ru : x.name_en) : id; };
 
-  const stats = [
-    { k: "stat_total", v: "247", sub: "+18" },
-    { k: "stat_month", v: "63",  sub: "+9" },
-    { k: "stat_time",  v: "41ч", sub: lang === "ru" ? "≈ 11 мин/док" : "≈ 11 min/doc" },
-    { k: "stat_acc",   v: "96%", sub: lang === "ru" ? "по полям" : "by field" },
+  const statCards = [
+    { k: "stat_total", v: String(stats.total) },
+    { k: "stat_month", v: String(stats.month) },
+    { k: "stat_last",  v: stats.last ? formatFillDate(stats.last, lang).split(",")[0] : "—" },
   ];
 
   return (
@@ -33,14 +35,13 @@ export default function Dashboard() {
       <p className="muted" style={{ maxWidth: 560, marginTop: 18, fontSize: 15.5 }}>{t("dash_sub")}</p>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1, marginTop: 40,
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1, marginTop: 40,
         background: "var(--line)", border: "1px solid var(--line)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
-        {stats.map(s => (
+        {statCards.map(s => (
           <div key={s.k} style={{ background: "var(--surface-1)", padding: "20px 22px" }}>
             <div className="mono" style={{ fontSize: 11, letterSpacing: ".04em", color: "var(--text-3)", textTransform: "uppercase" }}>{t(s.k)}</div>
             <div className="row gap-8" style={{ alignItems: "baseline", marginTop: 12 }}>
               <span className="display tnum" style={{ fontSize: 32, fontWeight: 600 }}>{s.v}</span>
-              <span className="mono" style={{ fontSize: 12, color: "var(--ok)" }}>{s.sub}</span>
             </div>
           </div>
         ))}
@@ -50,7 +51,7 @@ export default function Dashboard() {
       <div style={{ marginTop: 36 }}>
         <div className="row" style={{ justifyContent: "space-between", marginBottom: 14 }}>
           <h2 style={{ fontSize: 17 }}>{t("recent")}</h2>
-          <span className="mono dim" style={{ fontSize: 12 }}>{HISTORY.length} / 247</span>
+          <span className="mono dim" style={{ fontSize: 12 }}>{fills.length}</span>
         </div>
 
         <div style={{ border: "1px solid var(--line)", borderRadius: "var(--r-lg)", overflow: "hidden", background: "var(--surface-1)" }}>
@@ -63,9 +64,13 @@ export default function Dashboard() {
             <div />
           </div>
           {/* rows */}
-          {HISTORY.map((r, i) => (
-            <RecentRow key={r.id} r={r} tplName={tplName} onOpen={openReview} last={i === HISTORY.length - 1} />
-          ))}
+          {fills.length === 0 ? (
+            <div className="muted" style={{ padding: "28px 20px", fontSize: 13.5, textAlign: "center" }}>{t("fills_empty")}</div>
+          ) : (
+            fills.map((r, i) => (
+              <RecentRow key={r.id} r={r} tplName={tplName} dateText={formatFillDate(r.createdAt, lang)} last={i === fills.length - 1} />
+            ))
+          )}
         </div>
       </div>
     </div>
