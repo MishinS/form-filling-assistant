@@ -119,6 +119,14 @@ export const STR: Record<string, { ru: string; en: string }> = {
   kind_amount:     { ru: "Сумма", en: "Amount" },
   kind_date:       { ru: "Дата", en: "Date" },
   soon:            { ru: "скоро", en: "soon" },
+  login_title:    { ru: "Вход", en: "Sign in" },
+  login_sub:      { ru: "Войдите, чтобы продолжить", en: "Sign in to continue" },
+  login_email:    { ru: "Email", en: "Email" },
+  login_password: { ru: "Пароль", en: "Password" },
+  login_submit:   { ru: "Войти", en: "Sign in" },
+  login_loading:  { ru: "Вход…", en: "Signing in…" },
+  login_error:    { ru: "Неверный email или пароль", en: "Invalid email or password" },
+  sign_out:       { ru: "Выйти", en: "Sign out" },
 };
 
 export const STATUS: Record<StatusKey, { key: string; tone: "ok" | "warn" | "info" | "muted" | "bad" }> = {
