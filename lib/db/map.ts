@@ -33,15 +33,27 @@ export function buildFillRecord(id: string, userId: string, p: FillPayload): {
     pages: s.pages,
     blobKey: s.blobKey ?? null,
   }));
-  const values: ValueRow[] = p.values.map((v) => ({
-    id: `${id}-${v.fieldId}`,
-    fillId: id,
-    fieldId: v.fieldId,
-    value: v.value,
-    confidence: v.confidence,
-    sourceFileId: v.source?.fileId ?? null,
-    locator: v.source?.locator ? v.source.locator : null,
-  }));
+  // Resolve a value's upload fileId (e.g. "u0") to the persisted source_files row id
+  // ("<id>-s<i>") so extracted_values.sourceFileId points at a real row, not the transient
+  // upload id. Unknown / null upload ids resolve to null.
+  const rowIdByUpload = new Map(p.sources.map((s, i) => [s.fileId, `${id}-s${i}`]));
+  // One row per fieldId: the deterministic id `<id>-<fieldId>` means a duplicate or empty
+  // fieldId would collide on the primary key and abort the whole batch insert. Keep the last
+  // occurrence per field and drop entries without a usable fieldId.
+  const byField = new Map<string, ValueRow>();
+  for (const v of p.values) {
+    if (!v.fieldId) continue;
+    byField.set(v.fieldId, {
+      id: `${id}-${v.fieldId}`,
+      fillId: id,
+      fieldId: v.fieldId,
+      value: v.value ?? "",
+      confidence: v.confidence,
+      sourceFileId: v.source?.fileId ? (rowIdByUpload.get(v.source.fileId) ?? null) : null,
+      locator: v.source?.locator ? v.source.locator : null,
+    });
+  }
+  const values = Array.from(byField.values());
   return { fill, sources, values };
 }
 
