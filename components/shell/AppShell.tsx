@@ -29,12 +29,12 @@ export const TemplateMappingContext = createContext<{
 
 export type SessionUser = { name: string; email: string };
 
-export default function AppShell({ children, user }: { children: ReactNode; user: SessionUser }) {
+export default function AppShell({ children, user, initialFields }: { children: ReactNode; user: SessionUser; initialFields?: ExtractField[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const [wizardStart, setWizardStart] = useState<number | null>(null);
   const [model, setModel] = useState(DEFAULT_MODEL);
-  const [fields, setFields] = useState<ExtractField[]>(PT_FIELDS);
+  const [fields, setFields] = useState<ExtractField[]>(initialFields ?? PT_FIELDS);
   const route = pathname.split("/")[1] || "fills";
   return (
     <TemplateMappingContext.Provider value={{ fields, setFields, resetFields: () => setFields(PT_FIELDS) }}>
