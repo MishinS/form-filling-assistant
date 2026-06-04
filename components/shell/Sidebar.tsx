@@ -2,10 +2,12 @@
 import { useI18n } from "@/lib/i18n";
 import { Logo, Btn, Icon } from "@/components/primitives";
 import ModelSelect from "./ModelSelect";
+import { signOut } from "next-auth/react";
+import type { SessionUser } from "./AppShell";
 
-type Props = { route: string; onNavigate: (id: string) => void; onNewFill: () => void };
+type Props = { route: string; user: SessionUser; onNavigate: (id: string) => void; onNewFill: () => void };
 
-export default function Sidebar({ route, onNavigate, onNewFill }: Props) {
+export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
   const { t } = useI18n();
   const items = [
     { id: "fills", icon: "layers", k: "nav_fills" },
@@ -45,12 +47,18 @@ export default function Sidebar({ route, onNavigate, onNewFill }: Props) {
       {/* LLM model picker */}
       <ModelSelect />
 
-      <div className="row gap-10" style={{ marginTop: 16, padding: "14px 4px 0", borderTop: "1px solid var(--line)" }}>
-        <span style={{ width: 30, height: 30, borderRadius: 99, background: "var(--surface-hi)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 600 }}>СМ</span>
-        <div className="col" style={{ lineHeight: 1.2, minWidth: 0 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 600 }}>Сергей М.</span>
-          <span className="dim" style={{ fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>finance@company.ru</span>
+      <div className="row gap-10" style={{ marginTop: 16, padding: "14px 4px 0", borderTop: "1px solid var(--line)", alignItems: "center" }}>
+        <span style={{ width: 30, height: 30, borderRadius: 99, background: "var(--surface-hi)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 600 }}>
+          {(user.name || user.email || "?").trim().slice(0, 2).toUpperCase()}
+        </span>
+        <div className="col" style={{ lineHeight: 1.2, minWidth: 0, flex: 1 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name || "—"}</span>
+          <span className="dim" style={{ fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.email}</span>
         </div>
+        <button onClick={() => signOut({ callbackUrl: "/login" })} title={t("sign_out")} aria-label={t("sign_out")}
+          className="dim" style={{ width: 28, height: 28, borderRadius: 7, display: "grid", placeItems: "center", flex: "none" }}>
+          <Icon name="arrowR" size={15} />
+        </button>
       </div>
     </div>
   );
