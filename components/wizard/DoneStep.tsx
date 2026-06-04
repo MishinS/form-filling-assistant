@@ -4,13 +4,15 @@ import { useI18n } from "@/lib/i18n";
 import { Icon, Tag, Btn } from "@/components/primitives";
 import type { ExtractedValue } from "@/lib/types";
 import type { ExtractField } from "@/lib/extract/fields";
+import type { SourceInput } from "@/lib/db/map";
 
-type Props = { onClose: () => void; templateId: string; values: ExtractedValue[]; fields: ExtractField[] };
+type Props = { onClose: () => void; templateId: string; values: ExtractedValue[]; fields: ExtractField[]; sources: SourceInput[] };
 
-export default function DoneStep({ onClose, templateId, values, fields }: Props) {
+export default function DoneStep({ onClose, templateId, values, fields, sources }: Props) {
   const { t, lang } = useI18n();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const counter = values.find(v => v.fieldId === "f1")?.value?.trim();
   const fileName = `ПТ_${counter ? counter.replace(/[\/\\:*?"<>|]+/g, "") + "_" : ""}Ф15.xlsx`;
@@ -34,6 +36,15 @@ export default function DoneStep({ onClose, templateId, values, fields }: Props)
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      // Best-effort: record this completed fill once. Never blocks or fails the download.
+      if (!saved) {
+        setSaved(true);
+        void fetch("/api/fills", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ templateId, values, sources }),
+        }).catch(() => {});
+      }
     } catch {
       setErr(t("dl_excel_err"));
     } finally {

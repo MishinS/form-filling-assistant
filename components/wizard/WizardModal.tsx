@@ -95,7 +95,15 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
             )}
             {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} fields={fields} onDone={onExtracted} onBack={() => setStep(0)} />}
             {step === 2 && <ReviewStep values={values} docs={docs} fields={fields} warnings={warnings} onChange={setReviewValues} />}
-            {step === 3 && <DoneStep onClose={onClose} templateId={tpl} values={reviewValues} fields={fields} />}
+            {step === 3 && (
+              <DoneStep
+                onClose={onClose}
+                templateId={tpl}
+                values={reviewValues}
+                fields={fields}
+                sources={uploaded.map(u => ({ fileId: u.fileId, name: u.name, mime: u.mime, size: u.size, pages: u.pages, blobKey: u.blobUrl }))}
+              />
+            )}
           </div>
         </div>
 
