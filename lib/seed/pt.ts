@@ -105,6 +105,20 @@ export const STR: Record<string, { ru: string; en: string }> = {
   parse_failed:    { ru: "Обработка не удалась", en: "Processing failed" },
   processing_title:{ ru: "Обрабатываем документы", en: "Processing documents" },
   processing_sub:  { ru: "Извлекаем текст из файлов", en: "Extracting text from files" },
+  tpl_reset:       { ru: "Сбросить", en: "Reset" },
+  mapping_saved:   { ru: "Сохранено", en: "Saved" },
+  mapping_unsaved: { ru: "Несохранённые изменения", en: "Unsaved changes" },
+  cell_invalid:    { ru: "Неверный адрес ячейки", en: "Invalid cell address" },
+  cell_sheet_pt:   { ru: "Только лист ПТ", en: "Sheet ПТ only" },
+  cell_dupe:       { ru: "Ячейка уже используется", en: "Cell already used" },
+  cell_locked:     { ru: "Управляется формулой расписания", en: "Driven by schedule formula" },
+  field_kind:      { ru: "Тип", en: "Type" },
+  new_field_label: { ru: "Новое поле", en: "New field" },
+  kind_string:     { ru: "Строка", en: "String" },
+  kind_text:       { ru: "Текст", en: "Text" },
+  kind_amount:     { ru: "Сумма", en: "Amount" },
+  kind_date:       { ru: "Дата", en: "Date" },
+  soon:            { ru: "скоро", en: "soon" },
 };
 
 export const STATUS: Record<StatusKey, { key: string; tone: "ok" | "warn" | "info" | "muted" | "bad" }> = {
