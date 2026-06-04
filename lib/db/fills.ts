@@ -23,17 +23,21 @@ export async function createFill(userId: string, payload: FillPayload): Promise<
 /** Most-recent fills for one user, with the denormalised summary the dashboard row needs. */
 export async function listFills(userId: string, limit = 20): Promise<HistoryRowData[]> {
   const db = getDb();
+  // Inside a `.select()` projection, `${fills.id}` renders unqualified as `"id"`, which a
+  // correlated subquery resolves to the INNER table's id (sf.id / ev.id) — silently matching
+  // nothing. Reference the outer column with an explicit table-qualified raw fragment.
+  const fid = sql.raw('"fills"."id"');
   const rows = await db
     .select({
       id: fills.id,
       templateId: fills.templateId,
       status: fills.status,
       createdAt: fills.createdAt,
-      fileCount: sql<number>`(select count(*) from ${sourceFiles} sf where sf.fill_id = ${fills.id})`,
-      primaryFile: sql<string | null>`(select sf.name from ${sourceFiles} sf where sf.fill_id = ${fills.id} order by sf.id limit 1)`,
-      counterparty: sql<string | null>`(select ev.value from ${extractedValues} ev where ev.fill_id = ${fills.id} and ev.field_id = 'f1' limit 1)`,
-      amount: sql<string | null>`(select ev.value from ${extractedValues} ev where ev.fill_id = ${fills.id} and ev.field_id = 'f4' limit 1)`,
-      currency: sql<string | null>`(select ev.value from ${extractedValues} ev where ev.fill_id = ${fills.id} and ev.field_id = 'f5' limit 1)`,
+      fileCount: sql<number>`(select count(*) from ${sourceFiles} sf where sf.fill_id = ${fid})`,
+      primaryFile: sql<string | null>`(select sf.name from ${sourceFiles} sf where sf.fill_id = ${fid} order by sf.id limit 1)`,
+      counterparty: sql<string | null>`(select ev.value from ${extractedValues} ev where ev.fill_id = ${fid} and ev.field_id = 'f1' limit 1)`,
+      amount: sql<string | null>`(select ev.value from ${extractedValues} ev where ev.fill_id = ${fid} and ev.field_id = 'f4' limit 1)`,
+      currency: sql<string | null>`(select ev.value from ${extractedValues} ev where ev.fill_id = ${fid} and ev.field_id = 'f5' limit 1)`,
     })
     .from(fills)
     .where(eq(fills.userId, userId))
