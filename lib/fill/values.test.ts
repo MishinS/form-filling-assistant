@@ -46,3 +46,40 @@ describe("planWrites", () => {
     expect(ws).toHaveLength(0);
   });
 });
+
+import { PT_FIELDS } from "@/lib/extract/fields";
+
+describe("planWrites with a custom field list", () => {
+  const vals = (o: Record<string, string>) =>
+    Object.entries(o).map(([fieldId, value]) => ({
+      fieldId, value, confidence: "high" as const, source: { fileId: null, locator: "" },
+    }));
+
+  it("writes a remapped cell to the new ref", () => {
+    const fields = PT_FIELDS.map(f => f.id === "f1" ? { ...f, cell: "ПТ!D10" } : f);
+    const writes = planWrites(vals({ f1: "ООО Тест" }), fields);
+    const w = writes.find(x => x.value === "ООО Тест");
+    expect(w).toMatchObject({ sheet: "ПТ", ref: "D10", mode: "string" });
+  });
+
+  it("writes a new manual field to its cell", () => {
+    const fields = [
+      ...PT_FIELDS,
+      { id: "f13", group: "req" as const, label_ru: "Доп", label_en: "Extra",
+        cell: "ПТ!D22", kind: "string" as const, required: false, strategy: "manual" as const },
+    ];
+    const writes = planWrites(vals({ f13: "примечание" }), fields);
+    expect(writes.find(x => x.ref === "D22")).toMatchObject({ mode: "string", value: "примечание" });
+  });
+
+  it("skips a removed field", () => {
+    const fields = PT_FIELDS.filter(f => f.id !== "f1"); // drop Контрагент (ПТ!D9)
+    const writes = planWrites(vals({ f1: "ООО Тест", f8: "Аванс" }), fields);
+    expect(writes.find(x => x.ref === "D9")).toBeUndefined();
+  });
+
+  it("defaults to PT_FIELDS when no list is passed", () => {
+    const writes = planWrites(vals({ f1: "ООО Тест" }));
+    expect(writes.find(x => x.ref === "D9")).toMatchObject({ mode: "string", value: "ООО Тест" });
+  });
+});

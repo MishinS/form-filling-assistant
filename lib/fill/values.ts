@@ -1,4 +1,4 @@
-import { PT_FIELDS } from "@/lib/extract/fields";
+import { PT_FIELDS, type ExtractField } from "@/lib/extract/fields";
 import type { ExtractedValue } from "@/lib/types";
 import { parseAmount, parseDateSerial } from "./parse";
 import { buildSchedule } from "./schedule";
@@ -24,12 +24,12 @@ export function sheetFile(name: string): string {
 
 const refOf = (cell: string) => cell.split("!")[1]; // "ПТ!D9" → "D9"
 
-export function planWrites(values: ExtractedValue[]): CellWrite[] {
+export function planWrites(values: ExtractedValue[], fields: ExtractField[] = PT_FIELDS): CellWrite[] {
   const val = (id: string) => values.find(v => v.fieldId === id)?.value?.trim() ?? "";
   const writes: CellWrite[] = [];
 
   // Direct ПТ cells (amounts f4/f7 handled via the schedule below).
-  for (const f of PT_FIELDS) {
+  for (const f of fields) {
     if (f.id === "f4" || f.id === "f7") continue;
     const raw = val(f.id);
     if (!raw) continue;

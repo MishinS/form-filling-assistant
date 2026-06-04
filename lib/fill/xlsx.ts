@@ -1,14 +1,15 @@
 import { unzipSync, zipSync, strToU8, strFromU8 } from "fflate";
 import type { ExtractedValue } from "@/lib/types";
+import { PT_FIELDS, type ExtractField } from "@/lib/extract/fields";
 import { planWrites, sheetFile, type CellWrite } from "./values";
 import { writeCell, setFormulaCache } from "./cell";
 
 /** Fill the ПТ образец with the given values, preserving everything else. Pure & sync. */
-export function fillPtXlsx(templateBytes: Uint8Array, values: ExtractedValue[]): Uint8Array {
+export function fillPtXlsx(templateBytes: Uint8Array, values: ExtractedValue[], fields: ExtractField[] = PT_FIELDS): Uint8Array {
   const files = unzipSync(templateBytes);
 
   const byFile = new Map<string, CellWrite[]>();
-  for (const w of planWrites(values)) {
+  for (const w of planWrites(values, fields)) {
     const file = sheetFile(w.sheet);
     const arr = byFile.get(file) ?? [];
     arr.push(w);
