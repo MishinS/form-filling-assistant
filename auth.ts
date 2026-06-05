@@ -1,7 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
 import { parseUsers, verifyCredentials } from "@/lib/auth/users";
+import { getUserByEmail } from "@/lib/db/users";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -11,9 +13,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       authorize: async (creds) => {
         const email = typeof creds?.email === "string" ? creds.email : "";
         const password = typeof creds?.password === "string" ? creds.password : "";
-        const user = await verifyCredentials(email, password, parseUsers(process.env.AUTH_USERS));
-        // NextAuth wants an `id`; use the email. Returning null → CredentialsSignin error.
-        return user ? { id: user.email, email: user.email, name: user.name } : null;
+
+        // 1) env users (the owner fallback — works even if the DB is unreachable)
+        const envUser = await verifyCredentials(email, password, parseUsers(process.env.AUTH_USERS));
+        if (envUser) return { id: envUser.email, email: envUser.email, name: envUser.name };
+
+        // 2) DB users (registered via /register). DB errors → null (login fails, never crashes).
+        if (email && password) {
+          try {
+            const dbUser = await getUserByEmail(email);
+            if (dbUser && (await bcrypt.compare(password, dbUser.passwordHash))) {
+              return { id: dbUser.email, email: dbUser.email, name: dbUser.name };
+            }
+          } catch {
+            return null;
+          }
+        }
+        return null;
       },
     }),
   ],
