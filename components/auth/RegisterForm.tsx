@@ -28,7 +28,7 @@ export default function RegisterForm() {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       const code = (data as { error?: string }).error;
-      setErrKey(code === "invite" ? "register_err_invite" : code === "email_taken" ? "register_err_taken" : "register_err_generic");
+      setErrKey(code === "invite" ? "register_err_invite" : code === "email_taken" ? "register_err_taken" : code === "server" ? "register_err_server" : "register_err_generic");
       setBusy(false);
       return;
     }

@@ -47,6 +47,20 @@ describe("POST /api/register", () => {
     expect(createUser).not.toHaveBeenCalled();
   });
 
+  it("409 when createUser hits a unique-violation race (23505)", async () => {
+    (createUser as ReturnType<typeof vi.fn>).mockRejectedValueOnce(Object.assign(new Error("dup"), { code: "23505" }));
+    const res = await POST(req(good));
+    expect(res.status).toBe(409);
+    await expect(res.json()).resolves.toEqual({ error: "email_taken" });
+  });
+
+  it("500 when the DB errors for a non-unique reason (e.g. connectivity)", async () => {
+    (createUser as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("connect timeout"));
+    const res = await POST(req(good));
+    expect(res.status).toBe(500);
+    await expect(res.json()).resolves.toEqual({ error: "server" });
+  });
+
   it("200 creates the user with a bcrypt hash and normalized email", async () => {
     const res = await POST(req({ ...good, email: "New@User.ru" }));
     expect(res.status).toBe(200);

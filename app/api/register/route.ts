@@ -22,16 +22,21 @@ export async function POST(req: Request) {
   );
   if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
 
-  // Email must not already be an env user nor a DB user.
+  // Email must not already be an env user (pure check, no DB).
   const envTaken = parseUsers(process.env.AUTH_USERS).some((u) => u.email.toLowerCase() === v.email);
   if (envTaken) return NextResponse.json({ error: "email_taken" }, { status: 409 });
-  if (await getUserByEmail(v.email)) return NextResponse.json({ error: "email_taken" }, { status: 409 });
 
-  const passwordHash = bcrypt.hashSync(password, 10);
   try {
+    if (await getUserByEmail(v.email)) return NextResponse.json({ error: "email_taken" }, { status: 409 });
+    const passwordHash = bcrypt.hashSync(password, 10);
     await createUser({ email: v.email, name: v.name, passwordHash });
-  } catch {
-    return NextResponse.json({ error: "email_taken" }, { status: 409 }); // PK race
+  } catch (e) {
+    // A unique-violation = race where the email was registered between our check and insert.
+    if ((e as { code?: string })?.code === "23505") {
+      return NextResponse.json({ error: "email_taken" }, { status: 409 });
+    }
+    // Any other DB error (e.g. connectivity) surfaces honestly — never masquerade as "taken".
+    return NextResponse.json({ error: "server" }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
 }

@@ -144,6 +144,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   register_err_invite:  { ru: "Неверный код приглашения", en: "Invalid invite code" },
   register_err_taken:   { ru: "Этот email уже зарегистрирован", en: "That email is already registered" },
   register_err_generic: { ru: "Проверьте поля: email и имя обязательны, пароль от 8 символов", en: "Check the fields: email and name required, password 8+ chars" },
+  register_err_server:  { ru: "Ошибка сервера, попробуйте позже", en: "Server error, please try again" },
   register_have_account: { ru: "Уже есть аккаунт? Войти", en: "Already have an account? Sign in" },
 };
 
