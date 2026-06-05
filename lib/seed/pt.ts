@@ -133,7 +133,18 @@ export const STR: Record<string, { ru: string; en: string }> = {
   login_submit:   { ru: "Войти", en: "Sign in" },
   login_loading:  { ru: "Вход…", en: "Signing in…" },
   login_error:    { ru: "Неверный email или пароль", en: "Invalid email or password" },
+  login_no_account:  { ru: "Нет аккаунта? Регистрация", en: "No account? Sign up" },
   sign_out:       { ru: "Выйти", en: "Sign out" },
+  register_title:    { ru: "Регистрация",            en: "Sign up" },
+  register_sub:      { ru: "Создайте аккаунт по приглашению", en: "Create an account with an invite" },
+  register_name:     { ru: "Имя",                    en: "Name" },
+  register_invite:   { ru: "Код приглашения",        en: "Invite code" },
+  register_submit:   { ru: "Зарегистрироваться",     en: "Sign up" },
+  register_loading:  { ru: "Создаём…",               en: "Creating…" },
+  register_err_invite:  { ru: "Неверный код приглашения", en: "Invalid invite code" },
+  register_err_taken:   { ru: "Этот email уже зарегистрирован", en: "That email is already registered" },
+  register_err_generic: { ru: "Проверьте поля: email и имя обязательны, пароль от 8 символов", en: "Check the fields: email and name required, password 8+ chars" },
+  register_have_account: { ru: "Уже есть аккаунт? Войти", en: "Already have an account? Sign in" },
 };
 
 export const STATUS: Record<StatusKey, { key: string; tone: "ok" | "warn" | "info" | "muted" | "bad" }> = {

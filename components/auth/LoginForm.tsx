@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
@@ -58,6 +59,7 @@ export default function LoginForm() {
         <Btn variant="primary" size="lg" full disabled={busy}>
           {busy ? t("login_loading") : t("login_submit")}
         </Btn>
+        <Link href="/register" style={{ fontSize: 12.5, color: "var(--text-3)", textAlign: "center" }}>{t("login_no_account")}</Link>
       </form>
     </div>
   );
