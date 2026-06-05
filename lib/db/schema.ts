@@ -68,3 +68,10 @@ export const templateMappings = pgTable("template_mappings", {
   fields: jsonb("fields").$type<ExtractField[]>().notNull(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => ({ pk: primaryKey({ columns: [t.userId, t.templateId] }) }));
+
+export const users = pgTable("users", {
+  email: text("email").primaryKey(),          // stored lowercased
+  name: text("name").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
