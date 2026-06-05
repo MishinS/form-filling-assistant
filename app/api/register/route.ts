@@ -10,11 +10,12 @@ export async function POST(req: Request) {
   let body: Record<string, unknown> = {};
   try { body = (await req.json()) as Record<string, unknown>; } catch { /* empty/bad body → invalid */ }
 
+  const password = typeof body.password === "string" ? body.password : "";
   const v = validateRegistration(
     {
       email: typeof body.email === "string" ? body.email : "",
       name: typeof body.name === "string" ? body.name : "",
-      password: typeof body.password === "string" ? body.password : "",
+      password,
       inviteCode: typeof body.inviteCode === "string" ? body.inviteCode : "",
     },
     process.env.INVITE_CODE,
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
   if (envTaken) return NextResponse.json({ error: "email_taken" }, { status: 409 });
   if (await getUserByEmail(v.email)) return NextResponse.json({ error: "email_taken" }, { status: 409 });
 
-  const passwordHash = bcrypt.hashSync(body.password as string, 10);
+  const passwordHash = bcrypt.hashSync(password, 10);
   try {
     await createUser({ email: v.email, name: v.name, passwordHash });
   } catch {

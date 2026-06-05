@@ -43,6 +43,7 @@ describe("POST /api/register", () => {
     (getUserByEmail as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ email: "new@user.ru", name: "X", passwordHash: "h" });
     const res = await POST(req(good));
     expect(res.status).toBe(409);
+    await expect(res.json()).resolves.toEqual({ error: "email_taken" });
     expect(createUser).not.toHaveBeenCalled();
   });
 
