@@ -34,7 +34,7 @@ export default function RegisterForm() {
     }
     // Auto sign-in with the just-created credentials.
     const signRes = await signIn("credentials", { email, password, redirect: false });
-    if (signRes?.error) { router.push("/login"); return; }
+    if (signRes?.error) { setBusy(false); router.push("/login"); return; }
     router.push("/");
   };
 
