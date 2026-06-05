@@ -92,6 +92,11 @@ export interface FillDetail {
 export interface DetailRow   { fieldId: string; label: string; value: string; confidence: string; }
 export interface DetailGroup { group: string; groupLabel: string; rows: DetailRow[]; }
 
+/** Stable field-index map for sorting (built once from static PT_FIELDS). */
+const FIELD_ORDER = new Map(PT_FIELDS.map((f, i) => [f.id, i]));
+/** Stable field-lookup map (built once from static PT_FIELDS). */
+const FIELD_BY_ID = new Map(PT_FIELDS.map((f) => [f.id, f]));
+
 /**
  * Shape stored extracted values into PT_GROUPS buckets for display.
  * - rows ordered by PT_FIELDS index (unknown fieldIds sort last);
@@ -99,15 +104,13 @@ export interface DetailGroup { group: string; groupLabel: string; rows: DetailRo
  * - unknown fieldId buckets into the first group ("req"); empty groups are omitted.
  */
 export function buildDetailGroups(values: ValueDetail[], lang: "ru" | "en"): DetailGroup[] {
-  const order = new Map(PT_FIELDS.map((f, i) => [f.id, i]));
-  const byId = new Map(PT_FIELDS.map((f) => [f.id, f]));
   const sorted = [...values].sort(
-    (a, b) => (order.get(a.fieldId) ?? 1e9) - (order.get(b.fieldId) ?? 1e9),
+    (a, b) => (FIELD_ORDER.get(a.fieldId) ?? 1e9) - (FIELD_ORDER.get(b.fieldId) ?? 1e9),
   );
 
   const buckets = new Map<string, DetailRow[]>();
   for (const v of sorted) {
-    const f = byId.get(v.fieldId);
+    const f = FIELD_BY_ID.get(v.fieldId);
     const group = f?.group ?? "req";
     const label = f ? (lang === "ru" ? f.label_ru : f.label_en) : v.fieldId;
     const rows = buckets.get(group) ?? [];

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildFillRecord, formatFillDate, type FillPayload } from "./map";
+import { buildFillRecord, buildDetailGroups, formatFillDate, type FillPayload, type ValueDetail } from "./map";
 
 const payload: FillPayload = {
   templateId: "pt",
@@ -64,8 +64,6 @@ describe("formatFillDate", () => {
     expect(out).toMatch(/:/); // has a time component
   });
 });
-
-import { buildDetailGroups, type ValueDetail } from "./map";
 
 describe("buildDetailGroups", () => {
   const values: ValueDetail[] = [
