@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { FileGlyph, StatusDot, Icon } from "@/components/primitives";
 import type { StatusKey } from "@/lib/seed/pt";
 import type { HistoryRowData } from "@/lib/db/map";
@@ -11,9 +12,9 @@ export default function RecentRow({ r, tplName, dateText, last }: Props) {
   const ext = (r.primaryFile ?? "файл").split(".").pop()!;
   const fileLabel = r.primaryFile ?? "—";
   return (
-    <div onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
+    <Link href={`/fills/${r.id}`} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
       style={{ display: "grid", gridTemplateColumns: "2.4fr 1.3fr 1.6fr 1.1fr 1.1fr 1fr 30px",
-        gap: 16, padding: "14px 20px", alignItems: "center",
+        gap: 16, padding: "14px 20px", alignItems: "center", textDecoration: "none", color: "inherit",
         borderBottom: last ? "none" : "1px solid var(--line)",
         background: h ? "var(--surface-2)" : "transparent", transition: "background .12s" }}>
       <div className="row gap-12" style={{ minWidth: 0 }}>
@@ -31,6 +32,6 @@ export default function RecentRow({ r, tplName, dateText, last }: Props) {
       <div style={{ color: h ? "var(--text)" : "var(--text-3)", transition: "color .12s", display: "flex", justifyContent: "flex-end" }}>
         <Icon name="chevR" size={15} />
       </div>
-    </div>
+    </Link>
   );
 }
