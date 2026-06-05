@@ -1,7 +1,7 @@
-import { sql, eq, desc, count } from "drizzle-orm";
+import { sql, eq, and, desc, count } from "drizzle-orm";
 import { getDb } from "./client";
 import { fills, sourceFiles, extractedValues } from "./schema";
-import { buildFillRecord, type FillPayload, type HistoryRowData } from "./map";
+import { buildFillRecord, type FillPayload, type HistoryRowData, type FillDetail } from "./map";
 
 /** Atomically persist a completed fill (fills + source_files + extracted_values). */
 export async function createFill(userId: string, payload: FillPayload): Promise<string> {
@@ -79,5 +79,34 @@ export async function fillStats(userId: string): Promise<FillStats> {
     total: Number(row?.total ?? 0),
     month: Number(row?.month ?? 0),
     last: row?.last ? new Date(row.last).toISOString() : null,
+  };
+}
+
+/** One persisted fill scoped to its owner, with source files + extracted values. */
+export async function getFill(userId: string, id: string): Promise<FillDetail | null> {
+  const db = getDb();
+  const [fillRows, srcRows, valRows] = await db.batch([
+    db.select({
+      id: fills.id, templateId: fills.templateId, status: fills.status, createdAt: fills.createdAt,
+    }).from(fills).where(and(eq(fills.id, id), eq(fills.userId, userId))).limit(1),
+    db.select({
+      id: sourceFiles.id, name: sourceFiles.name, mime: sourceFiles.mime,
+      size: sourceFiles.size, pages: sourceFiles.pages,
+    }).from(sourceFiles).where(eq(sourceFiles.fillId, id)).orderBy(sourceFiles.id),
+    db.select({
+      fieldId: extractedValues.fieldId, value: extractedValues.value, confidence: extractedValues.confidence,
+    }).from(extractedValues).where(eq(extractedValues.fillId, id)).orderBy(extractedValues.id),
+  ]);
+
+  const f = fillRows[0];
+  if (!f) return null; // missing or not owned — children are discarded, nothing leaks
+
+  return {
+    id: f.id,
+    templateId: f.templateId,
+    status: f.status,
+    createdAt: (f.createdAt as Date).toISOString(),
+    sources: srcRows.map((s) => ({ id: s.id, name: s.name, mime: s.mime, size: s.size, pages: s.pages })),
+    values: valRows.map((v) => ({ fieldId: v.fieldId, value: v.value, confidence: v.confidence })),
   };
 }
