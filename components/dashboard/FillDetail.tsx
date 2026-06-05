@@ -12,6 +12,7 @@ export default function FillDetail({ data }: { data: FillDetail }) {
   const tplName = tpl ? (lang === "ru" ? tpl.name_ru : tpl.name_en) : data.templateId;
   const groups = buildDetailGroups(data.values, lang);
   const confLabel = (c: string) => t(c === "high" ? "conf_high" : c === "med" ? "conf_med" : "conf_low");
+  const safeLevel = (c: string): "high" | "med" | "low" => (c === "high" || c === "med" || c === "low" ? c : "low");
 
   return (
     <div className="fade-in" style={{ padding: "44px 48px 64px", maxWidth: 1180, margin: "0 auto" }}>
@@ -66,7 +67,7 @@ export default function FillDetail({ data }: { data: FillDetail }) {
                   <div className="muted" style={{ fontSize: 13 }}>{r.label}</div>
                   <div style={{ fontSize: 13.5 }}>{r.value ? r.value : <span className="dim">—</span>}</div>
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <Confidence level={r.confidence as "high" | "med" | "low"} label={confLabel(r.confidence)} />
+                    <Confidence level={safeLevel(r.confidence)} label={confLabel(r.confidence)} />
                   </div>
                 </div>
               ))}
