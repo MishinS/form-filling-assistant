@@ -1,4 +1,5 @@
 import type { ExtractedValue } from "@/lib/types";
+import { PT_FIELDS, PT_GROUPS } from "@/lib/extract/fields";
 
 export interface SourceInput {
   fileId: string;
@@ -76,4 +77,47 @@ export interface HistoryRowData {
   counterparty: string | null;
   amount: string | null;
   currency: string | null;
+}
+
+/* ---- Fill detail (read-only /fills/[id]) ---- */
+
+export interface SourceDetail { id: string; name: string; mime: string; size: string; pages: number; }
+export interface ValueDetail  { fieldId: string; value: string; confidence: string; }
+export interface FillDetail {
+  id: string; templateId: string; status: string; createdAt: string; // ISO
+  sources: SourceDetail[];
+  values: ValueDetail[];
+}
+
+export interface DetailRow   { fieldId: string; label: string; value: string; confidence: string; }
+export interface DetailGroup { group: string; groupLabel: string; rows: DetailRow[]; }
+
+/**
+ * Shape stored extracted values into PT_GROUPS buckets for display.
+ * - rows ordered by PT_FIELDS index (unknown fieldIds sort last);
+ * - label from PT_FIELDS (lang-aware), unknown fieldId falls back to the raw id;
+ * - unknown fieldId buckets into the first group ("req"); empty groups are omitted.
+ */
+export function buildDetailGroups(values: ValueDetail[], lang: "ru" | "en"): DetailGroup[] {
+  const order = new Map(PT_FIELDS.map((f, i) => [f.id, i]));
+  const byId = new Map(PT_FIELDS.map((f) => [f.id, f]));
+  const sorted = [...values].sort(
+    (a, b) => (order.get(a.fieldId) ?? 1e9) - (order.get(b.fieldId) ?? 1e9),
+  );
+
+  const buckets = new Map<string, DetailRow[]>();
+  for (const v of sorted) {
+    const f = byId.get(v.fieldId);
+    const group = f?.group ?? "req";
+    const label = f ? (lang === "ru" ? f.label_ru : f.label_en) : v.fieldId;
+    const rows = buckets.get(group) ?? [];
+    rows.push({ fieldId: v.fieldId, label, value: v.value, confidence: v.confidence });
+    buckets.set(group, rows);
+  }
+
+  return PT_GROUPS.filter((g) => buckets.get(g.id)?.length).map((g) => ({
+    group: g.id,
+    groupLabel: lang === "ru" ? g.ru : g.en,
+    rows: buckets.get(g.id)!,
+  }));
 }

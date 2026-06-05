@@ -64,3 +64,35 @@ describe("formatFillDate", () => {
     expect(out).toMatch(/:/); // has a time component
   });
 });
+
+import { buildDetailGroups, type ValueDetail } from "./map";
+
+describe("buildDetailGroups", () => {
+  const values: ValueDetail[] = [
+    { fieldId: "f5", value: "руб.", confidence: "high" },          // group "pay"
+    { fieldId: "f1", value: "ООО «Ромашка»", confidence: "high" }, // group "req"
+    { fieldId: "f3", value: "Счёт №142", confidence: "high" },     // group "req"
+    { fieldId: "zz", value: "custom", confidence: "low" },         // unknown -> "req", label = id
+  ];
+
+  it("groups by PT_GROUPS and orders rows by PT_FIELDS index", () => {
+    const g = buildDetailGroups(values, "ru");
+    expect(g.map(x => x.group)).toEqual(["req", "pay"]); // terms omitted (empty)
+    const req = g.find(x => x.group === "req")!;
+    expect(req.rows.map(r => r.fieldId)).toEqual(["f1", "f3", "zz"]); // f1<f3 by index, unknown last
+  });
+
+  it("uses lang-aware labels and falls back to fieldId for unknown fields", () => {
+    const ru = buildDetailGroups(values, "ru").find(x => x.group === "req")!;
+    expect(ru.rows.find(r => r.fieldId === "f1")!.label).toBe("Контрагент");
+    expect(ru.rows.find(r => r.fieldId === "zz")!.label).toBe("zz");
+    const en = buildDetailGroups(values, "en").find(x => x.group === "req")!;
+    expect(en.rows.find(r => r.fieldId === "f1")!.label).toBe("Counterparty");
+  });
+
+  it("labels groups per language and omits empty groups", () => {
+    expect(buildDetailGroups(values, "ru").find(x => x.group === "pay")!.groupLabel).toBe("Платёж");
+    expect(buildDetailGroups(values, "en").find(x => x.group === "pay")!.groupLabel).toBe("Payment");
+    expect(buildDetailGroups([], "ru")).toEqual([]);
+  });
+});
