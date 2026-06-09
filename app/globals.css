@@ -15,6 +15,18 @@
   --font-mono: var(--font-mono-next), 'IBM Plex Mono', ui-monospace, monospace;
   --r-sm:7px; --r-md:11px; --r-lg:16px; --r-xl:22px; --pill:999px; --ease:cubic-bezier(.22,.61,.36,1);
 }
+:root{ color-scheme: dark; }
+:root[data-theme="light"]{
+  color-scheme: light;
+  --bg:#f6f8f7; --surface-1:#ffffff; --surface-2:#f0f3f2; --surface-3:#e7ecea; --surface-hi:#dde3e1;
+  --line:rgba(16,24,22,.10); --line-2:rgba(16,24,22,.16); --line-strong:rgba(16,24,22,.30);
+  --text:#16201d; --text-2:#586460; --text-3:#8a938f; --text-inv:#f6f8f7;
+  --ok:#2f7d43; --ok-bg:rgba(47,125,67,.12); --warn:#8a6310; --warn-bg:rgba(138,99,16,.12);
+  --bad:#b0452d; --bad-bg:rgba(176,69,45,.12); --info:#3a6ea5;
+  --accent:#0b5394; --accent-text:#f6f8f7;
+}
+:root[data-theme="light"] ::selection{ background:rgba(11,83,148,.16); }
+:root[data-theme="light"] .doc-stripes{ background-image:repeating-linear-gradient(135deg, rgba(0,0,0,.04) 0 10px, transparent 10px 20px); }
 *{ box-sizing:border-box; }
 html,body{ margin:0; height:100%; }
 body{ background:var(--bg); color:var(--text); font-family:var(--font-sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
