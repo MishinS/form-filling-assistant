@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseThemeMode, resolveTheme, THEME_COOKIE } from "./theme";
+import { parseThemeMode, resolveTheme, THEME_COOKIE } from "./theme-core";
 
 describe("parseThemeMode", () => {
   it("accepts known modes, defaults everything else to system", () => {

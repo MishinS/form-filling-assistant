@@ -1,7 +1,10 @@
 // lib/theme.tsx
 "use client";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { type ThemeMode, type ResolvedTheme, THEME_COOKIE, resolveTheme } from "./theme";
+import { type ThemeMode, type ResolvedTheme, THEME_COOKIE, resolveTheme } from "./theme-core";
+
+// Re-export the public types so consumers import everything theme-related from "@/lib/theme".
+export type { ThemeMode, ResolvedTheme } from "./theme-core";
 
 type Ctx = { mode: ThemeMode; resolved: ResolvedTheme; setMode: (m: ThemeMode) => void };
 const ThemeContext = createContext<Ctx | null>(null);

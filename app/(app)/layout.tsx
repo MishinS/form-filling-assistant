@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { SessionProvider } from "next-auth/react";
 import { I18nProvider } from "@/lib/i18n";
-import { ThemeProvider } from "@/lib/theme.tsx";
-import { parseThemeMode } from "@/lib/theme";
+import { ThemeProvider } from "@/lib/theme";
+import { parseThemeMode } from "@/lib/theme-core";
 import AppShell from "@/components/shell/AppShell";
 import { auth } from "@/auth";
 import { getMapping } from "@/lib/db/mappings";
