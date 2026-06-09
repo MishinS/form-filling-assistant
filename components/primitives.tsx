@@ -32,6 +32,8 @@ const ICONS: Record<string, string> = {
   doc:      "M4 2.5h8v11h-8Z M6 5.5h4 M6 8h4 M6 10.5h2.5",
   dot:      "M8 9.5A1.5 1.5 0 1 0 8 6.5a1.5 1.5 0 0 0 0 3Z",
   bolt:     "M9 1.5 3.5 9H7l-.8 5.5L12 6.5H8.2Z",
+  sun:      "M8 10.5A2.5 2.5 0 1 0 8 5.5a2.5 2.5 0 0 0 0 5Z M8 1.8v1.7 M8 12.5v1.7 M1.8 8h1.7 M12.5 8h1.7 M3.6 3.6l1.2 1.2 M11.2 11.2l1.2 1.2 M12.4 3.6l-1.2 1.2 M4.8 11.2l-1.2 1.2",
+  moon:     "M13 9.5A5.5 5.5 0 0 1 6.5 3 5.5 5.5 0 1 0 13 9.5Z",
 };
 
 type IconProps = { name: string; size?: number; stroke?: number; fill?: boolean; style?: CSSProperties; className?: string };

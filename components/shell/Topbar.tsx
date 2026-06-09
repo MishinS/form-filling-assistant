@@ -1,6 +1,7 @@
 "use client";
 import { useI18n, type Lang } from "@/lib/i18n";
 import { Icon } from "@/components/primitives";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Topbar() {
   const { t, lang, setLang } = useI18n();
@@ -18,7 +19,7 @@ export default function Topbar() {
             background: lang === l ? "var(--accent)" : "transparent", color: lang === l ? "var(--accent-text)" : "var(--text-2)", transition: "all .15s" }}>{l}</button>
         ))}
       </div>
-      <button className="muted" style={{ width: 38, height: 38, borderRadius: 99, display: "grid", placeItems: "center", border: "1px solid var(--line-2)" }}><Icon name="gear" size={16} /></button>
+      <ThemeToggle />
     </div>
   );
 }
