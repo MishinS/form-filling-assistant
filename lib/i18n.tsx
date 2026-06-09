@@ -11,8 +11,12 @@ export function translate(key: string, lang: Lang): string {
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (key: string) => string };
 const I18nContext = createContext<Ctx | null>(null);
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>("ru");
+export function I18nProvider({ children, initialLang = "ru" }: { children: ReactNode; initialLang?: Lang }) {
+  const [lang, setLangState] = useState<Lang>(initialLang);
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    document.cookie = `lang=${l};path=/;max-age=31536000;samesite=lax`;
+  };
   const t = (key: string) => translate(key, lang);
   return <I18nContext.Provider value={{ lang, setLang, t }}>{children}</I18nContext.Provider>;
 }
