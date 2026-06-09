@@ -46,6 +46,28 @@ describe("extractFields", () => {
     expect(values.find(v => v.fieldId === "f1")!.confidence).toBe("low");
   });
 
+  it("blanks the counterparty and warns when the model returns our own company", async () => {
+    mockGetModel.mockReturnValue({
+      id: "m",
+      extract: async () => [{ fieldId: "f1", value: "АО Семейный доктор", confidence: "high" }],
+    });
+    const { values, warnings } = await extractFields([doc], "gemini-2.0-flash");
+    const f1 = values.find(v => v.fieldId === "f1")!;
+    expect(f1.value).toBe("");
+    expect(f1.confidence).toBe("low");
+    expect(warnings.some(w => w.includes("Контрагент не распознан"))).toBe(true);
+  });
+
+  it("keeps a genuine counterparty value", async () => {
+    mockGetModel.mockReturnValue({
+      id: "m",
+      extract: async () => [{ fieldId: "f1", value: 'ООО «Ромашка»', confidence: "high" }],
+    });
+    const { values, warnings } = await extractFields([doc], "gemini-2.0-flash");
+    expect(values.find(v => v.fieldId === "f1")!.value).toBe('ООО «Ромашка»');
+    expect(warnings.length).toBe(0);
+  });
+
   it("returns all 12 fields in catalog order", async () => {
     mockGetModel.mockReturnValue({ id: "m", extract: async () => [] });
     const { values } = await extractFields([doc], "gemini-2.0-flash");

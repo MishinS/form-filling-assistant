@@ -37,6 +37,7 @@ export function parseFieldList(input: unknown): ExtractField[] | null {
       rule: typeof f.rule === "string" ? (f.rule as ExtractField["rule"]) : undefined,
       unit: typeof f.unit === "string" ? f.unit : undefined,
       area: f.area === true ? true : undefined,
+      isCounterparty: f.isCounterparty === true ? true : undefined,
     });
   }
   return out;

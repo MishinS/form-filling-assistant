@@ -5,6 +5,7 @@ import { RULES } from "./rules";
 import { locatorRu } from "./format";
 import { getModel } from "./llm/registry";
 import { ModelNotConfigured } from "./llm/types";
+import { isOwnCompany } from "./own-company";
 
 export interface ExtractResult {
   values: ExtractedValue[];
@@ -50,8 +51,14 @@ export async function extractFields(
       for (const f of llmFields) {
         const r = results.find((x) => x.fieldId === f.id);
         if (r && r.value) {
-          byField.set(f.id, { fieldId: f.id, value: r.value, confidence: r.confidence ?? "med",
-            source: locateValue(docs, r.value) });
+          if (f.isCounterparty && isOwnCompany(r.value)) {
+            // Model returned our own company — blank it; user fills in manually.
+            byField.set(f.id, empty(f.id));
+            warnings.push("Контрагент не распознан — укажите вручную.");
+          } else {
+            byField.set(f.id, { fieldId: f.id, value: r.value, confidence: r.confidence ?? "med",
+              source: locateValue(docs, r.value) });
+          }
         } else {
           byField.set(f.id, empty(f.id));
         }
