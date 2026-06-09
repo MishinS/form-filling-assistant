@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateRegistration } from "./register";
+import { validateRegistration, isValidPassword } from "./register";
 
 const base = { email: "New@Mail.RU ", name: " Иван ", password: "longenough", inviteCode: "LETMEIN" };
 
@@ -32,5 +32,13 @@ describe("validateRegistration", () => {
   it("checks invite before everything else", () => {
     expect(validateRegistration({ email: "bad", name: "", password: "x", inviteCode: "wrong" }, "LETMEIN"))
       .toEqual({ ok: false, error: "invite" });
+  });
+});
+
+describe("isValidPassword", () => {
+  it("requires at least 8 characters", () => {
+    expect(isValidPassword("1234567")).toBe(false);
+    expect(isValidPassword("12345678")).toBe(true);
+    expect(isValidPassword("")).toBe(false);
   });
 });

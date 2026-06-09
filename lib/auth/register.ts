@@ -12,6 +12,11 @@ export type RegisterValidation =
   | { ok: true; email: string; name: string }
   | { ok: false; error: "invite" | "email" | "name" | "password" };
 
+/** Password policy — single source of truth (shared by registration and password change). */
+export function isValidPassword(pw: string): boolean {
+  return (pw ?? "").length >= 8;
+}
+
 /**
  * Gate registration input. Order matters (first failure wins): invite code →
  * email → name → password. Registration is CLOSED when expectedCode is empty/undefined.
@@ -23,6 +28,6 @@ export function validateRegistration(input: RegisterInput, expectedCode: string 
   if (!EMAIL_RE.test(email)) return { ok: false, error: "email" };
   const name = (input.name ?? "").trim();
   if (!name) return { ok: false, error: "name" };
-  if ((input.password ?? "").length < 8) return { ok: false, error: "password" };
+  if (!isValidPassword(input.password)) return { ok: false, error: "password" };
   return { ok: true, email, name };
 }
