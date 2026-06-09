@@ -2,10 +2,15 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
 vi.mock("@/lib/extract/extract", () => ({
-  extractFields: vi.fn(async () => ({
-    values: [{ fieldId: "f3", value: "Счёт №8 от 02.06.2026", confidence: "high", source: { fileId: "u1", locator: "стр. 1" } }],
-    warnings: [],
-  })),
+  extractFields: vi.fn(async (_docs: unknown, _model: unknown, _fields: unknown, onAttempt?: (e: unknown) => void) => {
+    onAttempt?.({ phase: "start", model: "m", index: 1, total: 1 });
+    return {
+      values: [{ fieldId: "f3", value: "Счёт №8 от 02.06.2026", confidence: "high", source: { fileId: "u1", locator: "стр. 1" } }],
+      warnings: [],
+      llmFailed: false,
+      usedModel: "m",
+    };
+  }),
 }));
 
 import { POST } from "./route";
@@ -16,12 +21,23 @@ function req(body: unknown) {
   return new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) });
 }
 
+async function ndjson(res: Response): Promise<Record<string, unknown>[]> {
+  const text = await res.text();
+  return text.split("\n").filter(Boolean).map((l) => JSON.parse(l));
+}
+
 describe("POST /api/extract", () => {
-  it("returns values for a valid request", async () => {
+  it("streams attempt + result events for a valid request", async () => {
     const res = await POST(req({ templateId: "pt", model: "gemini-2.0-flash", docs: [] }));
-    const json = await res.json();
     expect(res.status).toBe(200);
-    expect(json.values[0].fieldId).toBe("f3");
+    expect(res.headers.get("content-type")).toContain("application/x-ndjson");
+    const events = await ndjson(res);
+    expect(events.some(e => e.type === "attempt")).toBe(true);
+    const result = events.find(e => e.type === "result")!;
+    expect(result).toBeDefined();
+    expect((result.values as { fieldId: string }[])[0].fieldId).toBe("f3");
+    expect(result.llmFailed).toBe(false);
+    expect(events[events.length - 1].type).toBe("result");
   });
 
   it("rejects a malformed body with 400", async () => {
