@@ -48,13 +48,16 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
       <ModelSelect />
 
       <div className="row gap-10" style={{ marginTop: 16, padding: "14px 4px 0", borderTop: "1px solid var(--line)", alignItems: "center" }}>
-        <span style={{ width: 30, height: 30, borderRadius: 99, background: "var(--surface-hi)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 600 }}>
-          {(user.name || user.email || "?").trim().slice(0, 2).toUpperCase()}
-        </span>
-        <div className="col" style={{ lineHeight: 1.2, minWidth: 0, flex: 1 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name || "—"}</span>
-          <span className="dim" style={{ fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.email}</span>
-        </div>
+        <button onClick={() => onNavigate("settings")} title={t("nav_settings")}
+          className="row gap-10" style={{ flex: 1, minWidth: 0, textAlign: "left", background: "transparent", padding: 0 }}>
+          <span style={{ width: 30, height: 30, borderRadius: 99, background: "var(--surface-hi)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 600, flex: "none" }}>
+            {(user.name || user.email || "?").trim().slice(0, 2).toUpperCase()}
+          </span>
+          <div className="col" style={{ lineHeight: 1.2, minWidth: 0, flex: 1 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name || "—"}</span>
+            <span className="dim" style={{ fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.email}</span>
+          </div>
+        </button>
         <button onClick={() => signOut({ callbackUrl: "/login" })} title={t("sign_out")} aria-label={t("sign_out")}
           className="dim" style={{ width: 28, height: 28, borderRadius: 7, display: "grid", placeItems: "center", flex: "none" }}>
           <Icon name="arrowR" size={15} />
