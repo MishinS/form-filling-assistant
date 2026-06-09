@@ -1,4 +1,4 @@
-import type { ExtractionModel, LlmFieldResult } from "./types";
+import type { ExtractionModel, LlmFieldResult, OnAttempt } from "./types";
 import { ModelNotConfigured } from "./types";
 import type { ExtractField } from "../fields";
 import { FREE_MODEL_IDS } from "./catalog";
@@ -25,7 +25,7 @@ function parseFields(txt: string): LlmFieldResult[] {
 export function openrouterModel(modelName: string): ExtractionModel {
   return {
     id: modelName,
-    async extract(fields: ExtractField[], text: string): Promise<LlmFieldResult[]> {
+    async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt): Promise<LlmFieldResult[]> {
       const key = process.env.OPENROUTER_API_KEY;
       if (!key) throw new ModelNotConfigured(modelName);
 
@@ -41,7 +41,9 @@ export function openrouterModel(modelName: string): ExtractionModel {
         : [modelName];
 
       let lastErr: Error = new Error("Нет доступных моделей OpenRouter");
-      for (const model of candidates) {
+      for (let i = 0; i < candidates.length; i++) {
+        const model = candidates[i];
+        onAttempt?.({ phase: "start", model, index: i + 1, total: candidates.length });
         try {
           const res = await fetch(ENDPOINT, {
             method: "POST",
@@ -61,6 +63,7 @@ export function openrouterModel(modelName: string): ExtractionModel {
           });
           if (!res.ok) {
             lastErr = new Error(`OpenRouter HTTP ${res.status} (${model})`);
+            onAttempt?.({ phase: "fail", model, reason: lastErr.message });
             continue;
           }
           const data = (await res.json()) as {
@@ -69,11 +72,13 @@ export function openrouterModel(modelName: string): ExtractionModel {
           const txt = data?.choices?.[0]?.message?.content;
           if (!txt) {
             lastErr = new Error(`Пустой ответ модели (${model})`);
+            onAttempt?.({ phase: "fail", model, reason: lastErr.message });
             continue;
           }
           return parseFields(txt);
         } catch (e) {
           lastErr = e instanceof Error ? e : new Error(String(e));
+          onAttempt?.({ phase: "fail", model, reason: lastErr.message });
         }
       }
       throw lastErr;
