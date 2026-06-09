@@ -15,10 +15,12 @@ export interface ExtractField {
   required: boolean;
   strategy: Strategy;
   rule?: RuleKey;
+  /** Field that holds the counterparty — subject to the own-company post-filter. */
+  isCounterparty?: boolean;
 }
 
 export const PT_FIELDS: ExtractField[] = [
-  { id: "f1",  group: "req",   label_ru: "Контрагент",                   label_en: "Counterparty",                 cell: "ПТ!D9",  kind: "string", required: true,  strategy: "llm" },
+  { id: "f1",  group: "req",   label_ru: "Контрагент",                   label_en: "Counterparty",                 cell: "ПТ!D9",  kind: "string", required: true,  strategy: "llm", isCounterparty: true },
   { id: "f2",  group: "req",   label_ru: "Основание платежа",            label_en: "Payment basis",                cell: "ПТ!D11", kind: "text",   required: true,  strategy: "llm", area: true },
   { id: "f3",  group: "req",   label_ru: "Договор / Счёт №, дата",        label_en: "Contract / Invoice no., date", cell: "ПТ!D12", kind: "string", required: true,  strategy: "rule", rule: "invoiceNoDate" },
   { id: "f4",  group: "pay",   label_ru: "Сумма по договору",            label_en: "Contract amount",              cell: "ПТ!D13", kind: "amount", unit: "руб.", required: true,  strategy: "rule", rule: "totalAmount" },
