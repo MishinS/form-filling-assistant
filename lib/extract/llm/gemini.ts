@@ -1,6 +1,7 @@
 import type { ExtractionModel, LlmFieldResult } from "./types";
 import { ModelNotConfigured } from "./types";
 import type { ExtractField } from "../fields";
+import { buildExtractionPrompt } from "./prompt";
 
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -11,13 +12,7 @@ export function geminiModel(modelName: string): ExtractionModel {
       const key = process.env.GEMINI_API_KEY;
       if (!key) throw new ModelNotConfigured(modelName);
 
-      const specs = fields.map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})`).join("\n");
-      const prompt = [
-        "Извлеки значения полей для российского «Платёжного требования» из текста документа ниже.",
-        "Верни значение для каждого поля. Если значение не найдено — пустая строка и confidence \"low\".",
-        `Поля:\n${specs}`,
-        `Текст документа:\n${text.slice(0, 12000)}`,
-      ].join("\n\n");
+      const prompt = buildExtractionPrompt(fields, text);
 
       const body = {
         contents: [{ role: "user", parts: [{ text: prompt }] }],

@@ -2,6 +2,7 @@ import type { ExtractionModel, LlmFieldResult } from "./types";
 import { ModelNotConfigured } from "./types";
 import type { ExtractField } from "../fields";
 import { FREE_MODEL_IDS } from "./catalog";
+import { buildExtractionPrompt } from "./prompt";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -28,14 +29,11 @@ export function openrouterModel(modelName: string): ExtractionModel {
       const key = process.env.OPENROUTER_API_KEY;
       if (!key) throw new ModelNotConfigured(modelName);
 
-      const specs = fields.map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})`).join("\n");
-      const prompt = [
-        "Извлеки значения полей для российского «Платёжного требования» из текста документа ниже.",
-        "Верни значение для каждого поля. Если значение не найдено — пустая строка и confidence \"low\".",
+      const prompt = buildExtractionPrompt(
+        fields,
+        text,
         'Ответь СТРОГО валидным JSON вида {"fields":[{"fieldId":"f1","value":"...","confidence":"high|med|low","sourceHint":"..."}]} без markdown и пояснений.',
-        `Поля:\n${specs}`,
-        `Текст документа:\n${text.slice(0, 12000)}`,
-      ].join("\n\n");
+      );
 
       // Primary first, then the curated chain (deduped) — only for ":free" slugs.
       const candidates = modelName.endsWith(":free")
