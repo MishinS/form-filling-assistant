@@ -16,5 +16,13 @@ export const authConfig: NextAuthConfig = {
     authorized({ auth }) {
       return !!auth?.user;
     },
+    // Let the client's session.update({ name }) (after a profile rename) persist into
+    // the JWT so the sidebar/Topbar reflect the new name without a re-login.
+    jwt({ token, trigger, session }) {
+      if (trigger === "update" && session && typeof (session as { name?: unknown }).name === "string") {
+        token.name = (session as { name: string }).name;
+      }
+      return token;
+    },
   },
 };
