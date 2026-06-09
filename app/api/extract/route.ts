@@ -43,9 +43,12 @@ export async function POST(req: Request): Promise<Response> {
         write({ type: "result", values, warnings, llmFailed, usedModel });
       } catch (e) {
         // extractFields degrades internally and shouldn't throw for LLM failure, but guard the stream.
-        write({ type: "result", values: [], warnings: [String(e instanceof Error ? e.message : e)], llmFailed: true, usedModel: null });
+        // Wrapped: if the client already aborted, the controller is dead and write() would throw.
+        try {
+          write({ type: "result", values: [], warnings: [String(e instanceof Error ? e.message : e)], llmFailed: true, usedModel: null });
+        } catch { /* client gone — nothing to flush */ }
       }
-      controller.close();
+      try { controller.close(); } catch { /* already closed/errored */ }
     },
   });
 
