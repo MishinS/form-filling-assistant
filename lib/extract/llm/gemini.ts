@@ -1,4 +1,4 @@
-import type { ExtractionModel, LlmFieldResult } from "./types";
+import type { ExtractionModel, LlmFieldResult, OnAttempt } from "./types";
 import { ModelNotConfigured } from "./types";
 import type { ExtractField } from "../fields";
 import { buildExtractionPrompt } from "./prompt";
@@ -8,7 +8,8 @@ const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 export function geminiModel(modelName: string): ExtractionModel {
   return {
     id: modelName,
-    async extract(fields: ExtractField[], text: string): Promise<LlmFieldResult[]> {
+    async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt): Promise<LlmFieldResult[]> {
+      onAttempt?.({ phase: "start", model: modelName, index: 1, total: 1 });
       const key = process.env.GEMINI_API_KEY;
       if (!key) throw new ModelNotConfigured(modelName);
 
