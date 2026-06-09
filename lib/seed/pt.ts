@@ -138,6 +138,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   save:            { ru: "Сохранить", en: "Save" },
   parse_empty:     { ru: "Не удалось извлечь текст ни из одного файла", en: "No text could be extracted from any file" },
   parse_failed:    { ru: "Обработка не удалась", en: "Processing failed" },
+  stream_empty:    { ru: "Пустой ответ сервера", en: "Empty server response" },
   processing_title:{ ru: "Обрабатываем документы", en: "Processing documents" },
   processing_sub:  { ru: "Извлекаем текст из файлов", en: "Extracting text from files" },
   tpl_reset:       { ru: "Сбросить", en: "Reset" },

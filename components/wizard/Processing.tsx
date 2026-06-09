@@ -40,6 +40,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
     setTried([]);
     setCurrent(modelName(modelId));
     setResult(null);
+    setError(null);
     try {
       const res = await fetch("/api/extract", {
         method: "POST",
@@ -50,7 +51,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       const failed: string[] = [];
-      let final: ResultEvent | null = null;
+      const finalBox: { value: ResultEvent | null } = { value: null };
       let buf = "";
       const handleLine = (line: string) => {
         if (!line) return;
@@ -64,7 +65,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
           failed.push(modelName(ev.model));
           setTried([...failed]);
         } else if (ev.type === "result") {
-          final = { values: ev.values, warnings: ev.warnings, llmFailed: ev.llmFailed, usedModel: ev.usedModel };
+          finalBox.value = { values: ev.values, warnings: ev.warnings, llmFailed: ev.llmFailed, usedModel: ev.usedModel };
         }
       };
       for (;;) {
@@ -77,21 +78,21 @@ export default function Processing({ sources, model, templateId, fields, onDone,
           buf = buf.slice(nl + 1);
         }
       }
+      buf += decoder.decode(); // flush any bytes held in the decoder's internal state
       handleLine(buf.trim());
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      const finalResult = final as ResultEvent | null;
-      if (!finalResult) throw new Error("Пустой ответ сервера");
-      setResult(finalResult);
-      if (finalResult.llmFailed) {
+      const final = finalBox.value;
+      if (!final) throw new Error(t("stream_empty"));
+      setResult(final);
+      if (final.llmFailed) {
         setPhase("llm-failed");
       } else {
-        onDone(finalResult.values, docs, finalResult.warnings);
+        onDone(final.values, docs, final.warnings);
       }
     } catch (e) {
       setError((e as Error).message);
       setPhase("error");
     }
-  }, [templateId, fields, onDone]);
+  }, [templateId, fields, onDone, t]);
 
   // Parse then extract. Parse runs once per mount (ref-guarded).
   const start = useCallback(async () => {
