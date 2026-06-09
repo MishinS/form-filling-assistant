@@ -4,12 +4,14 @@ import { PT_FIELDS, type ExtractField } from "./fields";
 import { RULES } from "./rules";
 import { locatorRu } from "./format";
 import { getModel } from "./llm/registry";
-import { ModelNotConfigured } from "./llm/types";
+import { ModelNotConfigured, type OnAttempt } from "./llm/types";
 import { isOwnCompany } from "./own-company";
 
 export interface ExtractResult {
   values: ExtractedValue[];
   warnings: string[];
+  llmFailed: boolean;
+  usedModel: string | null;
 }
 
 function empty(fieldId: string): ExtractedValue {
@@ -20,9 +22,12 @@ export async function extractFields(
   docs: ParsedDoc[],
   modelId: string,
   fields: ExtractField[] = PT_FIELDS,
+  onAttempt?: OnAttempt,
 ): Promise<ExtractResult> {
   const warnings: string[] = [];
   const byField = new Map<string, ExtractedValue>();
+  let llmFailed = false;
+  let usedModel: string | null = null;
 
   // 1) regex pass
   for (const f of fields) {
@@ -45,9 +50,15 @@ export async function extractFields(
   const llmFields = fields.filter((f) => f.strategy === "llm");
   if (llmFields.length) {
     const text = docs.map((d) => d.blocks.map((b) => b.text).join("\n")).join("\n\n");
+    let lastStarted: string | null = null;
+    const wrapped: OnAttempt = (ev) => {
+      if (ev.phase === "start") lastStarted = ev.model;
+      onAttempt?.(ev);
+    };
     try {
       const model = getModel(modelId);
-      const results = await model.extract(llmFields, text);
+      const results = await model.extract(llmFields, text, wrapped);
+      usedModel = lastStarted;
       for (const f of llmFields) {
         const r = results.find((x) => x.fieldId === f.id);
         if (r && r.value) {
@@ -64,6 +75,8 @@ export async function extractFields(
         }
       }
     } catch (e) {
+      llmFailed = true;
+      usedModel = null;
       warnings.push(e instanceof ModelNotConfigured
         ? e.message
         : `Извлечение LLM не выполнено: ${e instanceof Error ? e.message : String(e)}`);
@@ -73,7 +86,7 @@ export async function extractFields(
 
   // 3) manual + remaining, in catalog order
   for (const f of fields) if (!byField.has(f.id)) byField.set(f.id, empty(f.id));
-  return { values: fields.map((f) => byField.get(f.id)!), warnings };
+  return { values: fields.map((f) => byField.get(f.id)!), warnings, llmFailed, usedModel };
 }
 
 function locateValue(docs: ParsedDoc[], value: string): ExtractedValue["source"] {

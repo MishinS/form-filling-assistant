@@ -74,4 +74,39 @@ describe("extractFields", () => {
     expect(values.map(v => v.fieldId)).toEqual(
       ["f1","f2","f3","f4","f5","f6","f7","f8","f9","f10","f11","f12"]);
   });
+
+  it("reports llmFailed=false and usedModel=last started model on success", async () => {
+    mockGetModel.mockReturnValue({
+      id: "m",
+      extract: async (_f: unknown, _t: unknown, onAttempt?: (e: { phase: string; model: string }) => void) => {
+        onAttempt?.({ phase: "start", model: "model-a" });
+        return [{ fieldId: "f1", value: "ООО «Тест»", confidence: "med" }];
+      },
+    });
+    const out = await extractFields([doc], "model-a");
+    expect(out.llmFailed).toBe(false);
+    expect(out.usedModel).toBe("model-a");
+  });
+
+  it("reports llmFailed=true and usedModel=null when the LLM pass throws", async () => {
+    mockGetModel.mockReturnValue({
+      id: "m",
+      extract: async () => { throw new Error("OpenRouter HTTP 429 (x)"); },
+    });
+    const out = await extractFields([doc], "x/y:free");
+    expect(out.llmFailed).toBe(true);
+    expect(out.usedModel).toBeNull();
+    expect(out.warnings.some(w => w.includes("429"))).toBe(true);
+    expect(out.values.find(v => v.fieldId === "f3")!.value).toBe("Счёт №8 от 02.06.2026");
+  });
+
+  it("keeps llmFailed=false when the model returns our own company (benign warning)", async () => {
+    mockGetModel.mockReturnValue({
+      id: "m",
+      extract: async () => [{ fieldId: "f1", value: "АО «Семейный доктор»", confidence: "high" }],
+    });
+    const out = await extractFields([doc], "model-a");
+    expect(out.llmFailed).toBe(false);
+    expect(out.warnings.some(w => w.includes("Контрагент не распознан"))).toBe(true);
+  });
 });
