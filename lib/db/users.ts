@@ -20,3 +20,15 @@ export async function createUser(u: DbUser): Promise<void> {
   const db = getDb();
   await db.insert(users).values({ email: u.email.toLowerCase(), name: u.name, passwordHash: u.passwordHash });
 }
+
+/** Update a registered user's display name. */
+export async function updateUserName(email: string, name: string): Promise<void> {
+  const db = getDb();
+  await db.update(users).set({ name }).where(eq(users.email, email.toLowerCase()));
+}
+
+/** Update a registered user's bcrypt password hash. */
+export async function updateUserPassword(email: string, passwordHash: string): Promise<void> {
+  const db = getDb();
+  await db.update(users).set({ passwordHash }).where(eq(users.email, email.toLowerCase()));
+}
