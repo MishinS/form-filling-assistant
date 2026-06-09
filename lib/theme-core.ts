@@ -1,4 +1,4 @@
-// lib/theme.ts — pure, no React/DOM (safe to import on server and in node tests).
+// lib/theme-core.ts — pure, no React/DOM (safe to import on server and in node tests).
 export type ThemeMode = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
 

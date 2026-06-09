@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import { isValidPassword } from "@/lib/auth/register";
 import { Card, Btn } from "@/components/primitives";
 
 const fieldStyle = { background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: "var(--r-md)", padding: "10px 12px", fontSize: 14, outline: "none", width: "100%" } as const;
@@ -11,7 +12,7 @@ export default function PasswordCard({ editable }: { editable: boolean }) {
   const [next, setNext] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
-  const can = editable && cur.length > 0 && next.length >= 8 && !busy;
+  const can = editable && cur.length > 0 && isValidPassword(next) && !busy;
 
   async function submit() {
     setBusy(true); setMsg(null);
