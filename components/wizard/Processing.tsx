@@ -52,35 +52,40 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       const failed: string[] = [];
       let final: ResultEvent | null = null;
       let buf = "";
+      const handleLine = (line: string) => {
+        if (!line) return;
+        const ev = JSON.parse(line) as
+          | { type: "attempt"; model: string }
+          | { type: "attempt-fail"; model: string; reason?: string }
+          | ({ type: "result" } & ResultEvent);
+        if (ev.type === "attempt") {
+          setCurrent(modelName(ev.model));
+        } else if (ev.type === "attempt-fail") {
+          failed.push(modelName(ev.model));
+          setTried([...failed]);
+        } else if (ev.type === "result") {
+          final = { values: ev.values, warnings: ev.warnings, llmFailed: ev.llmFailed, usedModel: ev.usedModel };
+        }
+      };
       for (;;) {
         const { value, done } = await reader.read();
         if (done) break;
         buf += decoder.decode(value, { stream: true });
         let nl;
         while ((nl = buf.indexOf("\n")) >= 0) {
-          const line = buf.slice(0, nl).trim();
+          handleLine(buf.slice(0, nl).trim());
           buf = buf.slice(nl + 1);
-          if (!line) continue;
-          const ev = JSON.parse(line) as
-            | { type: "attempt"; model: string }
-            | { type: "attempt-fail"; model: string; reason?: string }
-            | ({ type: "result" } & ResultEvent);
-          if (ev.type === "attempt") {
-            setCurrent(modelName(ev.model));
-          } else if (ev.type === "attempt-fail") {
-            failed.push(modelName(ev.model));
-            setTried([...failed]);
-          } else if (ev.type === "result") {
-            final = { values: ev.values, warnings: ev.warnings, llmFailed: ev.llmFailed, usedModel: ev.usedModel };
-          }
         }
       }
-      if (!final) throw new Error("Пустой ответ сервера");
-      setResult(final);
-      if (final.llmFailed) {
+      handleLine(buf.trim());
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      const finalResult = final as ResultEvent | null;
+      if (!finalResult) throw new Error("Пустой ответ сервера");
+      setResult(finalResult);
+      if (finalResult.llmFailed) {
         setPhase("llm-failed");
       } else {
-        onDone(final.values, docs, final.warnings);
+        onDone(finalResult.values, docs, finalResult.warnings);
       }
     } catch (e) {
       setError((e as Error).message);
