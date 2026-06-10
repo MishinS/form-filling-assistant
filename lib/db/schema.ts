@@ -75,3 +75,9 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const userAvatars = pgTable("user_avatars", {
+  email: text("email").primaryKey(),            // stored lowercased
+  url: text("url").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
