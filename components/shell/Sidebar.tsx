@@ -81,8 +81,10 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
 
         <button onClick={() => setMenuOpen(o => !o)} aria-haspopup="menu" aria-expanded={menuOpen} title={user.name || user.email}
           className="row gap-10" style={{ width: "100%", textAlign: "left", background: "transparent", padding: 0, alignItems: "center" }}>
-          <span style={{ width: 30, height: 30, borderRadius: 99, background: "var(--surface-hi)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 600, flex: "none" }}>
-            {(user.name || user.email || "?").trim().slice(0, 2).toUpperCase()}
+          <span style={{ width: 30, height: 30, borderRadius: 99, overflow: "hidden", background: "var(--surface-hi)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 600, flex: "none" }}>
+            {user.image
+              ? <img src={user.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : (user.name || user.email || "?").trim().slice(0, 2).toUpperCase()}
           </span>
           <div className="col" style={{ lineHeight: 1.2, minWidth: 0, flex: 1 }}>
             <span style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name || "—"}</span>
