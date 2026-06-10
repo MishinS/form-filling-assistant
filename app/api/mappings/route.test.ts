@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
-vi.mock("@/lib/db/mappings", () => ({ saveMapping: vi.fn(async () => {}), deleteMapping: vi.fn(async () => {}) }));
+vi.mock("@/lib/db/mappings", () => ({ saveMapping: vi.fn(async () => {}), deleteMapping: vi.fn(async () => {}), getMapping: vi.fn(async () => null) }));
+vi.mock("@/lib/db/templates", () => ({ getTemplate: vi.fn(async () => null) }));
 
 import { POST, DELETE } from "./route";
 import { auth } from "@/auth";
@@ -67,5 +68,45 @@ describe("DELETE /api/mappings", () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ ok: true });
     expect(deleteMapping).toHaveBeenCalledWith("me@x.ru", "pt");
+  });
+});
+
+import { GET } from "./route";
+import { getMapping } from "@/lib/db/mappings";
+import { getTemplate } from "@/lib/db/templates";
+
+const mockGetMapping = getMapping as unknown as ReturnType<typeof vi.fn>;
+const mockGetTemplate2 = getTemplate as unknown as ReturnType<typeof vi.fn>;
+const CUSTOM = { id: "tpl-abc", sheets: ["Форма"], userId: "u@x.ru", deletedAt: null,
+  defaultFields: [{ id: "f1", group: "req", label_ru: "X", label_en: "X", cell: "Форма!B2", kind: "string", required: false, strategy: "llm" }],
+  code: "T", nameRu: "n", nameEn: "n", descRu: "", descEn: "", format: "xlsx", fileKey: "k" };
+const getReq = (tid: string) => new Request(`http://t/api/mappings?templateId=${encodeURIComponent(tid)}`);
+
+describe("GET /api/mappings", () => {
+  beforeEach(() => asAuthed());
+  it("returns null fields for pt with no saved mapping (client falls back to PT_FIELDS)", async () => {
+    const res = await GET(getReq("pt"));
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({ fields: null });
+  });
+  it("returns the saved mapping when present", async () => {
+    mockGetMapping.mockResolvedValueOnce(CUSTOM.defaultFields);
+    await expect((await GET(getReq("tpl-abc"))).json()).resolves.toEqual({ fields: CUSTOM.defaultFields });
+  });
+  it("falls back to the template defaultFields for a custom template", async () => {
+    mockGetTemplate2.mockResolvedValueOnce(CUSTOM);
+    await expect((await GET(getReq("tpl-abc"))).json()).resolves.toEqual({ fields: CUSTOM.defaultFields });
+  });
+});
+
+describe("POST /api/mappings — custom sheets", () => {
+  beforeEach(() => asAuthed());
+  it("accepts custom-sheet cells for a custom template", async () => {
+    mockGetTemplate2.mockResolvedValueOnce(CUSTOM);
+    const res = await POST(new Request("http://t/api/mappings", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ templateId: "tpl-abc", fields: CUSTOM.defaultFields }),
+    }));
+    expect(res.status).toBe(200);
   });
 });
