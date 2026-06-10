@@ -24,6 +24,9 @@ function rowOf(ref: string): number {
 /**
  * Write a cell into worksheet XML, inserting the cell (and row if needed)
  * when it does not already exist. For custom templates where cells may be blank.
+ * INVARIANT: `ref` must be pre-validated (validateCellRef: A–Z cols + digits only) —
+ * it is interpolated into a RegExp unescaped, and valid worksheet XML is assumed
+ * to contain exactly one </sheetData> (guaranteed for files that passed workbookSheets).
  */
 function writeCellCustom(xml: string, ref: string, mode: "string" | "number", value: string | number): string {
   const cellXml = buildCell(ref, mode, value);
