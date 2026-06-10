@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
+import { del } from "@vercel/blob";
 import { auth } from "@/auth";
-import { setAvatar, deleteAvatar } from "@/lib/db/avatars";
+import { getAvatar, setAvatar, deleteAvatar } from "@/lib/db/avatars";
 import { isOwnBlobUrl } from "@/lib/upload/avatar";
 
 export const runtime = "nodejs"; // DB access
+
+// Best-effort: a failed blob deletion must never fail the request (worst case
+// an orphaned blob remains, same as before cleanup existed).
+async function tryDelBlob(url: string | null): Promise<void> {
+  if (!url) return;
+  try { await del(url); } catch { /* orphan stays; acceptable */ }
+}
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -15,11 +23,14 @@ export async function POST(req: Request) {
   const url = typeof body.url === "string" ? body.url : "";
   if (!isOwnBlobUrl(url)) return NextResponse.json({ error: "url" }, { status: 400 });
 
+  let old: string | null = null;
   try {
+    old = await getAvatar(email).catch(() => null);
     await setAvatar(email, url);
   } catch {
     return NextResponse.json({ error: "server" }, { status: 500 });
   }
+  if (old !== url) await tryDelBlob(old);
   return NextResponse.json({ ok: true, url });
 }
 
@@ -28,10 +39,13 @@ export async function DELETE() {
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  let old: string | null = null;
   try {
+    old = await getAvatar(email).catch(() => null);
     await deleteAvatar(email);
   } catch {
     return NextResponse.json({ error: "server" }, { status: 500 });
   }
+  await tryDelBlob(old);
   return NextResponse.json({ ok: true });
 }
