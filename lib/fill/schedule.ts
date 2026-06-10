@@ -12,16 +12,21 @@ export const round2 = (x: number) => Math.round(x * 100) / 100;
 
 const MAX_STAGES = 5;
 
+// Percents that are taxes/rates/penalties, not payment stages: «НДС 20%»,
+// «пени 0,1%», «ставка 8,25%», «штраф 10%»… Stripped before scanning.
+// NB: \w and \b are ASCII-only in JS — Cyrillic needs explicit [а-яё]* (i-flag covers case).
+const NON_STAGE = "(?:НДС|пени|пеня|штраф[а-яё]*|неустойк[а-яё]*|ставк[а-яё]*)";
+
 /**
  * Deterministic %-split parser for the f9 «Условия оплаты» free text.
  * Returns percents in order of appearance, or null → caller falls back to
- * the single «Аванс 100%» row. НДС clauses are stripped first so they never
- * count as payment stages.
+ * the single «Аванс 100%» row. НДС/penalty/rate clauses are stripped first
+ * so they never count as payment stages.
  */
 export function parseSplit(text: string): number[] | null {
   const cleaned = text
-    .replace(/НДС[^,;.%]{0,20}?\d+(?:[.,]\d+)?\s*%/gi, " ")
-    .replace(/\d+(?:[.,]\d+)?\s*%[^,;.%]{0,10}?НДС/gi, " ");
+    .replace(new RegExp(`${NON_STAGE}[^,;.%]{0,20}?\\d+(?:[.,]\\d+)?\\s*%`, "gi"), " ")
+    .replace(new RegExp(`\\d+(?:[.,]\\d+)?\\s*%[^,;.%]{0,10}?${NON_STAGE}`, "gi"), " ");
   const pcts = Array.from(
     cleaned.matchAll(/(\d+(?:[.,]\d+)?)\s*%/g),
     m => parseFloat(m[1].replace(",", ".")),

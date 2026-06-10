@@ -44,6 +44,14 @@ describe("parseSplit", () => {
   it("returns null for more than 5 stages", () => {
     expect(parseSplit("20%, 20%, 20%, 20%, 10%, 10%")).toBeNull();
   });
+  it("ignores rate/penalty percents — не этапы оплаты", () => {
+    expect(parseSplit("пени 0,1% за каждый день просрочки")).toBeNull();
+    expect(parseSplit("ставка рефинансирования 8,25%")).toBeNull();
+    expect(parseSplit("штраф 10% при расторжении")).toBeNull();
+    expect(parseSplit("неустойка 0,5% от суммы")).toBeNull();
+    // лишний не-этапный процент не убивает легитимную разбивку:
+    expect(parseSplit("аванс 30%, постоплата 70%, пени 0,1% за день просрочки")).toEqual([30, 70]);
+  });
 });
 
 describe("buildSchedule with terms text", () => {

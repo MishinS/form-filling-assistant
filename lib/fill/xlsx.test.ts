@@ -162,6 +162,24 @@ describe("fillPtXlsx with a 30/70 split in f9", () => {
   });
 });
 
+describe("fillPtXlsx with a 3-stage split", () => {
+  it("inserts two rows, names the middle stage, repoints Итого to D8", () => {
+    const out = fillPtXlsx(tpl, [
+      ev("f4", "90 000,00"),
+      ev("f9", "оплата: 50%, затем 30%, затем 20%"),
+    ]);
+    const files = unzipSync(out);
+    const graf = strFromU8(files["xl/worksheets/sheet3.xml"]);
+    const pt = strFromU8(files["xl/worksheets/sheet1.xml"]);
+    expect(graf).toMatch(/<c r="B6"[^>]*><is><t[^>]*>Платёж 2<\/t>/);
+    expect(graf).toMatch(/<c r="B7"[^>]*><is><t[^>]*>Постоплата<\/t>/);
+    expect(graf).toMatch(/<c r="D7"[^>]*><v>18000<\/v>/);
+    expect(graf).toContain("SUM(D5:D7)");
+    expect(graf).toContain('<dimension ref="A1:F20"');
+    expect(pt).toMatch(/<c r="D13"[^>]*><f>[^<]*!D8<\/f><v>90000<\/v>/);
+  });
+});
+
 describe("fillPtXlsx single-row regression (no f9 split)", () => {
   it("matches the legacy output byte-for-byte", () => {
     const vals = [ev("f4", "100 000,00"), ev("f10", "30.04.2026")];
