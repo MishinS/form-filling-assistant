@@ -32,3 +32,14 @@ describe("parseFieldList", () => {
     expect(ok?.[0].rule).toBeUndefined();
   });
 });
+
+describe("parseFieldList with allowedSheets", () => {
+  it("accepts custom-sheet cells and normalizes bare refs to the first sheet", () => {
+    const input = [
+      { id: "f1", group: "req", label_ru: "Поставщик", label_en: "Supplier", cell: "Данные!B2", kind: "string", required: false, strategy: "llm" },
+      { id: "f2", group: "req", label_ru: "Сумма", label_en: "Amount", cell: "C3", kind: "amount", required: false, strategy: "llm" },
+    ];
+    const out = parseFieldList(input, ["Лист1", "Данные"]);
+    expect(out?.map(f => f.cell)).toEqual(["Данные!B2", "Лист1!C3"]);
+  });
+});

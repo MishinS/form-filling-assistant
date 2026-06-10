@@ -8,12 +8,13 @@ export type CellRefResult =
 
 const REF_RE = /^(?:([^!]+)!)?([A-Z]{1,3})([1-9]\d{0,4})$/;
 
-export function validateCellRef(input: string): CellRefResult {
+export function validateCellRef(input: string, allowedSheets?: string[]): CellRefResult {
   const raw = (input ?? "").trim();
   if (!raw) return { ok: false, reason: "empty" };
   const m = raw.match(REF_RE);
   if (!m) return { ok: false, reason: "format" };
   const [, sheet, col, row] = m;
-  if (sheet && sheet !== "ПТ") return { ok: false, reason: "sheet" };
-  return { ok: true, normalized: `ПТ!${col}${row}` };
+  const sheets = allowedSheets && allowedSheets.length > 0 ? allowedSheets : ["ПТ"];
+  if (sheet && !sheets.includes(sheet)) return { ok: false, reason: "sheet" };
+  return { ok: true, normalized: `${sheet ?? sheets[0]}!${col}${row}` };
 }

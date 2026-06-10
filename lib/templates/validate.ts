@@ -9,7 +9,7 @@ const KINDS: FieldKind[] = ["string", "amount", "date", "text"];
 const STRATEGIES: Strategy[] = ["rule", "llm", "manual"];
 const GROUPS = ["req", "pay", "terms"];
 
-export function parseFieldList(input: unknown): ExtractField[] | null {
+export function parseFieldList(input: unknown, allowedSheets?: string[]): ExtractField[] | null {
   if (input == null || !Array.isArray(input) || input.length === 0) return null;
   const out: ExtractField[] = [];
   for (const raw of input) {
@@ -20,7 +20,7 @@ export function parseFieldList(input: unknown): ExtractField[] | null {
     if (typeof f.kind !== "string" || !KINDS.includes(f.kind as FieldKind)) return null;
     if (typeof f.strategy !== "string" || !STRATEGIES.includes(f.strategy as Strategy)) return null;
     if (typeof f.group !== "string" || !GROUPS.includes(f.group)) return null;
-    const cell = validateCellRef(typeof f.cell === "string" ? f.cell : "");
+    const cell = validateCellRef(typeof f.cell === "string" ? f.cell : "", allowedSheets);
     if (!cell.ok) return null;
     // A `rule` (when present) must be a known RuleKey — an unknown key would make
     // RULES[rule] undefined and crash the regex pass in extractFields.
