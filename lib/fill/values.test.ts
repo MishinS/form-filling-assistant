@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { planWrites, sheetFile, type CellWrite } from "./values";
+import { planWrites, sheetFile, scheduleFromValues, type CellWrite } from "./values";
 import type { ExtractedValue } from "@/lib/types";
 
 const ev = (fieldId: string, value: string): ExtractedValue => ({
@@ -81,5 +81,50 @@ describe("planWrites with a custom field list", () => {
   it("defaults to PT_FIELDS when no list is passed", () => {
     const writes = planWrites(vals({ f1: "ООО Тест" }));
     expect(writes.find(x => x.ref === "D9")).toMatchObject({ mode: "string", value: "ООО Тест" });
+  });
+});
+
+describe("planWrites with a 30/70 split in f9", () => {
+  const ws = planWrites([
+    ev("f4", "100 000,00"),
+    ev("f9", "аванс 30%, постоплата 70%"),
+    ev("f10", "30.04.2026"),
+  ]);
+
+  it("writes both schedule rows (5 and 6) with №, stage, percent, amount", () => {
+    expect(find(ws, "График оплат", "D5")).toMatchObject({ mode: "number", value: 30000 });
+    expect(find(ws, "График оплат", "B5")).toMatchObject({ mode: "string", value: "Аванс" });
+    expect(find(ws, "График оплат", "C5")).toMatchObject({ mode: "string", value: "30%" });
+    expect(find(ws, "График оплат", "A5")).toBeUndefined(); // A5=1 уже в шаблоне
+    expect(find(ws, "График оплат", "A6")).toMatchObject({ mode: "number", value: 2 });
+    expect(find(ws, "График оплат", "B6")).toMatchObject({ mode: "string", value: "Постоплата" });
+    expect(find(ws, "График оплат", "C6")).toMatchObject({ mode: "string", value: "70%" });
+    expect(find(ws, "График оплат", "D6")).toMatchObject({ mode: "number", value: 70000 });
+  });
+
+  it("writes no dues when split and blanks the template sample date in E5", () => {
+    // E5 в образце содержит образцовую дату (46162) — при разбивке её надо затереть пустой строкой
+    expect(find(ws, "График оплат", "E5")).toMatchObject({ mode: "string", value: "" });
+    expect(find(ws, "График оплат", "E6")).toBeUndefined();
+    expect(find(ws, "ПТ", "H16")).toMatchObject({ mode: "number", value: 46142 }); // сам f10 в ПТ остаётся
+  });
+
+  it("caches D13=total and D15=advance amount", () => {
+    expect(find(ws, "ПТ", "D13")).toMatchObject({ mode: "formulaCache", value: 100000 });
+    expect(find(ws, "ПТ", "D15")).toMatchObject({ mode: "formulaCache", value: 30000 });
+  });
+});
+
+describe("scheduleFromValues", () => {
+  it("builds the schedule from f4/f9/f10", () => {
+    const rows = scheduleFromValues([ev("f4", "100 000,00"), ev("f9", "аванс 30%, постоплата 70%")]);
+    expect(rows?.map(r => r.amount)).toEqual([30000, 70000]);
+  });
+  it("returns null without a total", () => {
+    expect(scheduleFromValues([ev("f9", "аванс 30%")])).toBeNull();
+  });
+  it("keeps the single-row legacy schedule without f9", () => {
+    const rows = scheduleFromValues([ev("f4", "100 000,00"), ev("f10", "30.04.2026")]);
+    expect(rows).toEqual([{ stage: "Аванс", percent: 100, amount: 100000, due: 46142 }]);
   });
 });

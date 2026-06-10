@@ -1,7 +1,7 @@
 import { PT_FIELDS, type ExtractField } from "@/lib/extract/fields";
 import type { ExtractedValue } from "@/lib/types";
 import { parseAmount, parseDateSerial } from "./parse";
-import { buildSchedule } from "./schedule";
+import { buildSchedule, formatPercent, round2, type ScheduleRow } from "./schedule";
 
 export type WriteMode = "string" | "number" | "formulaCache";
 export interface CellWrite {
@@ -24,7 +24,20 @@ export function sheetFile(name: string): string {
 
 const refOf = (cell: string) => cell.split("!")[1]; // "ПТ!D9" → "D9"
 
-export function planWrites(values: ExtractedValue[], fields: ExtractField[] = PT_FIELDS): CellWrite[] {
+/** Build the payment schedule from the reviewed values (f4/f7 total, f10 due, f9 terms).
+ *  Null when there is no parseable total → no schedule writes at all. */
+export function scheduleFromValues(values: ExtractedValue[]): ScheduleRow[] | null {
+  const val = (id: string) => values.find(v => v.fieldId === id)?.value?.trim() ?? "";
+  const total = parseAmount(val("f4") || val("f7"));
+  if (total === null) return null;
+  return buildSchedule(total, parseDateSerial(val("f10")), val("f9"));
+}
+
+export function planWrites(
+  values: ExtractedValue[],
+  fields: ExtractField[] = PT_FIELDS,
+  schedule?: ScheduleRow[] | null,
+): CellWrite[] {
   const val = (id: string) => values.find(v => v.fieldId === id)?.value?.trim() ?? "";
   const writes: CellWrite[] = [];
 
@@ -45,19 +58,25 @@ export function planWrites(values: ExtractedValue[], fields: ExtractField[] = PT
     }
   }
 
-  // «График оплат» schedule (default аванс 100%) drives ПТ!D13/D15 via their formulas.
-  const total = parseAmount(val("f4") || val("f7"));
-  if (total !== null) {
-    const due = parseDateSerial(val("f10"));
-    const [row] = buildSchedule(total, due);
-    writes.push({ sheet: "График оплат", ref: "D5", mode: "number", value: row.amount });
-    writes.push({ sheet: "График оплат", ref: "B5", mode: "string", value: row.stage });
-    writes.push({ sheet: "График оплат", ref: "C5", mode: "string", value: `${row.percent}%` });
-    if (row.due !== null) {
-      writes.push({ sheet: "График оплат", ref: "E5", mode: "number", value: row.due });
+  // «График оплат» schedule (single «Аванс 100%» row, or a %-split parsed from f9)
+  // drives ПТ!D13/D15 via their formulas. `undefined` → compute here; `null` → no total.
+  const rows = schedule === undefined ? scheduleFromValues(values) : schedule;
+  if (rows) {
+    rows.forEach((row, i) => {
+      const r = 5 + i;
+      if (i > 0) writes.push({ sheet: "График оплат", ref: `A${r}`, mode: "number", value: i + 1 });
+      writes.push({ sheet: "График оплат", ref: `B${r}`, mode: "string", value: row.stage });
+      writes.push({ sheet: "График оплат", ref: `C${r}`, mode: "string", value: formatPercent(row.percent) });
+      writes.push({ sheet: "График оплат", ref: `D${r}`, mode: "number", value: row.amount });
+      if (row.due !== null) writes.push({ sheet: "График оплат", ref: `E${r}`, mode: "number", value: row.due });
+    });
+    // При разбивке сроки пусты, но E5 образца содержит образцовую дату — затереть пустой строкой.
+    if (rows.length > 1) {
+      writes.push({ sheet: "График оплат", ref: "E5", mode: "string", value: "" });
     }
-    writes.push({ sheet: "ПТ", ref: "D13", mode: "formulaCache", value: total });      // ='График оплат'!D6 (=SUM total)
-    writes.push({ sheet: "ПТ", ref: "D15", mode: "formulaCache", value: row.amount });  // ='График оплат'!D5
+    const total = round2(rows.reduce((a, r) => a + r.amount, 0));
+    writes.push({ sheet: "ПТ", ref: "D13", mode: "formulaCache", value: total });          // ='График оплат'!D{Итого} (=SUM)
+    writes.push({ sheet: "ПТ", ref: "D15", mode: "formulaCache", value: rows[0].amount }); // ='График оплат'!D5 (аванс)
   }
 
   return writes;
