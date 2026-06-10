@@ -2,12 +2,12 @@
 import { useI18n } from "@/lib/i18n";
 import type { ExtractField } from "@/lib/extract/fields";
 
-type Props = { fields: ExtractField[]; sel: string };
+type Props = { fields: ExtractField[]; sel: string; title?: string };
 
-export default function MiniSheet({ fields, sel }: Props) {
+export default function MiniSheet({ fields, sel, title }: Props) {
   const { lang } = useI18n();
   const lines = [
-    { head: true as const, label: lang === "ru" ? "ПЛАТЁЖНОЕ ТРЕБОВАНИЕ" : "PAYMENT REQUEST", id: "__head", cell: "" },
+    { head: true as const, label: title ?? (lang === "ru" ? "ПЛАТЁЖНОЕ ТРЕБОВАНИЕ" : "PAYMENT REQUEST"), id: "__head", cell: "" },
     ...fields.map(f => ({ head: false as const, id: f.id, label: lang === "ru" ? f.label_ru : f.label_en, cell: f.cell.replace("ПТ!", "") })),
   ];
   return (
