@@ -62,17 +62,17 @@ const F = (over: Partial<import("@/lib/extract/fields").ExtractField>) => ({
 
 describe("fillCustomXlsx", () => {
   it("writes a string value into its sheet cell", () => {
-    const out = fillCustomXlsx(customFixture(), [{ fieldId: "f1", value: "ООО Ромашка", confidence: "high" }], [F({})]);
+    const out = fillCustomXlsx(customFixture(), [{ fieldId: "f1", value: "ООО Ромашка", confidence: "high", source: { fileId: null, locator: "" } }], [F({})]);
     const xml = strFromU8(unzipSync(out)["xl/worksheets/sheet1.xml"]);
     expect(xml).toContain("ООО Ромашка");
   });
   it("writes amounts as numbers", () => {
-    const out = fillCustomXlsx(customFixture(), [{ fieldId: "f1", value: "1 234,50", confidence: "high" }], [F({ kind: "amount" })]);
+    const out = fillCustomXlsx(customFixture(), [{ fieldId: "f1", value: "1 234,50", confidence: "high", source: { fileId: null, locator: "" } }], [F({ kind: "amount" })]);
     const xml = strFromU8(unzipSync(out)["xl/worksheets/sheet1.xml"]);
     expect(xml).toMatch(/<v>1234.5<\/v>/);
   });
   it("skips fields whose sheet is missing instead of throwing", () => {
-    const out = fillCustomXlsx(customFixture(), [{ fieldId: "f1", value: "x", confidence: "high" }], [F({ cell: "Нет!A1" })]);
+    const out = fillCustomXlsx(customFixture(), [{ fieldId: "f1", value: "x", confidence: "high", source: { fileId: null, locator: "" } }], [F({ cell: "Нет!A1" })]);
     expect(unzipSync(out)["xl/worksheets/sheet1.xml"]).toBeDefined();
   });
   it("preserves unrelated zip entries", () => {
