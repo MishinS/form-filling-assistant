@@ -18,6 +18,9 @@ export const templates = pgTable("templates", {
   fileKey: text("file_key"),
   sheets: jsonb("sheets").$type<string[]>().notNull().default([]),
   primary: boolean("primary").notNull().default(false),
+  userId: text("user_id"),                // null = built-in (pt), else owner email (lowercase)
+  deletedAt: timestamp("deleted_at"),     // soft delete: hidden from gallery/wizard, history intact
+  defaultFields: jsonb("default_fields").$type<ExtractField[]>(), // LLM-proposed initial set (Reset target); null for pt
 });
 
 export const fields = pgTable("fields", {
