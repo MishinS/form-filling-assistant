@@ -6,6 +6,8 @@ import { parseThemeMode } from "@/lib/theme-core";
 import AppShell from "@/components/shell/AppShell";
 import { auth } from "@/auth";
 import { getMapping } from "@/lib/db/mappings";
+import { listTemplates, listTemplateNames } from "@/lib/db/templates";
+import { TEMPLATES, type UiTemplate } from "@/lib/seed/pt";
 import type { ExtractField } from "@/lib/extract/fields";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -25,11 +27,31 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
   }
 
+  let templates: UiTemplate[] = TEMPLATES;
+  let templateNames: Record<string, { ru: string; en: string }> = {
+    pt: { ru: TEMPLATES[0].name_ru, en: TEMPLATES[0].name_en },
+  };
+  if (user.email) {
+    try {
+      const rows = await listTemplates(user.email);
+      const custom = rows.filter(r => r.userId !== null).map(r => ({
+        id: r.id, code: r.code, name_ru: r.nameRu, name_en: r.nameEn,
+        desc_ru: r.descRu, desc_en: r.descEn, format: r.format.toUpperCase(),
+        sheets: r.sheets, fields: r.defaultFields?.length ?? 0, updated: "", own: true,
+      }));
+      templates = [...TEMPLATES, ...custom];
+      const names = await listTemplateNames(user.email);
+      for (const n of names) templateNames[n.id] = { ru: n.nameRu, en: n.nameEn };
+    } catch {
+      // DB unreachable → built-ins only. Never 500 the app.
+    }
+  }
+
   return (
     <SessionProvider session={session}>
       <ThemeProvider initialMode={initialMode}>
         <I18nProvider initialLang={initialLang}>
-          <AppShell user={user} initialFields={initialFields}>{children}</AppShell>
+          <AppShell user={user} initialFields={initialFields} templates={templates} templateNames={templateNames}>{children}</AppShell>
         </I18nProvider>
       </ThemeProvider>
     </SessionProvider>

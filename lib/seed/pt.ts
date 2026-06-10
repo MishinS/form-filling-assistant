@@ -5,11 +5,7 @@ export type ConfLevel = "high" | "med" | "low";
 export interface UiTemplate {
   id: string; code: string; name_ru: string; name_en: string;
   desc_ru: string; desc_en: string; format: string; sheets: string[];
-  fields: number; updated: string; primary?: boolean;
-}
-export interface HistoryRow {
-  id: string; file: string; tpl: string; counter: string;
-  amount: string; cur: string; status: StatusKey; date: string; files: number;
+  fields: number; updated: string; primary?: boolean; own?: boolean;
 }
 export interface UiSourceFile { id: string; name: string; type: string; size: string; pages: number; }
 export interface PtField {
@@ -161,6 +157,21 @@ export const STR: Record<string, { ru: string; en: string }> = {
   kind_amount:     { ru: "Сумма", en: "Amount" },
   kind_date:       { ru: "Дата", en: "Date" },
   soon:            { ru: "скоро", en: "soon" },
+  tpl_new_title:    { ru: "Новый шаблон", en: "New template" },
+  tpl_new_name:     { ru: "Название", en: "Name" },
+  tpl_new_desc:     { ru: "Описание (необязательно)", en: "Description (optional)" },
+  tpl_new_file:     { ru: "Файл шаблона (.xlsx, до 5 МБ)", en: "Template file (.xlsx, up to 5 MB)" },
+  tpl_new_create:   { ru: "Создать", en: "Create" },
+  tpl_new_scanning: { ru: "Разбираем шаблон…", en: "Analyzing the template…" },
+  tpl_new_err:      { ru: "Не удалось создать шаблон", en: "Couldn't create the template" },
+  tpl_new_err_file: { ru: "Нужен файл .xlsx до 5 МБ", en: "Need an .xlsx file up to 5 MB" },
+  tpl_mine:         { ru: "Мой", en: "Mine" },
+  tpl_delete:       { ru: "Удалить шаблон", en: "Delete template" },
+  tpl_delete_sure:  { ru: "Точно удалить?", en: "Really delete?" },
+  tpl_deleting:     { ru: "Удаляем…", en: "Deleting…" },
+  tpl_renamed_err:  { ru: "Не удалось сохранить название", en: "Couldn't save the name" },
+  cell_sheet_bad:   { ru: "Нет такого листа в шаблоне", en: "No such sheet in this template" },
+  cancel:           { ru: "Отмена", en: "Cancel" },
   login_title:    { ru: "Вход", en: "Sign in" },
   login_sub:      { ru: "Войдите, чтобы продолжить", en: "Sign in to continue" },
   login_email:    { ru: "Email", en: "Email" },
@@ -197,31 +208,6 @@ export const TEMPLATES: UiTemplate[] = [
     desc_ru: "Внутренняя заявка на оплату по счёту / договору", desc_en: "Internal request to pay against an invoice / contract",
     format: "XLSX", sheets: ["ПТ", "Счёт", "График оплат"], fields: 18, updated: "20.05.2026", primary: true,
   },
-  {
-    id: "inv", code: "СЧ-01", name_ru: "Счёт на оплату", name_en: "Invoice for payment",
-    desc_ru: "Счёт с реквизитами, позициями и итогами", desc_en: "Invoice with details, line items and totals",
-    format: "XLSX", sheets: ["Счёт"], fields: 12, updated: "08.05.2026",
-  },
-  {
-    id: "act", code: "АКТ-02", name_ru: "Акт выполненных работ", name_en: "Acceptance act",
-    desc_ru: "Акт сдачи-приёмки по договору", desc_en: "Work acceptance act under a contract",
-    format: "DOCX", sheets: [], fields: 9, updated: "29.04.2026",
-  },
-  {
-    id: "rec", code: "СВ-03", name_ru: "Сверка взаиморасчётов", name_en: "Reconciliation report",
-    desc_ru: "Акт сверки за период", desc_en: "Settlement reconciliation for a period",
-    format: "XLSX", sheets: ["Сверка"], fields: 7, updated: "12.04.2026",
-  },
-];
-
-export const HISTORY: HistoryRow[] = [
-  { id: "F-2041", file: "Счёт-оферта №201.pdf",  tpl: "pt",  counter: 'ООО «МК Клевер»',     amount: "418 600,00", cur: "₽", status: "review",     date: "Сегодня, 11:24",  files: 3 },
-  { id: "F-2039", file: "Договор №КЛ-118.pdf",    tpl: "pt",  counter: 'ООО «Орбита-Тех»',     amount: "1 240 000,00", cur: "₽", status: "done",     date: "Сегодня, 09:50",  files: 2 },
-  { id: "F-2034", file: "КП_Светотехника.xlsx",   tpl: "inv", counter: 'ИП Гордеев А. В.',      amount: "96 400,00",  cur: "₽", status: "done",       date: "Вчера, 18:02",    files: 1 },
-  { id: "F-2031", file: "Счёт №77 от 28.05.pdf",  tpl: "pt",  counter: 'АО «Медтех-Сервис»',    amount: "532 100,00", cur: "₽", status: "processing", date: "Вчера, 15:41",    files: 2 },
-  { id: "F-2028", file: "Акт_СТ-440.docx",        tpl: "act", counter: 'ООО «СтройКомплект»',   amount: "—",          cur: "",  status: "draft",      date: "29.05.2026",      files: 1 },
-  { id: "F-2025", file: "Счёт №54.pdf",           tpl: "pt",  counter: 'ООО «Аква-Лайн»',       amount: "74 900,00",  cur: "₽", status: "error",       date: "28.05.2026",      files: 1 },
-  { id: "F-2019", file: "Договор поставки.pdf",    tpl: "rec", counter: 'ООО «ТД Вектор»',       amount: "2 015 300,00", cur: "₽", status: "done",     date: "27.05.2026",      files: 4 },
 ];
 
 export const SOURCE_FILES: UiSourceFile[] = [

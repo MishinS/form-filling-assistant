@@ -2,17 +2,17 @@
 import { useContext } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Eyebrow, Btn } from "@/components/primitives";
-import { TEMPLATES } from "@/lib/seed/pt";
 import type { HistoryRowData } from "@/lib/db/map";
 import type { FillStats } from "@/lib/db/fills";
 import { formatFillDate } from "@/lib/db/map";
-import { WizardTrigger } from "@/components/shell/AppShell";
+import { WizardTrigger, TemplatesContext } from "@/components/shell/AppShell";
 import RecentRow from "./RecentRow";
 
 export default function Dashboard({ fills, stats }: { fills: HistoryRowData[]; stats: FillStats }) {
   const { t, lang } = useI18n();
   const { openNew } = useContext(WizardTrigger);
-  const tplName = (id: string) => { const x = TEMPLATES.find(v => v.id === id); return x ? (lang === "ru" ? x.name_ru : x.name_en) : id; };
+  const { nameOf } = useContext(TemplatesContext);
+  const tplName = (id: string) => { const n = nameOf(id); return n ? (lang === "ru" ? n.ru : n.en) : id; };
 
   const statCards = [
     { k: "stat_total", v: String(stats.total) },

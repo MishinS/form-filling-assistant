@@ -1,17 +1,19 @@
 "use client";
+import { useContext } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Icon, Tag } from "@/components/primitives";
-import { TEMPLATES } from "@/lib/seed/pt";
+import { TemplatesContext } from "@/components/shell/AppShell";
 
 type Props = { selected: string; onSelect: (id: string) => void };
 
 export default function TemplatePick({ selected, onSelect }: Props) {
   const { t, lang } = useI18n();
+  const { templates } = useContext(TemplatesContext);
   return (
     <div>
       <div className="mono" style={{ fontSize: 11, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 12 }}>{t("choose_template")}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 }}>
-        {TEMPLATES.map(tpl => {
+        {templates.map(tpl => {
           const on = selected === tpl.id;
           return (
             <button key={tpl.id} onClick={() => onSelect(tpl.id)}
@@ -29,6 +31,7 @@ export default function TemplatePick({ selected, onSelect }: Props) {
                 <div className="row gap-8" style={{ alignItems: "center" }}>
                   <span style={{ fontWeight: 600, fontSize: 14 }}>{lang === "ru" ? tpl.name_ru : tpl.name_en}</span>
                   <Tag tone="mono" style={{ height: 18, fontSize: 10 }}>{tpl.format}</Tag>
+                  {tpl.own && <Tag tone="line" style={{ height: 18, fontSize: 10 }}>{t("tpl_mine")}</Tag>}
                 </div>
                 <div className="muted" style={{ fontSize: 12.5, marginTop: 5, lineHeight: 1.4 }}>{lang === "ru" ? tpl.desc_ru : tpl.desc_en}</div>
                 <div className="mono dim" style={{ fontSize: 11, marginTop: 9 }}>{tpl.fields} {t("fields_n")} · {tpl.code}</div>

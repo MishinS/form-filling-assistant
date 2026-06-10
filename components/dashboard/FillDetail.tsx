@@ -1,15 +1,16 @@
 "use client";
+import { useContext } from "react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import { Eyebrow, Icon, StatusDot, FileGlyph, Confidence } from "@/components/primitives";
 import type { StatusKey } from "@/lib/seed/pt";
-import { TEMPLATES } from "@/lib/seed/pt";
+import { TemplatesContext } from "@/components/shell/AppShell";
 import { buildDetailGroups, formatFillDate, type FillDetail } from "@/lib/db/map";
 
 export default function FillDetail({ data }: { data: FillDetail }) {
   const { t, lang } = useI18n();
-  const tpl = TEMPLATES.find((v) => v.id === data.templateId);
-  const tplName = tpl ? (lang === "ru" ? tpl.name_ru : tpl.name_en) : data.templateId;
+  const { nameOf } = useContext(TemplatesContext);
+  const tplName = (() => { const n = nameOf(data.templateId); return n ? (lang === "ru" ? n.ru : n.en) : data.templateId; })();
   const groups = buildDetailGroups(data.values, lang);
   const confLabel = (c: string) => t(c === "high" ? "conf_high" : c === "med" ? "conf_med" : "conf_low");
   const safeLevel = (c: string): "high" | "med" | "low" => (c === "high" || c === "med" || c === "low" ? c : "low");
