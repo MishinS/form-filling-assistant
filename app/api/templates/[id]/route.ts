@@ -24,6 +24,10 @@ export async function PATCH(req: Request, { params }: Ctx): Promise<Response> {
     patch.name = name;
   }
   if (typeof body.desc === "string") patch.desc = body.desc.trim().slice(0, MAX_DESC);
+  // An empty patch would skip the DB ownership check (renameTemplate no-ops) — reject it.
+  if (patch.name === undefined && patch.desc === undefined) {
+    return NextResponse.json({ error: "empty" }, { status: 400 });
+  }
 
   try {
     const ok = await renameTemplate(params.id, email, patch);

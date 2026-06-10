@@ -59,4 +59,16 @@ describe("DELETE /api/templates/[id]", () => {
     expect((await DELETE(delReq(), ctx)).status).toBe(403);
     expect(del).not.toHaveBeenCalled();
   });
+  it("401 without a session", async () => {
+    mockAuth.mockResolvedValueOnce(null);
+    expect((await DELETE(delReq(), ctx)).status).toBe(401);
+    expect(softDeleteTemplate).not.toHaveBeenCalled();
+  });
+});
+
+describe("PATCH /api/templates/[id] — empty patch", () => {
+  it("400 when neither name nor desc is provided (must not skip the ownership check)", async () => {
+    expect((await PATCH(patch({}), ctx)).status).toBe(400);
+    expect(renameTemplate).not.toHaveBeenCalled();
+  });
 });
