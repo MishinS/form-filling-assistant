@@ -4,7 +4,7 @@ import SettingsView from "@/components/settings/SettingsView";
 
 export default async function SettingsPage() {
   const session = await auth();
-  const user = { name: session?.user?.name ?? "", email: session?.user?.email ?? "" };
+  const user = { name: session?.user?.name ?? "", email: session?.user?.email ?? "", image: session?.user?.image ?? null };
   let editable = false;
   if (user.email) {
     // Editable only for DB-backed accounts; env-only owner accounts are read-only.

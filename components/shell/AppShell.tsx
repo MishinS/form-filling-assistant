@@ -27,7 +27,7 @@ export const TemplateMappingContext = createContext<{
   resetFields: () => {},
 });
 
-export type SessionUser = { name: string; email: string };
+export type SessionUser = { name: string; email: string; image: string | null };
 
 export default function AppShell({ children, user, initialFields }: { children: ReactNode; user: SessionUser; initialFields?: ExtractField[] }) {
   const router = useRouter();

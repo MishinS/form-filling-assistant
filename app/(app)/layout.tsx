@@ -10,7 +10,7 @@ import type { ExtractField } from "@/lib/extract/fields";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  const user = { name: session?.user?.name ?? "", email: session?.user?.email ?? "" };
+  const user = { name: session?.user?.name ?? "", email: session?.user?.email ?? "", image: session?.user?.image ?? null };
 
   const jar = await cookies();
   const initialMode = parseThemeMode(jar.get("theme")?.value);
