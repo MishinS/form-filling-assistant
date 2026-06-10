@@ -1,6 +1,5 @@
-// Payment schedule for «График оплат». Phase 5: default-only (аванс 100%, single row).
-// Modeled as a list so the future conditions-driven %-split (аванс 30 / постоплата 70)
-// is a clean extension — see the design spec follow-up.
+// Payment schedule for «График оплат»: a single «Аванс 100%» row by default,
+// or one row per stage when the f9 terms text carries a parseable %-split.
 
 export interface ScheduleRow {
   stage: string;       // «Аванс» / «Постоплата» …
@@ -37,6 +36,28 @@ export function parseSplit(text: string): number[] | null {
   return pcts;
 }
 
-export function buildSchedule(total: number, due: number | null): ScheduleRow[] {
-  return [{ stage: "Аванс", percent: 100, amount: total, due }];
+/** «30%» / «12,5%» — percent column rendering, ru decimal comma. */
+export const formatPercent = (p: number) => `${String(p).replace(".", ",")}%`;
+
+const stageName = (i: number, k: number): string => {
+  if (i === 0) return "Аванс";
+  if (i === k - 1) return "Постоплата";
+  return `Платёж ${i + 1}`;
+};
+
+/**
+ * Build the «График оплат» rows. With parseable terms text → one row per stage,
+ * kopeck-exact amounts (last row takes the remainder), dues always empty.
+ * Otherwise → the single «Аванс 100%» row carrying the f10 due (legacy path).
+ */
+export function buildSchedule(total: number, due: number | null, termsText?: string): ScheduleRow[] {
+  const split = termsText ? parseSplit(termsText) : null;
+  if (!split) return [{ stage: "Аванс", percent: 100, amount: total, due }];
+  const k = split.length;
+  let allocated = 0;
+  return split.map((percent, i) => {
+    const amount = i === k - 1 ? round2(total - allocated) : round2((total * percent) / 100);
+    allocated = round2(allocated + amount);
+    return { stage: stageName(i, k), percent, amount, due: null };
+  });
 }
