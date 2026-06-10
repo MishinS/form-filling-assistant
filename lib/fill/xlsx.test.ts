@@ -123,3 +123,54 @@ describe("retargetItogoFormula", () => {
     expect(retargetItogoFormula(sheet1, 1)).toBe(sheet1);
   });
 });
+
+describe("fillPtXlsx with a 30/70 split in f9", () => {
+  const out = fillPtXlsx(tpl, [
+    ev("f1", "ООО «Ромашка»"),
+    ev("f4", "100 000,00"),
+    ev("f9", "аванс 30%, постоплата 70%"),
+    ev("f10", "30.04.2026"),
+  ]);
+  const files = unzipSync(out);
+  const graf = strFromU8(files["xl/worksheets/sheet3.xml"]);
+  const pt = strFromU8(files["xl/worksheets/sheet1.xml"]);
+
+  it("fills both schedule rows with stages, percents, amounts and №", () => {
+    expect(graf).toMatch(/<c r="B5"[^>]*t="inlineStr"><is><t[^>]*>Аванс<\/t>/);
+    expect(graf).toMatch(/<c r="C5"[^>]*t="inlineStr"><is><t[^>]*>30%<\/t>/);
+    expect(graf).toMatch(/<c r="D5"[^>]*><v>30000<\/v>/);
+    expect(graf).toMatch(/<c r="A6"[^>]*><v>2<\/v>/);
+    expect(graf).toMatch(/<c r="B6"[^>]*t="inlineStr"><is><t[^>]*>Постоплата<\/t>/);
+    expect(graf).toMatch(/<c r="C6"[^>]*t="inlineStr"><is><t[^>]*>70%<\/t>/);
+    expect(graf).toMatch(/<c r="D6"[^>]*><v>70000<\/v>/);
+  });
+  it("leaves all schedule dues empty (E5/E6 carry no value)", () => {
+    expect(graf).not.toMatch(/<c r="E5"[^>]*><v>/);
+    expect(graf).not.toMatch(/<c r="E6"[^>]*><v>/);
+  });
+  it("moves Итого to row 7 with the extended SUM", () => {
+    expect(graf).toContain("SUM(D5:D6)");
+  });
+  it("repoints ПТ!D13 to !D7 and caches D13=100000 / D15=30000", () => {
+    expect(pt).toMatch(/<c r="D13"[^>]*><f>[^<]*!D7<\/f><v>100000<\/v>/);
+    expect(pt).toMatch(/<c r="D15"[^>]*><f>[^<]*!D5<\/f><v>30000<\/v>/);
+  });
+  it("still preserves untouched sheets byte-for-byte", () => {
+    const orig = unzipSync(tpl);
+    expect(strFromU8(files["xl/worksheets/sheet2.xml"]))
+      .toBe(strFromU8(orig["xl/worksheets/sheet2.xml"]));
+  });
+});
+
+describe("fillPtXlsx single-row regression (no f9 split)", () => {
+  it("matches the legacy output byte-for-byte", () => {
+    const vals = [ev("f4", "100 000,00"), ev("f10", "30.04.2026")];
+    const legacy = fillPtXlsx(tpl, vals);
+    const withDullF9 = fillPtXlsx(tpl, [...vals, ev("f9", "оплата в течение 30 дней")]);
+    const a = unzipSync(legacy); const b = unzipSync(withDullF9);
+    // f9 пишется в ПТ!D16, поэтому sheet1 различается; график и формулы — нет:
+    expect(strFromU8(a["xl/worksheets/sheet3.xml"]))
+      .toBe(strFromU8(b["xl/worksheets/sheet3.xml"]));
+    expect(strFromU8(b["xl/worksheets/sheet3.xml"])).toContain("SUM(D5:D5)");
+  });
+});

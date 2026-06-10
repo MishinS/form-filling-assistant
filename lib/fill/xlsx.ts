@@ -1,7 +1,7 @@
 import { unzipSync, zipSync, strToU8, strFromU8 } from "fflate";
 import type { ExtractedValue } from "@/lib/types";
 import { PT_FIELDS, type ExtractField } from "@/lib/extract/fields";
-import { planWrites, sheetFile, type CellWrite } from "./values";
+import { planWrites, sheetFile, scheduleFromValues, type CellWrite } from "./values";
 import { writeCell, setFormulaCache } from "./cell";
 import { workbookSheets } from "@/lib/templates/xlsx-scan";
 import { parseAmount, parseDateSerial } from "./parse";
@@ -134,8 +134,18 @@ export function fillCustomXlsx(
 export function fillPtXlsx(templateBytes: Uint8Array, values: ExtractedValue[], fields: ExtractField[] = PT_FIELDS): Uint8Array {
   const files = unzipSync(templateBytes);
 
+  // Multi-row schedule → structural pass first (insert rows / retarget Итого formula).
+  const schedule = scheduleFromValues(values);
+  const k = schedule?.length ?? 1;
+  if (k > 1) {
+    const grafFile = sheetFile("График оплат");
+    files[grafFile] = strToU8(insertScheduleRows(strFromU8(files[grafFile]), k));
+    const ptFile = sheetFile("ПТ");
+    files[ptFile] = strToU8(retargetItogoFormula(strFromU8(files[ptFile]), k));
+  }
+
   const byFile = new Map<string, CellWrite[]>();
-  for (const w of planWrites(values, fields)) {
+  for (const w of planWrites(values, fields, schedule)) {
     const file = sheetFile(w.sheet);
     const arr = byFile.get(file) ?? [];
     arr.push(w);
