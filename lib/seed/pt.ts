@@ -167,6 +167,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   tpl_new_err_file: { ru: "Нужен файл .xlsx до 5 МБ", en: "Need an .xlsx file up to 5 MB" },
   tpl_mine:         { ru: "Мой", en: "Mine" },
   tpl_delete:       { ru: "Удалить шаблон", en: "Delete template" },
+  tpl_delete_err:   { ru: "Не удалось удалить шаблон", en: "Couldn't delete the template" },
   tpl_delete_sure:  { ru: "Точно удалить?", en: "Really delete?" },
   tpl_deleting:     { ru: "Удаляем…", en: "Deleting…" },
   tpl_renamed_err:  { ru: "Не удалось сохранить название", en: "Couldn't save the name" },

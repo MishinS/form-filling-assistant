@@ -172,7 +172,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
                   router.push("/templates");
                   router.refresh();
                 } catch {
-                  setErr(t("tpl_new_err"));
+                  setErr(t("tpl_delete_err"));
                   setDeleting(false);
                   setConfirmDel(false);
                 }

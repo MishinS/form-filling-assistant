@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, usePathname } from "next/navigation";
-import { createContext, useState, type ReactNode } from "react";
+import { createContext, useMemo, useState, type ReactNode } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import { WizardModal } from "@/components/wizard/WizardModal";
@@ -46,10 +46,10 @@ export default function AppShell({ children, user, initialFields, templates, tem
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [fields, setFields] = useState<ExtractField[]>(initialFields ?? PT_FIELDS);
   const route = pathname.split("/")[1] || "fills";
-  const tplCtx: TemplatesCtx = {
+  const tplCtx: TemplatesCtx = useMemo(() => ({
     templates: templates ?? TEMPLATES,
     nameOf: (id) => templateNames?.[id],
-  };
+  }), [templates, templateNames]);
   return (
     <TemplatesContext.Provider value={tplCtx}>
     <TemplateMappingContext.Provider value={{ fields, setFields, resetFields: () => setFields(PT_FIELDS) }}>

@@ -22,7 +22,7 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
   const pick = (f: File | undefined) => {
     setErr(null);
     if (!f) return;
-    if ((f.type && f.type !== MIME.xlsx && !f.name.toLowerCase().endsWith(".xlsx")) || f.size > MAX_BYTES) {
+    if ((f.type && f.type !== MIME.xlsx) || !f.name.toLowerCase().endsWith(".xlsx") || f.size > MAX_BYTES) {
       setErr(t("tpl_new_err_file"));
       return;
     }
