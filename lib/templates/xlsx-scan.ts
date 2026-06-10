@@ -1,0 +1,70 @@
+// Read-only structure scan of an uploaded XLSX: sheet list (workbook.xml + rels)
+// and per-sheet "A1: value" text lines for the LLM field-proposal prompt.
+import { unzipSync, strFromU8 } from "fflate";
+
+export interface SheetRef { name: string; file: string }
+export interface SheetText { name: string; lines: string[] }
+
+const MAX_LINES_PER_SHEET = 200;
+
+const decodeXml = (s: string) =>
+  s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+
+/** Sheet names in workbook order mapped to their zip entry paths. Throws on non-XLSX. */
+export function workbookSheets(bytes: Uint8Array): SheetRef[] {
+  let files: Record<string, Uint8Array>;
+  try {
+    files = unzipSync(bytes);
+  } catch {
+    throw new Error("Не XLSX: не удалось распаковать архив");
+  }
+  const wbEntry = files["xl/workbook.xml"];
+  const relsEntry = files["xl/_rels/workbook.xml.rels"];
+  if (!wbEntry || !relsEntry) throw new Error("Не XLSX: нет workbook.xml");
+  const rels = strFromU8(relsEntry);
+  const relTarget = new Map<string, string>();
+  for (const m of Array.from(rels.matchAll(/<Relationship\b([^>]*)\/?>/g))) {
+    const id = /\bId="([^"]+)"/.exec(m[1])?.[1];
+    const target = /\bTarget="([^"]+)"/.exec(m[1])?.[1];
+    if (id && target) relTarget.set(id, target);
+  }
+  const out: SheetRef[] = [];
+  for (const m of Array.from(strFromU8(wbEntry).matchAll(/<sheet\b([^>]*)\/?>/g))) {
+    const name = /\bname="([^"]+)"/.exec(m[1])?.[1];
+    const rid = /\br:id="([^"]+)"/.exec(m[1])?.[1];
+    const target = rid ? relTarget.get(rid) : undefined;
+    if (!name || !target) continue;
+    const file = target.startsWith("/") ? target.slice(1) : `xl/${target.replace(/^\.\//, "")}`;
+    out.push({ name: decodeXml(name), file });
+  }
+  if (out.length === 0) throw new Error("В файле нет листов");
+  return out;
+}
+
+/** Per-sheet "A1: value" lines (shared strings, inline strings, numbers). */
+export function sheetTexts(bytes: Uint8Array): SheetText[] {
+  const files = unzipSync(bytes);
+  const shared: string[] = [];
+  const sst = files["xl/sharedStrings.xml"];
+  if (sst) {
+    for (const m of Array.from(strFromU8(sst).matchAll(/<si>([\s\S]*?)<\/si>/g))) {
+      shared.push(decodeXml(m[1].replace(/<[^>]+>/g, "")));
+    }
+  }
+  return workbookSheets(bytes).map(({ name, file }) => {
+    const entry = files[file];
+    const xml = entry ? strFromU8(entry) : "";
+    const lines: string[] = [];
+    for (const m of Array.from(xml.matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g))) {
+      if (lines.length >= MAX_LINES_PER_SHEET) break;
+      const ref = /\br="([A-Z]{1,3}\d+)"/.exec(m[1])?.[1];
+      if (!ref) continue;
+      const t = /\bt="([^"]+)"/.exec(m[1])?.[1];
+      const v = /<v>([\s\S]*?)<\/v>/.exec(m[2])?.[1] ?? /<t[^>]*>([\s\S]*?)<\/t>/.exec(m[2])?.[1];
+      if (v == null) continue;
+      const text = t === "s" ? (shared[Number(v)] ?? "") : decodeXml(v);
+      if (text.trim()) lines.push(`${ref}: ${text.trim()}`);
+    }
+    return { name, lines };
+  });
+}
