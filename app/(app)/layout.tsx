@@ -28,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   let templates: UiTemplate[] = TEMPLATES;
-  let templateNames: Record<string, { ru: string; en: string }> = {
+  const templateNames: Record<string, { ru: string; en: string }> = {
     pt: { ru: TEMPLATES[0].name_ru, en: TEMPLATES[0].name_en },
   };
   if (user.email) {

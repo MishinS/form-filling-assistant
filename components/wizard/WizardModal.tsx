@@ -1,12 +1,12 @@
 "use client";
 import { useState, useContext } from "react";
 import { useI18n } from "@/lib/i18n";
-import { ModelContext, TemplateMappingContext } from "@/components/shell/AppShell";
+import { ModelContext, TemplateMappingContext, TemplatesContext } from "@/components/shell/AppShell";
 import { Logo, Icon, Btn } from "@/components/primitives";
-import { TEMPLATES } from "@/lib/seed/pt";
 import { uploadToBlob, formatSize, inferMime, type UploadFile } from "@/lib/upload/client";
 import type { ParsedDoc } from "@/lib/parse/types";
 import type { ExtractedValue } from "@/lib/types";
+import type { ExtractField } from "@/lib/extract/fields";
 import Stepper from "./Stepper";
 import TemplatePick from "./TemplatePick";
 import Dropzone from "./Dropzone";
@@ -27,7 +27,24 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
   const [warnings, setWarnings] = useState<string[]>([]);
   const [reviewValues, setReviewValues] = useState<ExtractedValue[]>([]);
   const { model: MODEL } = useContext(ModelContext);
-  const { fields } = useContext(TemplateMappingContext);
+  const { fields: ptFields } = useContext(TemplateMappingContext);
+  const { templates } = useContext(TemplatesContext);
+  const [customFields, setCustomFields] = useState<Record<string, ExtractField[]>>({});
+  const [fieldsLoading, setFieldsLoading] = useState(false);
+  const fields = tpl === "pt" ? ptFields : customFields[tpl] ?? [];
+
+  const selectTpl = (id: string) => {
+    setTpl(id);
+    if (id !== "pt" && customFields[id] === undefined) {
+      setFieldsLoading(true);
+      fetch(`/api/mappings?templateId=${encodeURIComponent(id)}`)
+        .then(r => r.json())
+        .then((d: { fields?: ExtractField[] | null }) =>
+          setCustomFields(c => ({ ...c, [id]: Array.isArray(d.fields) ? d.fields : [] })))
+        .catch(() => setCustomFields(c => ({ ...c, [id]: [] })))
+        .finally(() => setFieldsLoading(false));
+    }
+  };
 
   const patch = (id: string, p: Partial<UploadFile>) =>
     setFiles(fs => fs.map(f => (f.fileId === id ? { ...f, ...p } : f)));
@@ -48,8 +65,8 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
 
   const removeFile = (id: string) => setFiles(fs => fs.filter(f => f.fileId !== id));
   const uploaded = files.filter(f => f.status === "ok");
-  const canStart = !!tpl && uploaded.length > 0 && files.every(f => f.status !== "uploading");
-  const curTpl = TEMPLATES.find(x => x.id === tpl);
+  const canStart = !!tpl && uploaded.length > 0 && files.every(f => f.status !== "uploading") && !fieldsLoading && fields.length > 0;
+  const curTpl = templates.find(x => x.id === tpl);
 
   const startParse = () => {
     setStep(1);
@@ -89,7 +106,7 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
           <div style={{ flex: 1, overflowY: "auto", padding: "28px 32px" }}>
             {step === 0 && (
               <div className="col gap-24" style={{ maxWidth: 760, margin: "0 auto" }}>
-                <TemplatePick selected={tpl} onSelect={setTpl} />
+                <TemplatePick selected={tpl} onSelect={selectTpl} />
                 <Dropzone files={files} onPick={onPick} onRemove={removeFile} />
               </div>
             )}
