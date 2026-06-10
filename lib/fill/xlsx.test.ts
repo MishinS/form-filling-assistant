@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { unzipSync, zipSync, strToU8, strFromU8 } from "fflate";
-import { fillPtXlsx, fillCustomXlsx } from "./xlsx";
+import { fillPtXlsx, fillCustomXlsx, insertScheduleRows, retargetItogoFormula } from "./xlsx";
 import type { ExtractedValue } from "@/lib/types";
 
 const tpl = new Uint8Array(readFileSync("lib/fill/templates/pt.xlsx"));
@@ -78,5 +78,48 @@ describe("fillCustomXlsx", () => {
   it("preserves unrelated zip entries", () => {
     const out = fillCustomXlsx(customFixture(), [], []);
     expect(unzipSync(out)["docProps/app.xml"]).toBeDefined();
+  });
+});
+
+describe("insertScheduleRows", () => {
+  const sheet3 = strFromU8(unzipSync(tpl)["xl/worksheets/sheet3.xml"]);
+  const out = insertScheduleRows(sheet3, 2); // k=2 → вставить 1 строку
+
+  it("inserts a styled row 6 after the data row 5", () => {
+    expect(out).toContain('<row r="6" ht="20" customHeight="1" s="38">');
+    expect(out).toContain('<c r="B6" s="84"');
+    expect(out).toContain('<c r="D6" s="86"');
+  });
+  it("renumbers the rows below (Итого 6→7, примечания 8/9→9/10)", () => {
+    expect(out).toContain('<row r="7"');
+    expect(out).toMatch(/<c r="A7"[^>]*><is><t>[^<]*<\/t><\/is>/); // Итого теперь в A7
+    expect(out).not.toMatch(/<row r="6"[^>]*>(?:(?!<\/row>).)*SUM/); // SUM больше не в строке 6
+  });
+  it("extends the Итого SUM range", () => {
+    expect(out).toContain("SUM(D5:D6)");
+    expect(out).not.toContain("SUM(D5:D5)");
+  });
+  it("shifts merges below and the dimension, keeps A1:E1", () => {
+    expect(out).toContain('<mergeCell ref="A1:E1"');
+    expect(out).toContain('<mergeCell ref="A9:E9"');
+    expect(out).toContain('<mergeCell ref="A10:E10"');
+    expect(out).not.toContain('<mergeCell ref="A8:E8"');
+    expect(out).toContain('<dimension ref="A1:F19"');
+  });
+  it("is a no-op for k=1", () => {
+    expect(insertScheduleRows(sheet3, 1)).toBe(sheet3);
+  });
+});
+
+describe("retargetItogoFormula", () => {
+  const sheet1 = strFromU8(unzipSync(tpl)["xl/worksheets/sheet1.xml"]);
+
+  it("repoints ПТ!D13 from !D6 to the shifted Итого row", () => {
+    const out = retargetItogoFormula(sheet1, 2);
+    expect(out).toMatch(/<c r="D13"[^>]*><f>[^<]*!D7<\/f>/);
+    expect(out).toMatch(/<c r="D15"[^>]*><f>[^<]*!D5<\/f>/); // аванс не тронут
+  });
+  it("is a no-op for k=1", () => {
+    expect(retargetItogoFormula(sheet1, 1)).toBe(sheet1);
   });
 });
