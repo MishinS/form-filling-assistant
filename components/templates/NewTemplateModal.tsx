@@ -85,7 +85,9 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
       const box: { result: { id: string } | null; error: FailCode | null } = { result: null, error: null };
       const handleLine = (line: string) => {
         if (!line) return;
-        const ev = JSON.parse(line) as StreamEvent;
+        let ev: StreamEvent;
+        // A malformed line must not mask an already-received terminal event.
+        try { ev = JSON.parse(line) as StreamEvent; } catch { return; }
         if (ev.type === "stage" && ev.stage === "sheets") { setStage(t("tpl_scan_sheets")); setPct(25); }
         else if (ev.type === "attempt") {
           const i = ev.index ?? 1; const n = ev.total ?? 1;
