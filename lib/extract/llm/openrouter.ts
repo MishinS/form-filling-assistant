@@ -13,6 +13,17 @@ const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 // the whole chain.
 const FREE_FALLBACKS = FREE_MODEL_IDS;
 
+// A hung free-pool model must not eat the route budget (/api/extract maxDuration=60):
+// each attempt is aborted after ATTEMPT_TIMEOUT_MS, and the whole chain gives up at
+// CHAIN_DEADLINE_MS so the NDJSON stream always flushes a terminal result before the
+// platform kills the function mid-stream (the client would otherwise see a dead
+// «Пустой ответ сервера» screen with no retry). Healthy free models have been observed
+// to take ~22s on Vercel, so the per-attempt timeout must stay comfortably above that.
+// Exported for lib/templates/scan.ts, whose own OpenRouter chain runs under the
+// same 60s route budget (/api/templates).
+export const ATTEMPT_TIMEOUT_MS = 30_000;
+export const CHAIN_DEADLINE_MS = 50_000;
+
 // Tolerate models that wrap JSON in a ```json fence despite response_format.
 function parseFields(txt: string): LlmFieldResult[] {
   const cleaned = txt.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
@@ -41,12 +52,18 @@ export function openrouterModel(modelName: string): ExtractionModel {
         : [modelName];
 
       let lastErr: Error = new Error("Нет доступных моделей OpenRouter");
+      const t0 = Date.now();
       for (let i = 0; i < candidates.length; i++) {
+        const remaining = CHAIN_DEADLINE_MS - (Date.now() - t0);
+        if (remaining <= 0) break;
         const model = candidates[i];
         onAttempt?.({ phase: "start", model, index: i + 1, total: candidates.length });
+        const ac = new AbortController();
+        const timer = setTimeout(() => ac.abort(), Math.min(ATTEMPT_TIMEOUT_MS, remaining));
         try {
           const res = await fetch(ENDPOINT, {
             method: "POST",
+            signal: ac.signal,
             headers: {
               Authorization: `Bearer ${key}`,
               "Content-Type": "application/json",
@@ -77,8 +94,12 @@ export function openrouterModel(modelName: string): ExtractionModel {
           }
           return parseFields(txt);
         } catch (e) {
-          lastErr = e instanceof Error ? e : new Error(String(e));
+          lastErr = ac.signal.aborted
+            ? new Error(`Таймаут ответа модели (${model})`)
+            : e instanceof Error ? e : new Error(String(e));
           onAttempt?.({ phase: "fail", model, reason: lastErr.message });
+        } finally {
+          clearTimeout(timer);
         }
       }
       throw lastErr;
