@@ -104,6 +104,14 @@ describe("POST /api/templates", () => {
     expect(terminal(evs)).toEqual({ type: "error", code: "server" });
   });
 
+  it("saveMapping failure is recoverable → still result (retry must not mint a duplicate)", async () => {
+    mockPropose.mockResolvedValueOnce({ fields: [FIELD], failure: null });
+    (saveMapping as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("cold start"));
+    const evs = await events(await POST(post({ name: "Ф", url: OK_URL })));
+    expect((terminal(evs) as { type: string }).type).toBe("result");
+    expect(createTemplate).toHaveBeenCalledTimes(1);
+  });
+
   it("400 on empty name (plain JSON before the stream)", async () => {
     const res = await POST(post({ name: "  ", url: OK_URL }));
     expect(res.status).toBe(400);

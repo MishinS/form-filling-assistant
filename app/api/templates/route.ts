@@ -68,8 +68,12 @@ export async function POST(req: Request): Promise<Response> {
         const id = `tpl-${crypto.randomUUID().slice(0, 8)}`;
         try {
           await createTemplate({ id, code: id.toUpperCase(), name, desc, fileKey: url, sheets, userId: email, defaultFields: scan.fields });
-          await saveMapping(email, id, scan.fields);
         } catch { fail("server"); return; }
+        // The initial mapping is recoverable (GET /api/mappings falls back to the
+        // template's defaultFields), so its failure must not fail the creation —
+        // otherwise a transient DB hiccup answers "error" for a template that DOES
+        // exist, and a retry mints a duplicate (seen in UAT on a Neon cold start).
+        try { await saveMapping(email, id, scan.fields); } catch { /* recoverable */ }
         write({ type: "result", id, fields: scan.fields.length });
       };
 
