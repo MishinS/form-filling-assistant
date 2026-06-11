@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { proposeFields } from "./scan";
 import type { AttemptEvent } from "@/lib/extract/llm/types";
+import { FREE_MODEL_IDS } from "@/lib/extract/llm/catalog";
 
 const SHEETS = [{ name: "Лист1", lines: ["A1: Поставщик", "B1: ___"] }];
 const PROPOSAL = JSON.stringify({
@@ -66,8 +67,29 @@ describe("proposeFields", () => {
       .mockResolvedValue(okResponse(PROPOSAL)));
     const { fields } = await proposeFields(SHEETS, (ev) => events.push(ev));
     expect(fields).toHaveLength(1);
-    expect(events[0]).toMatchObject({ phase: "start", model: expect.any(String), index: 1, total: 5 });
+    expect(events[0]).toMatchObject({ phase: "start", model: expect.any(String), index: 1, total: FREE_MODEL_IDS.length });
     expect(events[1]).toMatchObject({ phase: "fail", reason: "HTTP 429" });
     expect(events[2]).toMatchObject({ phase: "start", index: 2 });
+  });
+
+  it("aborts a hung model after the per-attempt timeout and falls back to the next", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+    let call = 0;
+    vi.stubGlobal("fetch", vi.fn((_url: unknown, init?: RequestInit) => {
+      call += 1;
+      if (call === 1) return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+      });
+      return Promise.resolve(okResponse(PROPOSAL));
+    }));
+    const events: AttemptEvent[] = [];
+    const p = proposeFields(SHEETS, (ev) => events.push(ev));
+    await vi.advanceTimersByTimeAsync(30_000);
+    const { fields, failure } = await p;
+    vi.useRealTimers();
+    expect(failure).toBeNull();
+    expect(fields).toHaveLength(1);
+    expect(events[1]).toMatchObject({ phase: "fail" });
+    expect(events[1].reason).toContain("Таймаут");
   });
 });

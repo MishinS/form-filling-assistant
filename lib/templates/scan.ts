@@ -5,6 +5,7 @@
 //   "nofields" — a model answered, but no valid field survived parsing.
 // The caller (POST /api/templates) blocks template creation on any failure.
 import { FREE_MODEL_IDS } from "@/lib/extract/llm/catalog";
+import { ATTEMPT_TIMEOUT_MS, CHAIN_DEADLINE_MS } from "@/lib/extract/llm/openrouter";
 import type { ExtractField } from "@/lib/extract/fields";
 import type { FieldKind } from "@/lib/types";
 import type { OnAttempt } from "@/lib/extract/llm/types";
@@ -82,12 +83,20 @@ export async function proposeFields(sheets: SheetText[], onAttempt?: OnAttempt):
   const sheetNames = sheets.map(s => s.name);
   const total = FREE_MODEL_IDS.length;
   let sawResponse = false; // a model produced non-empty content → "nofields", not "llm"
+  // Same budget guard as openrouter.ts: a hung model must not eat the route's
+  // maxDuration=60 and kill the NDJSON stream before a terminal event is flushed.
+  const t0 = Date.now();
   for (let i = 0; i < total; i++) {
+    const remaining = CHAIN_DEADLINE_MS - (Date.now() - t0);
+    if (remaining <= 0) break;
     const model = FREE_MODEL_IDS[i];
     onAttempt?.({ phase: "start", model, index: i + 1, total });
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), Math.min(ATTEMPT_TIMEOUT_MS, remaining));
     try {
       const res = await fetch(ENDPOINT, {
         method: "POST",
+        signal: ac.signal,
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model,
@@ -107,7 +116,12 @@ export async function proposeFields(sheets: SheetText[], onAttempt?: OnAttempt):
       if (fields.length > 0) return { fields, failure: null };
       onAttempt?.({ phase: "fail", model, reason: "no fields" });
     } catch (e) {
-      onAttempt?.({ phase: "fail", model, reason: e instanceof Error ? e.message : String(e) });
+      const reason = ac.signal.aborted
+        ? `Таймаут ответа модели (${model})`
+        : e instanceof Error ? e.message : String(e);
+      onAttempt?.({ phase: "fail", model, reason });
+    } finally {
+      clearTimeout(timer);
     }
   }
   return { fields: [], failure: sawResponse ? "nofields" : "llm" };
