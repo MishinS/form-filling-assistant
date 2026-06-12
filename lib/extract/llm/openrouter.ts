@@ -1,7 +1,7 @@
 import type { ExtractionModel, LlmFieldResult, OnAttempt } from "./types";
 import { ModelNotConfigured } from "./types";
 import type { ExtractField } from "../fields";
-import { FREE_MODEL_IDS } from "./catalog";
+import { FREE_MODEL_IDS, isFreeSlug } from "./catalog";
 import { buildExtractionPrompt } from "./prompt";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
@@ -46,8 +46,9 @@ export function openrouterModel(modelName: string): ExtractionModel {
         'Ответь СТРОГО валидным JSON вида {"fields":[{"fieldId":"f1","value":"...","confidence":"high|med|low","sourceHint":"..."}]} без markdown и пояснений.',
       );
 
-      // Primary first, then the curated chain (deduped) — only for ":free" slugs.
-      const candidates = modelName.endsWith(":free")
+      // Primary first, then the curated chain (deduped) — for any free slug,
+      // including the openrouter/free auto-router (no ":free" suffix).
+      const candidates = isFreeSlug(modelName)
         ? [modelName, ...FREE_FALLBACKS.filter((m) => m !== modelName)]
         : [modelName];
 

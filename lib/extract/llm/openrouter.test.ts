@@ -108,4 +108,25 @@ describe("openrouterModel", () => {
     expect(global.fetch).toHaveBeenCalledTimes(2);
     expect(events.filter((e) => e.phase === "start")).toHaveLength(2);
   });
+
+  it("engages the fallback chain when the primary is the openrouter/free auto-router", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+    let call = 0;
+    global.fetch = vi.fn(async () => {
+      call += 1;
+      if (call === 1) return new Response("rate limited", { status: 429 });
+      return new Response(JSON.stringify({
+        choices: [{ message: { content: JSON.stringify({ fields: [] }) } }],
+      }));
+    }) as unknown as typeof fetch;
+
+    const events: AttemptEvent[] = [];
+    await openrouterModel("openrouter/free").extract(PT_FIELDS, "текст", (ev) => events.push(ev));
+
+    // primary = сам роутер, после его 429 цепочка ДОЛЖНА продолжиться каталожной моделью
+    expect(events[0]).toMatchObject({ phase: "start", model: "openrouter/free", index: 1 });
+    expect(events[1]).toMatchObject({ phase: "fail", model: "openrouter/free" });
+    expect(events[2]).toMatchObject({ phase: "start" });
+    expect(events[2].model).not.toBe("openrouter/free");
+  });
 });
