@@ -6,7 +6,7 @@ import { buildExtractionPrompt } from "./prompt";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
-// Curated free models tried in order when the primary is a ":free" slug. Single
+// Curated free models tried in order when the primary is a free slug. Single
 // source of truth is the shared catalog (also drives the sidebar picker). We fall
 // back client-side (not via OpenRouter's `models[]`) because that only retries on
 // 429/5xx — a 400 from a model that rejects response_format would otherwise abort
@@ -32,7 +32,8 @@ function parseFields(txt: string): LlmFieldResult[] {
 }
 
 // OpenAI-compatible adapter for OpenRouter (https://openrouter.ai).
-// `modelName` is a full OpenRouter slug, e.g. "moonshotai/kimi-k2.6:free".
+// `modelName` is a full OpenRouter slug, e.g. "openai/gpt-oss-120b:free" or the
+// "openrouter/free" auto-router.
 export function openrouterModel(modelName: string): ExtractionModel {
   return {
     id: modelName,
