@@ -17,6 +17,8 @@ export interface ExtractField {
   rule?: RuleKey;
   /** Field that holds the counterparty — subject to the own-company post-filter. */
   isCounterparty?: boolean;
+  /** Подсказка LLM по стилю/формату значения; попадает в строку поля в промпте. */
+  hint_ru?: string;
 }
 
 export const PT_FIELDS: ExtractField[] = [
