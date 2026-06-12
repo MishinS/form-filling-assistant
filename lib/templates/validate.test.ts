@@ -31,6 +31,19 @@ describe("parseFieldList", () => {
     const ok = parseFieldList([{ ...PT_FIELDS[0] }]); // f1 is an llm field, no rule
     expect(ok?.[0].rule).toBeUndefined();
   });
+
+  it("carries hint_ru through (lossless round-trip)", () => {
+    const f = { ...PT_FIELDS[0], hint_ru: "кратко" };
+    const out = parseFieldList([f]);
+    expect(out?.[0].hint_ru).toBe("кратко");
+  });
+
+  it("silently drops an over-long hint_ru but keeps the field", () => {
+    const f = { ...PT_FIELDS[0], hint_ru: "x".repeat(201) };
+    const out = parseFieldList([f]);
+    expect(out).not.toBeNull();
+    expect(out?.[0].hint_ru).toBeUndefined();
+  });
 });
 
 describe("parseFieldList with allowedSheets", () => {

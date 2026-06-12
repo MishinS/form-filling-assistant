@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Logo, Btn, Icon } from "@/components/primitives";
 import ModelSelect from "./ModelSelect";
+import SettingsCog from "./SettingsCog";
 import { signOut } from "next-auth/react";
 import type { SessionUser } from "./AppShell";
 
@@ -24,7 +25,7 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
     { id: "fills", icon: "layers", k: "nav_fills" },
     { id: "templates", icon: "grid", k: "nav_templates" },
     { id: "sources", icon: "file", k: "nav_sources" },
-    { id: "settings", icon: "gear", k: "nav_settings" },
+    { id: "settings", icon: "", k: "nav_settings" },
   ];
   return (
     <div className="col" style={{ width: 244, flex: "none", borderRight: "1px solid var(--line)", background: "var(--surface-1)", padding: "20px 16px" }}>
@@ -43,12 +44,12 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
           const on = route === it.id;
           return (
             <button key={it.id} onClick={() => onNavigate(it.id)}
-              className="row gap-12" style={{ padding: "10px 12px", borderRadius: "var(--r-md)", textAlign: "left",
+              className={`row gap-12${it.id === "settings" ? " settings-cog-host" : ""}`} style={{ padding: "10px 12px", borderRadius: "var(--r-md)", textAlign: "left",
                 background: on ? "var(--surface-3)" : "transparent", color: on ? "var(--text)" : "var(--text-2)",
                 fontWeight: on ? 600 : 500, fontSize: 13.5, transition: "all .12s" }}
               onMouseEnter={e => { if (!on) e.currentTarget.style.background = "var(--surface-2)"; }}
               onMouseLeave={e => { if (!on) e.currentTarget.style.background = "transparent"; }}>
-              <Icon name={it.icon} size={16} />{t(it.k)}
+              {it.id === "settings" ? <SettingsCog size={16} spin="host" aria-hidden /> : <Icon name={it.icon} size={16} />}{t(it.k)}
             </button>
           );
         })}
@@ -65,10 +66,10 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
             background: "var(--surface-hi)", border: "1px solid var(--line-strong)", borderRadius: "var(--r-md)",
             padding: 5, boxShadow: "0 18px 50px rgba(0,0,0,.55)" }}>
             <button role="menuitem" onClick={() => { setMenuOpen(false); onNavigate("settings"); }}
-              className="row gap-10" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)", background: "transparent", transition: "background .12s" }}
+              className="row gap-10 settings-cog-host" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)", background: "transparent", transition: "background .12s" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-              <Icon name="gear" size={15} className="muted" /><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{t("nav_settings")}</span>
+              <SettingsCog size={15} spin="host" className="muted" aria-hidden /><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{t("nav_settings")}</span>
             </button>
             <button role="menuitem" onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/login" }); }}
               className="row gap-10" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)", background: "transparent", transition: "background .12s" }}
