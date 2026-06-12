@@ -38,6 +38,10 @@ export function parseFieldList(input: unknown, allowedSheets?: string[]): Extrac
       unit: typeof f.unit === "string" ? f.unit : undefined,
       area: f.area === true ? true : undefined,
       isCounterparty: f.isCounterparty === true ? true : undefined,
+      // Подсказка LLM — косметика промпта: длинную (защита от раздувания промпта
+      // из недоверенного тела) молча отбрасываем, поле остаётся валидным.
+      hint_ru: typeof f.hint_ru === "string" && f.hint_ru.length > 0 && f.hint_ru.length <= 200
+        ? f.hint_ru : undefined,
     });
   }
   return out;
