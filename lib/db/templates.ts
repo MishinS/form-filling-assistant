@@ -49,6 +49,13 @@ export async function getTemplate(id: string): Promise<TemplateRow | null> {
   return row ?? null;
 }
 
+/** Pure accessibility rule (mirrors listTemplates): a row is accessible iff it
+ *  exists, is not soft-deleted, and is built-in (userId null) or owned by the user. */
+export function isTemplateAccessible(tpl: TemplateRow | null, email: string): boolean {
+  if (!tpl || tpl.deletedAt) return false;
+  return tpl.userId === null || tpl.userId === email.toLowerCase();
+}
+
 export async function createTemplate(t: {
   id: string; code: string; name: string; desc: string;
   fileKey: string; sheets: string[]; userId: string; defaultFields: ExtractField[];
