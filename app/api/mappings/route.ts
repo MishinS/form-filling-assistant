@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { unauthorized } from "@/lib/auth/guard";
 import { parseFieldList } from "@/lib/templates/validate";
 import { getMapping, saveMapping, deleteMapping } from "@/lib/db/mappings";
-import { getTemplate } from "@/lib/db/templates";
+import { getTemplate, isTemplateAccessible } from "@/lib/db/templates";
 
 export const runtime = "nodejs";
 
@@ -19,7 +19,10 @@ export async function GET(req: Request): Promise<Response> {
     if (saved) return NextResponse.json({ fields: saved });
     if (templateId === "pt") return NextResponse.json({ fields: null }); // client uses PT_FIELDS
     const tpl = await getTemplate(templateId);
-    return NextResponse.json({ fields: tpl?.defaultFields ?? [] });
+    if (!isTemplateAccessible(tpl, session.user.email)) {
+      return NextResponse.json({ error: "Шаблон не найден" }, { status: 404 });
+    }
+    return NextResponse.json({ fields: tpl!.defaultFields ?? [] });
   } catch {
     return NextResponse.json({ error: "Не удалось загрузить карту полей" }, { status: 500 });
   }
@@ -43,10 +46,16 @@ export async function POST(req: Request): Promise<Response> {
   }
   let allowedSheets: string[] | undefined;
   if (body.templateId !== "pt") {
+    let tpl;
     try {
-      const tpl = await getTemplate(body.templateId);
-      allowedSheets = tpl?.sheets;
-    } catch { /* fall through: validation will use the ПТ default and reject */ }
+      tpl = await getTemplate(body.templateId);
+    } catch {
+      return NextResponse.json({ error: "Не удалось проверить шаблон" }, { status: 500 });
+    }
+    if (!isTemplateAccessible(tpl, session.user.email)) {
+      return NextResponse.json({ error: "Шаблон не найден" }, { status: 404 });
+    }
+    allowedSheets = tpl!.sheets;
   }
   const fields = parseFieldList(body.fields, allowedSheets);
   if (!fields) {

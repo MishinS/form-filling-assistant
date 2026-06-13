@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("@/lib/db/mappings", () => ({ saveMapping: vi.fn(async () => {}), deleteMapping: vi.fn(async () => {}), getMapping: vi.fn(async () => null) }));
-vi.mock("@/lib/db/templates", () => ({ getTemplate: vi.fn(async () => null) }));
+vi.mock("@/lib/db/templates", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/db/templates")>();
+  return { getTemplate: vi.fn(async () => null), isTemplateAccessible: actual.isTemplateAccessible };
+});
 
 import { POST, DELETE } from "./route";
 import { auth } from "@/auth";
@@ -77,9 +80,10 @@ import { getTemplate } from "@/lib/db/templates";
 
 const mockGetMapping = getMapping as unknown as ReturnType<typeof vi.fn>;
 const mockGetTemplate2 = getTemplate as unknown as ReturnType<typeof vi.fn>;
-const CUSTOM = { id: "tpl-abc", sheets: ["Форма"], userId: "u@x.ru", deletedAt: null,
+const CUSTOM = { id: "tpl-abc", sheets: ["Форма"], userId: "me@x.ru", deletedAt: null,
   defaultFields: [{ id: "f1", group: "req", label_ru: "X", label_en: "X", cell: "Форма!B2", kind: "string", required: false, strategy: "llm" }],
   code: "T", nameRu: "n", nameEn: "n", descRu: "", descEn: "", format: "xlsx", fileKey: "k" };
+const FOREIGN = { ...CUSTOM, id: "tpl-foreign", userId: "other@x.ru" };
 const getReq = (tid: string) => new Request(`http://t/api/mappings?templateId=${encodeURIComponent(tid)}`);
 
 describe("GET /api/mappings", () => {
@@ -97,6 +101,16 @@ describe("GET /api/mappings", () => {
     mockGetTemplate2.mockResolvedValueOnce(CUSTOM);
     await expect((await GET(getReq("tpl-abc"))).json()).resolves.toEqual({ fields: CUSTOM.defaultFields });
   });
+  it("404s for a foreign custom template", async () => {
+    mockGetTemplate2.mockResolvedValueOnce(FOREIGN);
+    const res = await GET(getReq("tpl-foreign"));
+    expect(res.status).toBe(404);
+  });
+  it("404s for a non-existent template", async () => {
+    mockGetTemplate2.mockResolvedValueOnce(null);
+    const res = await GET(getReq("tpl-missing"));
+    expect(res.status).toBe(404);
+  });
 });
 
 describe("POST /api/mappings — custom sheets", () => {
@@ -108,5 +122,29 @@ describe("POST /api/mappings — custom sheets", () => {
       body: JSON.stringify({ templateId: "tpl-abc", fields: CUSTOM.defaultFields }),
     }));
     expect(res.status).toBe(200);
+  });
+});
+
+describe("POST /api/mappings — ownership gate", () => {
+  it("404s when the custom template is foreign", async () => {
+    asAuthed();
+    mockGetTemplate2.mockResolvedValueOnce(FOREIGN);
+    const res = await POST(body({ templateId: "tpl-foreign", fields: [{ ...validField, cell: "Форма!B2" }] }));
+    expect(res.status).toBe(404);
+    expect(saveMapping).not.toHaveBeenCalled();
+  });
+  it("404s when the custom template does not exist", async () => {
+    asAuthed();
+    mockGetTemplate2.mockResolvedValueOnce(null);
+    const res = await POST(body({ templateId: "tpl-missing", fields: [{ ...validField, cell: "Форма!B2" }] }));
+    expect(res.status).toBe(404);
+    expect(saveMapping).not.toHaveBeenCalled();
+  });
+  it("500s when the template lookup throws", async () => {
+    asAuthed();
+    mockGetTemplate2.mockRejectedValueOnce(new Error("db down"));
+    const res = await POST(body({ templateId: "tpl-abc", fields: [{ ...validField, cell: "Форма!B2" }] }));
+    expect(res.status).toBe(500);
+    expect(saveMapping).not.toHaveBeenCalled();
   });
 });
