@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { zipSync, strToU8 } from "fflate";
-import { workbookSheets, sheetTexts } from "./xlsx-scan";
+import { zipSync, strToU8, unzipSync } from "fflate";
+import { workbookSheets, sheetTexts, sheetsFromFiles } from "./xlsx-scan";
 
 /** Minimal two-sheet workbook: Лист1 (shared string in A1, number in B2), Данные (inline string in C3). */
 export function fixtureXlsx(): Uint8Array {
@@ -41,6 +41,16 @@ describe("workbookSheets", () => {
   });
   it("throws on non-zip bytes", () => {
     expect(() => workbookSheets(strToU8("not a zip"))).toThrow();
+  });
+});
+
+describe("sheetsFromFiles", () => {
+  it("maps sheets from already-unzipped files (no re-unzip)", () => {
+    const files = unzipSync(fixtureXlsx());
+    expect(sheetsFromFiles(files)).toEqual([
+      { name: "Лист1", file: "xl/worksheets/sheet1.xml" },
+      { name: "Данные", file: "xl/worksheets/sheet2.xml" },
+    ]);
   });
 });
 

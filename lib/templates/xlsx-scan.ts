@@ -10,14 +10,8 @@ const MAX_LINES_PER_SHEET = 200;
 const decodeXml = (s: string) =>
   s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
 
-/** Sheet names in workbook order mapped to their zip entry paths. Throws on non-XLSX. */
-export function workbookSheets(bytes: Uint8Array): SheetRef[] {
-  let files: Record<string, Uint8Array>;
-  try {
-    files = unzipSync(bytes);
-  } catch {
-    throw new Error("Не XLSX: не удалось распаковать архив");
-  }
+/** Sheet names in workbook order mapped to their zip entry paths, from already-unzipped files. */
+export function sheetsFromFiles(files: Record<string, Uint8Array>): SheetRef[] {
   const wbEntry = files["xl/workbook.xml"];
   const relsEntry = files["xl/_rels/workbook.xml.rels"];
   if (!wbEntry || !relsEntry) throw new Error("Не XLSX: нет workbook.xml");
@@ -41,6 +35,17 @@ export function workbookSheets(bytes: Uint8Array): SheetRef[] {
   return out;
 }
 
+/** Sheet names in workbook order mapped to their zip entry paths. Throws on non-XLSX. */
+export function workbookSheets(bytes: Uint8Array): SheetRef[] {
+  let files: Record<string, Uint8Array>;
+  try {
+    files = unzipSync(bytes);
+  } catch {
+    throw new Error("Не XLSX: не удалось распаковать архив");
+  }
+  return sheetsFromFiles(files);
+}
+
 /** Per-sheet "A1: value" lines (shared strings, inline strings, numbers). */
 export function sheetTexts(bytes: Uint8Array): SheetText[] {
   const files = unzipSync(bytes);
@@ -51,7 +56,7 @@ export function sheetTexts(bytes: Uint8Array): SheetText[] {
       shared.push(decodeXml(m[1].replace(/<[^>]+>/g, "")));
     }
   }
-  return workbookSheets(bytes).map(({ name, file }) => {
+  return sheetsFromFiles(files).map(({ name, file }) => {
     const entry = files[file];
     const xml = entry ? strFromU8(entry) : "";
     const lines: string[] = [];

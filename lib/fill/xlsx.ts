@@ -3,7 +3,7 @@ import type { ExtractedValue } from "@/lib/types";
 import { PT_FIELDS, type ExtractField } from "@/lib/extract/fields";
 import { planWrites, sheetFile, scheduleFromValues, type CellWrite } from "./values";
 import { writeCell, setFormulaCache } from "./cell";
-import { workbookSheets } from "@/lib/templates/xlsx-scan";
+import { sheetsFromFiles } from "@/lib/templates/xlsx-scan";
 import { parseAmount, parseDateSerial } from "./parse";
 
 const esc = (s: string) =>
@@ -106,7 +106,7 @@ export function fillCustomXlsx(
   fields: ExtractField[],
 ): Uint8Array {
   const files = unzipSync(templateBytes);
-  const fileBySheet = new Map(workbookSheets(templateBytes).map(s => [s.name, s.file]));
+  const fileBySheet = new Map(sheetsFromFiles(files).map(s => [s.name, s.file]));
   const val = (id: string) => values.find(v => v.fieldId === id)?.value?.trim() ?? "";
 
   for (const f of fields) {
