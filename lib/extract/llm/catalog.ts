@@ -8,11 +8,18 @@
 // twice (locally and on prod), starving the whole fallback chain of its time budget.
 // 2026-06-12: appended openrouter/free — OpenRouter's server-side auto-router over
 // the whole free pool; the last-resort attempt when every curated model is down.
+// NOTE: the router does NOT guarantee a live model — it can route to a busy one and
+// pass its 429 through, or hang; treat it as a roulette last resort, never a primary.
+// Refreshed 2026-06-13: qwen3-next/llama-3.3 dropped — chronic upstream 429 (their
+// only free host, Venice, is permanently saturated; probed dead 06-11/12/13).
+// nemotron-3-super demoted to 4th: intermittently hangs on larger prompts (30s burn).
+// Added probed-stable nemotron-3-nano-30b + nex-n2-pro (0.4–1.9s, valid JSON on both
+// scan and extraction prompts, respect brevity hints).
 export const FREE_MODELS: { id: string; name: string; provider: string }[] = [
   { id: "openai/gpt-oss-120b:free",                  name: "GPT-OSS 120B",          provider: "OpenAI" },
+  { id: "nvidia/nemotron-3-nano-30b-a3b:free",       name: "Nemotron 3 Nano 30B",   provider: "NVIDIA" },
+  { id: "nex-agi/nex-n2-pro:free",                   name: "Nex N2 Pro",            provider: "Nex AGI" },
   { id: "nvidia/nemotron-3-super-120b-a12b:free",    name: "Nemotron 3 Super 120B", provider: "NVIDIA" },
-  { id: "qwen/qwen3-next-80b-a3b-instruct:free",     name: "Qwen3 Next 80B",        provider: "Alibaba" },
-  { id: "meta-llama/llama-3.3-70b-instruct:free",    name: "Llama 3.3 70B",         provider: "Meta" },
   { id: "openrouter/free",                           name: "Авто — любая свободная", provider: "OpenRouter" },
 ];
 
