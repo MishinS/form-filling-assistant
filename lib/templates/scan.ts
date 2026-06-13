@@ -1,11 +1,14 @@
 // LLM scan of an uploaded template: propose fillable fields from sheet texts.
 // Deliberately independent of the user's extraction-model pick: uses the
 // OpenRouter free chain only and never throws. failure codes:
-//   "llm"      — no model produced a usable answer (key missing / all rejected);
-//   "nofields" — a model answered, but no valid field survived parsing.
+//   "llm"      — no model produced a usable answer (key missing / rejected / junk content);
+//   "nofields" — a model UNDERSTOOD the schema (valid {"fields":[…]}), but no field survived.
+// Junk (non-JSON / no fields[]) counts as "llm", not "nofields": a weak router-routed
+// model's garbage must not masquerade as «модель не распознала поля» — the honest
+// verdict is pool failure, and retry is the right affordance.
 // The caller (POST /api/templates) blocks template creation on any failure.
 import { FREE_MODEL_IDS } from "@/lib/extract/llm/catalog";
-import { ATTEMPT_TIMEOUT_MS, CHAIN_DEADLINE_MS } from "@/lib/extract/llm/openrouter";
+import { CHAIN_DEADLINE_MS } from "@/lib/extract/llm/openrouter";
 import type { ExtractField } from "@/lib/extract/fields";
 import type { FieldKind } from "@/lib/types";
 import type { OnAttempt } from "@/lib/extract/llm/types";
@@ -15,6 +18,11 @@ import type { SheetText } from "./xlsx-scan";
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 const KINDS: FieldKind[] = ["string", "amount", "date", "text"];
 const MAX_FIELDS = 40;
+
+// Scan answers are small (capped sheet lines) and fast — healthy models respond ≤2s
+// locally, ≤10s on Vercel. A tighter per-attempt timeout than extraction's 30s lets
+// the chain survive two hung models within the shared 50s CHAIN_DEADLINE_MS.
+const SCAN_ATTEMPT_TIMEOUT_MS = 20_000;
 
 export type ScanFailure = "llm" | "nofields";
 export interface ScanResult { fields: ExtractField[]; failure: ScanFailure | null }
@@ -41,15 +49,17 @@ function pickLabel(f: Record<string, unknown>): string | null {
   return null;
 }
 
-function parseProposal(txt: string, sheetNames: string[]): ExtractField[] {
+// null = junk (not JSON / no fields[] array) — the model didn't do the task at all;
+// [] = the model understood the schema but nothing valid survived.
+function parseProposal(txt: string, sheetNames: string[]): ExtractField[] | null {
   const cleaned = txt.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   let parsed: { fields?: unknown };
   try {
     parsed = JSON.parse(cleaned) as { fields?: unknown };
   } catch {
-    return [];
+    return null;
   }
-  if (!Array.isArray(parsed.fields)) return [];
+  if (!Array.isArray(parsed.fields)) return null;
   const out: ExtractField[] = [];
   for (const raw of parsed.fields) {
     if (out.length >= MAX_FIELDS) break;
@@ -82,7 +92,7 @@ export async function proposeFields(sheets: SheetText[], onAttempt?: OnAttempt):
   const prompt = buildScanPrompt(sheets);
   const sheetNames = sheets.map(s => s.name);
   const total = FREE_MODEL_IDS.length;
-  let sawResponse = false; // a model produced non-empty content → "nofields", not "llm"
+  let understood = false; // a model returned valid {"fields":[…]} → "nofields", not "llm"
   // Same budget guard as openrouter.ts: a hung model must not eat the route's
   // maxDuration=60 and kill the NDJSON stream before a terminal event is flushed.
   const t0 = Date.now();
@@ -92,7 +102,7 @@ export async function proposeFields(sheets: SheetText[], onAttempt?: OnAttempt):
     const model = FREE_MODEL_IDS[i];
     onAttempt?.({ phase: "start", model, index: i + 1, total });
     const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), Math.min(ATTEMPT_TIMEOUT_MS, remaining));
+    const timer = setTimeout(() => ac.abort(), Math.min(SCAN_ATTEMPT_TIMEOUT_MS, remaining));
     try {
       const res = await fetch(ENDPOINT, {
         method: "POST",
@@ -111,8 +121,12 @@ export async function proposeFields(sheets: SheetText[], onAttempt?: OnAttempt):
       }
       const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
       const content = data.choices?.[0]?.message?.content ?? "";
-      if (content.trim()) sawResponse = true;
       const fields = parseProposal(content, sheetNames);
+      if (fields === null) {
+        onAttempt?.({ phase: "fail", model, reason: "bad json" });
+        continue;
+      }
+      understood = true;
       if (fields.length > 0) return { fields, failure: null };
       onAttempt?.({ phase: "fail", model, reason: "no fields" });
     } catch (e) {
@@ -124,5 +138,5 @@ export async function proposeFields(sheets: SheetText[], onAttempt?: OnAttempt):
       clearTimeout(timer);
     }
   }
-  return { fields: [], failure: sawResponse ? "nofields" : "llm" };
+  return { fields: [], failure: understood ? "nofields" : "llm" };
 }

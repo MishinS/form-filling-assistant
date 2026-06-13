@@ -55,8 +55,22 @@ describe("proposeFields", () => {
     expect(await proposeFields(SHEETS)).toEqual({ fields: [], failure: "llm" });
   });
 
-  it("failure 'nofields' when a model answers but nothing valid survives", async () => {
+  it("failure 'llm' (not 'nofields') when models answer with unparseable junk", async () => {
+    // Junk content (weak router-routed model) must NOT masquerade as «не распознала поля» —
+    // the honest verdict is pool failure → «модели заняты», retry makes sense.
     vi.stubGlobal("fetch", vi.fn(async () => okResponse("not json at all")));
+    expect(await proposeFields(SHEETS)).toEqual({ fields: [], failure: "llm" });
+  });
+
+  it("failure 'llm' when the answer is JSON but without a fields[] array", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => okResponse('{"data":"что-то не то"}')));
+    expect(await proposeFields(SHEETS)).toEqual({ fields: [], failure: "llm" });
+  });
+
+  it("failure 'nofields' when a model understood the schema but no field survives", async () => {
+    // Valid {"fields":[…]} → the model did the task; every entry dropped (unknown sheet).
+    const understood = JSON.stringify({ fields: [{ label_ru: "Мусор", cell: "Чужой!A1", kind: "string" }] });
+    vi.stubGlobal("fetch", vi.fn(async () => okResponse(understood)));
     expect(await proposeFields(SHEETS)).toEqual({ fields: [], failure: "nofields" });
   });
 
@@ -84,7 +98,9 @@ describe("proposeFields", () => {
     }));
     const events: AttemptEvent[] = [];
     const p = proposeFields(SHEETS, (ev) => events.push(ev));
-    await vi.advanceTimersByTimeAsync(30_000);
+    // Scan answers are small/fast (healthy ≤2s local, ≤10s on Vercel) — the scan chain
+    // aborts a hung attempt at 20s so even two hangs fit the 50s chain deadline.
+    await vi.advanceTimersByTimeAsync(20_000);
     const { fields, failure } = await p;
     vi.useRealTimers();
     expect(failure).toBeNull();
