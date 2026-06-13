@@ -43,6 +43,21 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const busy = phase === "busy";
 
+  // Fire-and-forget delete of an uploaded-but-unclaimed blob (cancel / file replace).
+  const cleanupBlob = (url: string) => {
+    void fetch("/api/blob/template", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ url }),
+    }).catch(() => {});
+  };
+
+  const handleClose = () => {
+    const pending = blobUrlRef.current; // uploaded but not yet claimed by a created template
+    if (pending) { blobUrlRef.current = null; cleanupBlob(pending); }
+    onClose();
+  };
+
   const pick = (f: File | undefined) => {
     setErr(null);
     if (!f) return;
@@ -51,7 +66,9 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
       return;
     }
     setFile(f);
+    const stale = blobUrlRef.current;
     blobUrlRef.current = null; // a new file invalidates the previously uploaded blob
+    if (stale) cleanupBlob(stale);
   };
 
   const failWith = (code: FailCode) => { setFail(code); setPhase("failed"); };
@@ -112,6 +129,7 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
       if (box.error) { failWith(box.error); return; }
       if (!box.result) { failWith("server"); return; }
       setPct(100);
+      blobUrlRef.current = null; // claimed by the created template — must not be cleaned up
       router.push(`/templates/${box.result.id}`);
       router.refresh();
     } catch {
@@ -121,11 +139,11 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
 
   const modal = (
     <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(6,9,8,.72)", backdropFilter: "blur(8px)", display: "grid", placeItems: "center", padding: 28 }}
-      onClick={busy ? undefined : onClose}>
+      onClick={busy ? undefined : handleClose}>
       <div onClick={e => e.stopPropagation()} style={{ width: "min(480px, 100%)", background: "var(--bg)", border: "1px solid var(--line-2)", borderRadius: "var(--r-xl)", padding: 24, boxShadow: "0 40px 120px rgba(0,0,0,.6)" }}>
         <div className="row" style={{ justifyContent: "space-between", marginBottom: 18 }}>
           <h2 style={{ fontSize: 16 }}>{t("tpl_new_title")}</h2>
-          <button onClick={busy ? undefined : onClose} className="muted" style={{ width: 30, height: 30, borderRadius: 8, display: "grid", placeItems: "center", border: "1px solid var(--line-2)" }}><Icon name="x" size={14} /></button>
+          <button onClick={busy ? undefined : handleClose} className="muted" style={{ width: 30, height: 30, borderRadius: 8, display: "grid", placeItems: "center", border: "1px solid var(--line-2)" }}><Icon name="x" size={14} /></button>
         </div>
         <div className="col gap-12">
           <label className="col gap-6">
@@ -165,7 +183,7 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
           )}
 
           <div className="row gap-10" style={{ justifyContent: "flex-end", marginTop: 6 }}>
-            <Btn variant="ghost" size="md" onClick={onClose} disabled={busy}>{t("cancel")}</Btn>
+            <Btn variant="ghost" size="md" onClick={handleClose} disabled={busy}>{t("cancel")}</Btn>
             {phase === "failed" ? (
               <Btn variant="primary" size="md" icon="spin" onClick={create} disabled={!file || !name.trim()}>{t("retry")}</Btn>
             ) : (
