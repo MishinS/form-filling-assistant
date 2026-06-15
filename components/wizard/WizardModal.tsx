@@ -91,7 +91,7 @@ export function WizardModal({ start, onClose }: { start: number; onClose: () => 
         {/* header */}
         <div className="row" style={{ justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid var(--line)", gap: 24 }}>
           <div className="row gap-12" style={{ minWidth: 0 }}>
-            <span style={{ width: 30, height: 30, borderRadius: 8, background: "var(--surface-3)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center" }}><Logo size={15} /></span>
+            <span className="logo-host" style={{ width: 30, height: 30, borderRadius: 8, background: "var(--surface-3)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center" }}><Logo size={15} /></span>
             <div className="col" style={{ lineHeight: 1.15 }}>
               <span style={{ fontSize: 14, fontWeight: 600 }}>{t("new_fill")}</span>
               <span className="mono dim" style={{ fontSize: 10.5 }}>{curTpl ? (lang === "ru" ? curTpl.name_ru : curTpl.name_en) : ""}</span>

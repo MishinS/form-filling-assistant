@@ -72,3 +72,72 @@ a{ color:inherit; text-decoration:none; }
 @media (prefers-reduced-motion: reduce) {
   .settings-cog .cog-rotor { animation: none !important; }
 }
+
+/* ---- NavIcons (animated sidebar nav icons) ---- */
+.nav-ic{ fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; overflow:visible; display:block; }
+.nav-ic .ni-part{ transform-box:fill-box; transform-origin:center; }
+.nav-ic .ni-line{ stroke-dasharray:100; }
+
+@keyframes niCascade{
+  0%{ opacity:0; transform:translateY(-7px) scaleY(.6); }
+  20%{ opacity:1; transform:none; }
+  78%{ opacity:1; transform:none; }
+  100%{ opacity:0; transform:translateY(-7px) scaleY(.6); }
+}
+@keyframes niConverge{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(var(--cx),var(--cy)); } }
+@keyframes niDraw{ from{ stroke-dashoffset:100; } to{ stroke-dashoffset:0; } }
+
+/* LAYERS — cascade loop */
+.nav-ic[data-trigger="always"].ni-layers .l-bot,
+.nav-ic[data-trigger="hover"].ni-layers:hover .l-bot,
+.nav-icon-host:hover .nav-ic[data-trigger="host"].ni-layers .l-bot{ animation:niCascade 1.7s cubic-bezier(.22,.61,.36,1) 0s infinite; }
+.nav-ic[data-trigger="always"].ni-layers .l-mid,
+.nav-ic[data-trigger="hover"].ni-layers:hover .l-mid,
+.nav-icon-host:hover .nav-ic[data-trigger="host"].ni-layers .l-mid{ animation:niCascade 1.7s cubic-bezier(.22,.61,.36,1) .14s infinite; }
+.nav-ic[data-trigger="always"].ni-layers .l-top,
+.nav-ic[data-trigger="hover"].ni-layers:hover .l-top,
+.nav-icon-host:hover .nav-ic[data-trigger="host"].ni-layers .l-top{ animation:niCascade 1.7s cubic-bezier(.22,.61,.36,1) .28s infinite; }
+
+/* GRID — converge breathe */
+.nav-ic.ni-grid .g1{ --cx:1.5px;  --cy:1.5px;  }
+.nav-ic.ni-grid .g2{ --cx:-1.5px; --cy:1.5px;  }
+.nav-ic.ni-grid .g3{ --cx:1.5px;  --cy:-1.5px; }
+.nav-ic.ni-grid .g4{ --cx:-1.5px; --cy:-1.5px; }
+.nav-ic[data-trigger="always"].ni-grid .ni-part,
+.nav-ic[data-trigger="hover"].ni-grid:hover .ni-part,
+.nav-icon-host:hover .nav-ic[data-trigger="host"].ni-grid .ni-part{ animation:niConverge 1.5s cubic-bezier(.22,.61,.36,1) infinite; }
+
+/* FILE — lines write loop */
+.nav-ic[data-trigger="always"].ni-file .t1,
+.nav-ic[data-trigger="hover"].ni-file:hover .t1,
+.nav-icon-host:hover .nav-ic[data-trigger="host"].ni-file .t1{ animation:niDraw .5s cubic-bezier(.22,.61,.36,1) 0s infinite; }
+.nav-ic[data-trigger="always"].ni-file .t2,
+.nav-ic[data-trigger="hover"].ni-file:hover .t2,
+.nav-icon-host:hover .nav-ic[data-trigger="host"].ni-file .t2{ animation:niDraw .5s cubic-bezier(.22,.61,.36,1) .18s infinite; }
+.nav-ic[data-trigger="always"].ni-file .t3,
+.nav-ic[data-trigger="hover"].ni-file:hover .t3,
+.nav-icon-host:hover .nav-ic[data-trigger="host"].ni-file .t3{ animation:niDraw .5s cubic-bezier(.22,.61,.36,1) .36s infinite; }
+
+@media (prefers-reduced-motion: reduce){
+  .nav-ic .ni-part, .nav-ic .ni-line{ animation:none !important; }
+}
+
+/* ---- SparkleLogo (animated four-point spark brand mark) ---- */
+.sparkle-logo{ fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; overflow:visible; display:block; }
+.sparkle-logo .sl-star{ transform-box:fill-box; transform-origin:center; }
+.sparkle-logo .sl-spark{ transform-box:fill-box; transform-origin:center; opacity:0; }
+
+@keyframes slTwinkle{ 0%,100%{ transform:scale(.84) rotate(0); } 50%{ transform:scale(1.12) rotate(40deg); } }
+@keyframes slSpark{ 0%,100%{ opacity:0; transform:scale(0); } 50%{ opacity:1; transform:scale(1); } }
+
+.sparkle-logo[data-trigger="always"] .sl-star,
+.sparkle-logo[data-trigger="hover"]:hover .sl-star,
+.logo-host:hover .sparkle-logo[data-trigger="host"] .sl-star{ animation:slTwinkle 1.7s cubic-bezier(.22,.61,.36,1) infinite; }
+
+.sparkle-logo[data-trigger="always"] .sl-spark,
+.sparkle-logo[data-trigger="hover"]:hover .sl-spark,
+.logo-host:hover .sparkle-logo[data-trigger="host"] .sl-spark{ animation:slSpark 1.7s cubic-bezier(.22,.61,.36,1) .35s infinite; }
+
+@media (prefers-reduced-motion: reduce){
+  .sparkle-logo .sl-star, .sparkle-logo .sl-spark{ animation:none !important; }
+}

@@ -48,13 +48,28 @@ export function Icon({ name, size = 16, stroke = 1.6, fill = false, style, class
   );
 }
 
-/* ---- Logo: asterisk mark ---- */
-export function Logo({ size = 22 }: { size?: number }) {
+/* ---- Logo: animated four-point spark mark ----
+ * Ported from the owner's design handoff (sparkle_logo_handoff). The main star
+ * pulses + rotates and a secondary spark twinkles while an ancestor `.logo-host`
+ * is hovered (trigger="host"). Keyframes/selectors live in app/globals.css
+ * (.sparkle-logo) — same porting pattern as SettingsCog/NavIcons. */
+type LogoProps = {
+  size?: number;
+  trigger?: "host" | "hover" | "always" | "none";
+  style?: CSSProperties;
+  className?: string;
+  "aria-hidden"?: boolean;
+};
+export function Logo({ size = 22, trigger = "host", style, className = "", "aria-hidden": ariaHidden }: LogoProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ flex: "none" }}>
-      <g stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
-        <path d="M12 3.5v17 M4.4 7.75l15.2 8.5 M19.6 7.75 4.4 16.25" />
-      </g>
+    <svg className={`sparkle-logo ${className}`.trim()} data-trigger={trigger}
+         width={size} height={size} viewBox="0 0 24 24"
+         role={ariaHidden ? undefined : "img"}
+         aria-label={ariaHidden ? undefined : "Form-Filling Assistant"}
+         aria-hidden={ariaHidden}
+         style={{ flex: "none", display: "block", ...style }}>
+      <path className="sl-star" d="M12 2.5 14.4 9.6 21.5 12 14.4 14.4 12 21.5 9.6 14.4 2.5 12 9.6 9.6Z" />
+      <path className="sl-spark" style={{ strokeWidth: 1.7 }} d="M18.5 4 19.3 6.2 21.5 7 19.3 7.8 18.5 10 17.7 7.8 15.5 7 17.7 6.2Z" />
     </svg>
   );
 }
@@ -181,7 +196,7 @@ export function Card({ children, pad = 20, style, hover, onClick }: CardProps) {
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
     <div className="row gap-8" style={{ color: "var(--text-3)", marginBottom: 14 }}>
-      <Logo size={13} />
+      <Logo size={13} trigger="none" aria-hidden />
       <span className="mono" style={{ fontSize: 11.5, letterSpacing: ".08em", textTransform: "uppercase" }}>{children}</span>
     </div>
   );

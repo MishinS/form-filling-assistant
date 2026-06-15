@@ -43,7 +43,7 @@ export default function LoginForm() {
         style={{ width: "min(380px, 100%)", padding: 32, borderRadius: "var(--r-xl)",
           border: "1px solid var(--line)", background: "var(--surface-1)" }}>
         <div className="col gap-10" style={{ alignItems: "center", textAlign: "center" }}>
-          <span style={{ width: 38, height: 38, borderRadius: 10, background: "var(--surface-3)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center" }}><Logo size={18} /></span>
+          <span className="logo-host" style={{ width: 38, height: 38, borderRadius: 10, background: "var(--surface-3)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center" }}><Logo size={18} /></span>
           <h1 style={{ fontSize: 22 }}>{t("login_title")}</h1>
           <p className="muted" style={{ fontSize: 13 }}>{t("login_sub")}</p>
         </div>

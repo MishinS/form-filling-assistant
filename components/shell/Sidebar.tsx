@@ -4,6 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import { Logo, Btn, Icon } from "@/components/primitives";
 import ModelSelect from "./ModelSelect";
 import SettingsCog from "./SettingsCog";
+import { LayersIcon, GridIcon, FileIcon } from "./NavIcons";
 import { signOut } from "next-auth/react";
 import type { SessionUser } from "./AppShell";
 
@@ -22,19 +23,19 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [menuOpen]);
   const items = [
-    { id: "fills", icon: "layers", k: "nav_fills" },
-    { id: "templates", icon: "grid", k: "nav_templates" },
-    { id: "sources", icon: "file", k: "nav_sources" },
-    { id: "settings", icon: "", k: "nav_settings" },
+    { id: "fills", Icon: LayersIcon, k: "nav_fills" },
+    { id: "templates", Icon: GridIcon, k: "nav_templates" },
+    { id: "sources", Icon: FileIcon, k: "nav_sources" },
+    { id: "settings", Icon: null, k: "nav_settings" },
   ];
   return (
     <div className="col" style={{ width: 244, flex: "none", borderRight: "1px solid var(--line)", background: "var(--surface-1)", padding: "20px 16px" }}>
       {/* Logo doubles as a "fresh entry" — hard-reload to the app root. */}
       <button type="button" onClick={() => window.location.assign("/")} title={t("home_reload")}
-        className="row gap-10" style={{ padding: "4px 8px 22px", background: "transparent", border: 0, cursor: "pointer", textAlign: "left", width: "100%" }}
+        className="row gap-10 logo-host" style={{ padding: "4px 8px 22px", background: "transparent", border: 0, cursor: "pointer", textAlign: "left", width: "100%" }}
         onMouseEnter={e => { e.currentTarget.style.opacity = ".7"; }}
         onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
-        <Logo size={22} />
+        <Logo size={22} aria-hidden />
         <div className="col" style={{ lineHeight: 1.05 }}>
           <span className="display nowrap" style={{ fontSize: 14.5, fontWeight: 600 }}>Form-Filling</span>
           <span className="mono dim nowrap" style={{ fontSize: 9.5, letterSpacing: ".18em" }}>ASSISTANT</span>
@@ -46,14 +47,15 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
       <div className="col gap-2">
         {items.map(it => {
           const on = route === it.id;
+          const NavIcon = it.Icon;
           return (
             <button key={it.id} onClick={() => onNavigate(it.id)}
-              className={`row gap-12${it.id === "settings" ? " settings-cog-host" : ""}`} style={{ padding: "10px 12px", borderRadius: "var(--r-md)", textAlign: "left",
+              className={`row gap-12 ${NavIcon ? "nav-icon-host" : "settings-cog-host"}`} style={{ padding: "10px 12px", borderRadius: "var(--r-md)", textAlign: "left",
                 background: on ? "var(--surface-3)" : "transparent", color: on ? "var(--text)" : "var(--text-2)",
                 fontWeight: on ? 600 : 500, fontSize: 13.5, transition: "all .12s" }}
               onMouseEnter={e => { if (!on) e.currentTarget.style.background = "var(--surface-2)"; }}
               onMouseLeave={e => { if (!on) e.currentTarget.style.background = "transparent"; }}>
-              {it.id === "settings" ? <SettingsCog size={16} spin="host" aria-hidden /> : <Icon name={it.icon} size={16} />}{t(it.k)}
+              {NavIcon ? <NavIcon size={16} trigger="host" aria-hidden /> : <SettingsCog size={16} spin="host" aria-hidden />}{t(it.k)}
             </button>
           );
         })}
