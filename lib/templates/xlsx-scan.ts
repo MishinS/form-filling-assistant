@@ -11,10 +11,13 @@ const MAX_LINES_PER_SHEET = 200;
 // BEFORE &amp;→& so a literal "&amp;#1055;" is not mis-decoded into a Cyrillic char.
 // This образец-class file stores Cyrillic as numeric refs; without this the LLM
 // scan prompt gets unreadable, ~3x-bloated text and times out (see spec).
+// An out-of-range codepoint is left literal (String.fromCodePoint would throw),
+// so one corrupt ref doesn't get the whole template rejected as «not xlsx».
+const codePoint = (n: number, raw: string) => (n <= 0x10ffff ? String.fromCodePoint(n) : raw);
 export const decodeXml = (s: string) =>
   s
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (m, h) => codePoint(parseInt(h, 16), m))
+    .replace(/&#(\d+);/g, (m, d) => codePoint(parseInt(d, 10), m))
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')

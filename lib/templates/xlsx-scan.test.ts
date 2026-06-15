@@ -82,6 +82,12 @@ describe("decodeXml", () => {
     // raw text that means the literal string "&#1055;" must stay literal
     expect(decodeXml("&amp;#1055;")).toBe("&#1055;");
   });
+  it("leaves an out-of-range numeric ref literal instead of throwing", () => {
+    // codepoints > 0x10FFFF would make String.fromCodePoint throw; a corrupt ref
+    // in one cell must not get the whole template rejected as «not xlsx».
+    expect(decodeXml("&#9999999999;")).toBe("&#9999999999;");
+    expect(decodeXml("&#x110000;")).toBe("&#x110000;");
+  });
 });
 
 describe("sheetTexts numeric entities", () => {
