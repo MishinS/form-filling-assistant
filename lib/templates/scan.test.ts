@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { proposeFields } from "./scan";
 import type { AttemptEvent } from "@/lib/extract/llm/types";
-import { FREE_MODEL_IDS } from "@/lib/extract/llm/catalog";
+import { FREE_MODEL_IDS, PAID_LAST_RESORT } from "@/lib/extract/llm/catalog";
 
 const SHEETS = [{ name: "Лист1", lines: ["A1: Поставщик", "B1: ___"] }];
 const PROPOSAL = JSON.stringify({
@@ -89,7 +89,7 @@ describe("proposeFields", () => {
   it("falls back to the paid last-resort after the free pool fails", async () => {
     vi.stubGlobal("fetch", vi.fn(async (_url: unknown, init?: RequestInit) => {
       const body = JSON.parse(init!.body as string) as { model: string };
-      if (body.model === "google/gemini-2.5-flash-lite") return okResponse(PROPOSAL);
+      if (body.model === PAID_LAST_RESORT.id) return okResponse(PROPOSAL);
       return { ok: false, status: 429 } as Response;
     }));
     const events: AttemptEvent[] = [];
@@ -97,7 +97,7 @@ describe("proposeFields", () => {
     expect(failure).toBeNull();
     expect(fields).toHaveLength(1);
     const starts = events.filter((e) => e.phase === "start");
-    expect(starts[starts.length - 1].model).toBe("google/gemini-2.5-flash-lite");
+    expect(starts[starts.length - 1].model).toBe(PAID_LAST_RESORT.id);
   });
 
   it("aborts a hung model after the per-attempt timeout and falls back to the next", async () => {

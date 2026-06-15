@@ -37,12 +37,14 @@ export function isFreeSlug(id: string): boolean {
 // A single PAID model used as a guaranteed last-resort when the free pool is
 // exhausted/hung. Kept OUT of FREE_MODELS so the free-каталог and its tests stay
 // "everything here is free"; the picker and both chains append it explicitly.
-// Billed via OpenRouter credits (account is_free_tier:false) — the proxy avoids
-// the regional geoblock that killed the direct free-Gemini tier earlier.
+// Billed via OpenRouter credits (account is_free_tier:false).
+// NB: google/gemini-2.5-flash-lite was tried first but OpenRouter relays Google's
+// regional 403 «Blocked by Google AI Studio» — Gemini is geoblocked even via the
+// proxy. gpt-4.1-nano works from here (probed 2.4s, valid JSON), same $0.10/$0.40.
 export const PAID_LAST_RESORT = {
-  id: "google/gemini-2.5-flash-lite",
-  name: "Gemini 2.5 Flash Lite (платная)",
-  provider: "Google",
+  id: "openai/gpt-4.1-nano",
+  name: "GPT-4.1 Nano (платная)",
+  provider: "OpenAI",
 };
 
 export function isPaidModel(id: string): boolean {

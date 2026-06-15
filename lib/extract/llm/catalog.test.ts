@@ -34,7 +34,7 @@ describe("free-model catalog", () => {
 
 describe("paid last-resort", () => {
   it("defines the paid last-resort model with a non-empty name/provider", () => {
-    expect(PAID_LAST_RESORT.id).toBe("google/gemini-2.5-flash-lite");
+    expect(PAID_LAST_RESORT.id).toBe("openai/gpt-4.1-nano");
     expect(PAID_LAST_RESORT.name.length).toBeGreaterThan(0);
     expect(PAID_LAST_RESORT.provider.length).toBeGreaterThan(0);
   });

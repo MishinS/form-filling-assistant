@@ -3,9 +3,10 @@ import { openrouterModel } from "./openrouter";
 import { ModelNotConfigured } from "./types";
 import type { AttemptEvent } from "./types";
 import { PT_FIELDS } from "../fields";
+import { PAID_LAST_RESORT } from "./catalog";
 
 const MODEL = "moonshotai/kimi-k2.6:free";
-const PAID = "google/gemini-2.5-flash-lite";
+const PAID = PAID_LAST_RESORT.id;
 const okFields = (fields: unknown[]) =>
   new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ fields }) } }] }));
 
@@ -112,7 +113,7 @@ describe("openrouterModel", () => {
     expect(global.fetch).toHaveBeenCalledTimes(3);
     const starts = events.filter((e) => e.phase === "start");
     expect(starts).toHaveLength(3);
-    expect(starts[2].model).toBe("google/gemini-2.5-flash-lite");
+    expect(starts[2].model).toBe(PAID);
   });
 
   it("falls back to the paid last-resort after the free pool is exhausted", async () => {
