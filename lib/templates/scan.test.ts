@@ -81,9 +81,23 @@ describe("proposeFields", () => {
       .mockResolvedValue(okResponse(PROPOSAL)));
     const { fields } = await proposeFields(SHEETS, (ev) => events.push(ev));
     expect(fields).toHaveLength(1);
-    expect(events[0]).toMatchObject({ phase: "start", model: expect.any(String), index: 1, total: FREE_MODEL_IDS.length });
+    expect(events[0]).toMatchObject({ phase: "start", model: expect.any(String), index: 1, total: FREE_MODEL_IDS.length + 1 });
     expect(events[1]).toMatchObject({ phase: "fail", reason: "HTTP 429" });
     expect(events[2]).toMatchObject({ phase: "start", index: 2 });
+  });
+
+  it("falls back to the paid last-resort after the free pool fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(init!.body as string) as { model: string };
+      if (body.model === "google/gemini-2.5-flash-lite") return okResponse(PROPOSAL);
+      return { ok: false, status: 429 } as Response;
+    }));
+    const events: AttemptEvent[] = [];
+    const { fields, failure } = await proposeFields(SHEETS, (ev) => events.push(ev));
+    expect(failure).toBeNull();
+    expect(fields).toHaveLength(1);
+    const starts = events.filter((e) => e.phase === "start");
+    expect(starts[starts.length - 1].model).toBe("google/gemini-2.5-flash-lite");
   });
 
   it("aborts a hung model after the per-attempt timeout and falls back to the next", async () => {

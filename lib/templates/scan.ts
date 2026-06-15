@@ -1,14 +1,15 @@
 // LLM scan of an uploaded template: propose fillable fields from sheet texts.
-// Deliberately independent of the user's extraction-model pick: uses the
-// OpenRouter free chain only and never throws. failure codes:
+// Deliberately independent of the user's extraction-model pick: tries the OpenRouter
+// free pool first, then the paid last-resort as a guaranteed tail, and never throws.
+// failure codes:
 //   "llm"      — no model produced a usable answer (key missing / rejected / junk content);
 //   "nofields" — a model UNDERSTOOD the schema (valid {"fields":[…]}), but no field survived.
 // Junk (non-JSON / no fields[]) counts as "llm", not "nofields": a weak router-routed
 // model's garbage must not masquerade as «модель не распознала поля» — the honest
 // verdict is pool failure, and retry is the right affordance.
 // The caller (POST /api/templates) blocks template creation on any failure.
-import { FREE_MODEL_IDS } from "@/lib/extract/llm/catalog";
-import { CHAIN_DEADLINE_MS } from "@/lib/extract/llm/openrouter";
+import { FREE_MODEL_IDS, PAID_LAST_RESORT } from "@/lib/extract/llm/catalog";
+import { CHAIN_DEADLINE_MS, FREE_PHASE_DEADLINE_MS, PAID_TIMEOUT_MS } from "@/lib/extract/llm/openrouter";
 import type { ExtractField } from "@/lib/extract/fields";
 import type { FieldKind } from "@/lib/types";
 import type { OnAttempt } from "@/lib/extract/llm/types";
@@ -91,18 +92,27 @@ export async function proposeFields(sheets: SheetText[], onAttempt?: OnAttempt):
   if (!key) return { fields: [], failure: "llm" };
   const prompt = buildScanPrompt(sheets);
   const sheetNames = sheets.map(s => s.name);
-  const total = FREE_MODEL_IDS.length;
+  // The free pool first, then the paid last-resort as a guaranteed reserved tail.
+  // Scan ignores the user's model pick by design, so the paid model is NEVER primary.
+  const candidates = [...FREE_MODEL_IDS, PAID_LAST_RESORT.id];
+  const total = candidates.length;
+  const paidTailIdx = total - 1;
   let understood = false; // a model returned valid {"fields":[…]} → "nofields", not "llm"
   // Same budget guard as openrouter.ts: a hung model must not eat the route's
   // maxDuration=60 and kill the NDJSON stream before a terminal event is flushed.
+  // The free phase is capped at FREE_PHASE_DEADLINE_MS so the paid tail keeps its slice.
   const t0 = Date.now();
   for (let i = 0; i < total; i++) {
-    const remaining = CHAIN_DEADLINE_MS - (Date.now() - t0);
-    if (remaining <= 0) break;
-    const model = FREE_MODEL_IDS[i];
+    const elapsed = Date.now() - t0;
+    const isTail = i === paidTailIdx;
+    const phaseDeadline = isTail ? CHAIN_DEADLINE_MS : FREE_PHASE_DEADLINE_MS;
+    const phaseRemaining = phaseDeadline - elapsed;
+    if (phaseRemaining <= 0) continue; // free phase exhausted → reach the paid tail
+    const model = candidates[i];
     onAttempt?.({ phase: "start", model, index: i + 1, total });
+    const perAttempt = isTail ? PAID_TIMEOUT_MS : SCAN_ATTEMPT_TIMEOUT_MS;
     const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), Math.min(SCAN_ATTEMPT_TIMEOUT_MS, remaining));
+    const timer = setTimeout(() => ac.abort(), Math.min(perAttempt, phaseRemaining));
     try {
       const res = await fetch(ENDPOINT, {
         method: "POST",
