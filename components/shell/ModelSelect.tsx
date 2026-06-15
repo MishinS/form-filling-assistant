@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useContext } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Icon } from "@/components/primitives";
-import { FREE_MODELS } from "@/lib/extract/llm/catalog";
+import { FREE_MODELS, PAID_LAST_RESORT, isPaidModel } from "@/lib/extract/llm/catalog";
 import { ModelContext } from "./AppShell";
 
 export default function ModelSelect() {
@@ -10,7 +10,8 @@ export default function ModelSelect() {
   const { model: sel, setModel } = useContext(ModelContext);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const cur = FREE_MODELS.find(m => m.id === sel) ?? FREE_MODELS[0];
+  const MODELS = [...FREE_MODELS, PAID_LAST_RESORT];
+  const cur = MODELS.find(m => m.id === sel) ?? MODELS[0];
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("mousedown", h);
@@ -26,7 +27,7 @@ export default function ModelSelect() {
         <div className="fade-in" style={{ position: "absolute", bottom: "calc(100% + 6px)", left: 0, right: 0, zIndex: 30,
           background: "var(--surface-hi)", border: "1px solid var(--line-strong)", borderRadius: "var(--r-md)",
           padding: 5, boxShadow: "0 18px 50px rgba(0,0,0,.55)" }}>
-          {FREE_MODELS.map(m => {
+          {MODELS.map(m => {
             const on = m.id === sel;
             return (
               <button key={m.id} onClick={() => { setModel(m.id); setOpen(false); }}
@@ -39,14 +40,19 @@ export default function ModelSelect() {
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>{m.name}</div>
                   <div className="mono dim" style={{ fontSize: 10 }}>{m.provider}</div>
                 </div>
-                <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--ok)", background: "var(--ok-bg)",
-                  borderRadius: 99, padding: "2px 7px", flex: "none" }}>free</span>
+                {isPaidModel(m.id) ? (
+                  <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
+                    border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>платная</span>
+                ) : (
+                  <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--ok)", background: "var(--ok-bg)",
+                    borderRadius: 99, padding: "2px 7px", flex: "none" }}>free</span>
+                )}
                 {on && <Icon name="check" size={13} stroke={2.2} style={{ color: "var(--text)", flex: "none" }} />}
               </button>
             );
           })}
           <div className="dim" style={{ fontSize: 10.5, lineHeight: 1.4, padding: "8px 10px 5px", borderTop: "1px solid var(--line)", marginTop: 4 }}>
-            {lang === "ru" ? "Только бесплатные модели — без отдельной оплаты." : "Free models only — no extra billing."}
+            {lang === "ru" ? "Бесплатные модели; платная — резерв при перегрузке." : "Free models; the paid one is a fallback when busy."}
           </div>
         </div>
       )}
