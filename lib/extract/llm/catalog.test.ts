@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { FREE_MODELS, FREE_MODEL_IDS, DEFAULT_MODEL, isFreeSlug } from "./catalog";
+import { FREE_MODELS, FREE_MODEL_IDS, DEFAULT_MODEL, isFreeSlug, PAID_LAST_RESORT, isPaidModel } from "./catalog";
 
 describe("free-model catalog", () => {
   it("lists only namespaced free OpenRouter slugs", () => {
@@ -29,5 +29,24 @@ describe("free-model catalog", () => {
     expect(isFreeSlug("openai/gpt-oss-120b:free")).toBe(true);
     expect(isFreeSlug("openrouter/free")).toBe(true);
     expect(isFreeSlug("openai/gpt-4o")).toBe(false);
+  });
+});
+
+describe("paid last-resort", () => {
+  it("defines the paid last-resort model with a non-empty name/provider", () => {
+    expect(PAID_LAST_RESORT.id).toBe("google/gemini-2.5-flash-lite");
+    expect(PAID_LAST_RESORT.name.length).toBeGreaterThan(0);
+    expect(PAID_LAST_RESORT.provider.length).toBeGreaterThan(0);
+  });
+
+  it("is NOT part of the free chain (free-каталог semantics intact)", () => {
+    expect(FREE_MODEL_IDS).not.toContain(PAID_LAST_RESORT.id);
+    expect(isFreeSlug(PAID_LAST_RESORT.id)).toBe(false);
+  });
+
+  it("isPaidModel matches only the paid id", () => {
+    expect(isPaidModel(PAID_LAST_RESORT.id)).toBe(true);
+    expect(isPaidModel("openai/gpt-oss-120b:free")).toBe(false);
+    expect(isPaidModel("openrouter/free")).toBe(false);
   });
 });

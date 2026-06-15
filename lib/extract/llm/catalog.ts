@@ -33,3 +33,18 @@ export const DEFAULT_MODEL = FREE_MODELS[0].id;
 export function isFreeSlug(id: string): boolean {
   return id.endsWith(":free") || id === "openrouter/free";
 }
+
+// A single PAID model used as a guaranteed last-resort when the free pool is
+// exhausted/hung. Kept OUT of FREE_MODELS so the free-каталог and its tests stay
+// "everything here is free"; the picker and both chains append it explicitly.
+// Billed via OpenRouter credits (account is_free_tier:false) — the proxy avoids
+// the regional geoblock that killed the direct free-Gemini tier earlier.
+export const PAID_LAST_RESORT = {
+  id: "google/gemini-2.5-flash-lite",
+  name: "Gemini 2.5 Flash Lite (платная)",
+  provider: "Google",
+};
+
+export function isPaidModel(id: string): boolean {
+  return id === PAID_LAST_RESORT.id;
+}
