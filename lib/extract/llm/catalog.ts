@@ -50,3 +50,10 @@ export const PAID_LAST_RESORT = {
 export function isPaidModel(id: string): boolean {
   return id === PAID_LAST_RESORT.id;
 }
+
+// Friendly display name for any model slug, across the free pool and the paid
+// last-resort. Single source of truth for the picker, scan modal, and extraction
+// Processing screen. Unknown slugs fall back to the slug itself.
+export function modelLabel(id: string): string {
+  return [...FREE_MODELS, PAID_LAST_RESORT].find((m) => m.id === id)?.name ?? id;
+}

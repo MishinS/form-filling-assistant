@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { FREE_MODELS, FREE_MODEL_IDS, DEFAULT_MODEL, isFreeSlug, PAID_LAST_RESORT, isPaidModel } from "./catalog";
+import { FREE_MODELS, FREE_MODEL_IDS, DEFAULT_MODEL, isFreeSlug, PAID_LAST_RESORT, isPaidModel, modelLabel } from "./catalog";
 
 describe("free-model catalog", () => {
   it("lists only namespaced free OpenRouter slugs", () => {
@@ -48,5 +48,18 @@ describe("paid last-resort", () => {
     expect(isPaidModel(PAID_LAST_RESORT.id)).toBe(true);
     expect(isPaidModel("openai/gpt-oss-120b:free")).toBe(false);
     expect(isPaidModel("openrouter/free")).toBe(false);
+  });
+});
+
+describe("modelLabel", () => {
+  it("resolves a free slug to its catalog name", () => {
+    expect(modelLabel(FREE_MODELS[0].id)).toBe(FREE_MODELS[0].name);
+  });
+  it("resolves the paid last-resort slug to its name (marked платная)", () => {
+    expect(modelLabel(PAID_LAST_RESORT.id)).toBe(PAID_LAST_RESORT.name);
+    expect(modelLabel(PAID_LAST_RESORT.id)).toContain("платная");
+  });
+  it("falls back to the raw slug for an unknown model", () => {
+    expect(modelLabel("acme/unknown-model")).toBe("acme/unknown-model");
   });
 });
