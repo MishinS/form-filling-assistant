@@ -165,7 +165,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   tpl_new_create:   { ru: "Создать", en: "Create" },
   tpl_scan_upload:        { ru: "Загружаем файл…", en: "Uploading the file…" },
   tpl_scan_sheets:        { ru: "Читаем листы…", en: "Reading sheets…" },
-  tpl_scan_model:         { ru: "Сканируем поля — модель {i} из {n}…", en: "Scanning fields — model {i} of {n}…" },
+  tpl_scan_model:         { ru: "Сканируем поля — {name} ({i}/{n})…", en: "Scanning fields — {name} ({i}/{n})…" },
   tpl_scan_save:          { ru: "Сохраняем…", en: "Saving…" },
   tpl_scan_fail_llm:      { ru: "Бесплатные модели сейчас перегружены — повторите попытку через минуту", en: "Free models are overloaded right now — retry in a minute" },
   tpl_scan_fail_nofields: { ru: "Не удалось распознать заполняемые поля — проверьте, что файл является формой с подписями", en: "Couldn't recognize any fillable fields — make sure the file is a labeled form" },

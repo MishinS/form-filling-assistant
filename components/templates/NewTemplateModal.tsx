@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { useI18n } from "@/lib/i18n";
+import { modelLabel } from "@/lib/extract/llm/catalog";
 import { Btn, Icon } from "@/components/primitives";
 import { MIME } from "@/lib/parse/types";
 
@@ -73,8 +74,8 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
 
   const failWith = (code: FailCode) => { setFail(code); setPhase("failed"); };
 
-  const modelStage = (i: number, n: number) =>
-    t("tpl_scan_model").replace("{i}", String(i)).replace("{n}", String(n));
+  const modelStage = (name: string, i: number, n: number) =>
+    t("tpl_scan_model").replace("{name}", name).replace("{i}", String(i)).replace("{n}", String(n));
 
   const create = async () => {
     if (!file || !name.trim()) return;
@@ -108,7 +109,7 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
         if (ev.type === "stage" && ev.stage === "sheets") { setStage(t("tpl_scan_sheets")); setPct(25); }
         else if (ev.type === "attempt") {
           const i = ev.index ?? 1; const n = ev.total ?? 1;
-          setStage(modelStage(i, n)); setPct(30 + Math.round(((i - 1) / n) * 60));
+          setStage(modelStage(modelLabel(ev.model), i, n)); setPct(30 + Math.round(((i - 1) / n) * 60));
         } else if (ev.type === "stage" && ev.stage === "save") { setStage(t("tpl_scan_save")); setPct(95); }
         else if (ev.type === "result") { box.result = ev; }
         else if (ev.type === "error") { box.error = ev.code; }
