@@ -158,8 +158,9 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
           <div className="col gap-6">
             <span className="muted" style={{ fontSize: 12 }}>{t("tpl_new_file")}</span>
             <input ref={fileRef} type="file" accept=".xlsx" onChange={e => { pick(e.target.files?.[0]); e.target.value = ""; }} style={{ display: "none" }} />
-            <button onClick={() => fileRef.current?.click()} disabled={busy}
-              style={{ ...fieldStyle, textAlign: "left", cursor: "pointer", color: file ? "var(--text-1)" : "var(--text-3)" }}>
+            <button onClick={() => fileRef.current?.click()} disabled={busy} title={file ? file.name : undefined}
+              style={{ ...fieldStyle, textAlign: "left", cursor: "pointer", color: file ? "var(--text-1)" : "var(--text-3)",
+                display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {file ? file.name : "…"}
             </button>
           </div>
