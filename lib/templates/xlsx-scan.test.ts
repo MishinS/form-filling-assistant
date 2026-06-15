@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { zipSync, strToU8, unzipSync } from "fflate";
-import { workbookSheets, sheetTexts, sheetsFromFiles } from "./xlsx-scan";
+import { workbookSheets, sheetTexts, sheetsFromFiles, decodeXml } from "./xlsx-scan";
 
 /** Minimal two-sheet workbook: Лист1 (shared string in A1, number in B2), Данные (inline string in C3). */
 export function fixtureXlsx(): Uint8Array {
@@ -63,5 +63,37 @@ describe("sheetTexts", () => {
   it("reads inline strings", () => {
     const [, s2] = sheetTexts(fixtureXlsx());
     expect(s2.lines).toEqual(["C3: Итого"]);
+  });
+});
+
+describe("decodeXml", () => {
+  it("decodes decimal numeric character references (Cyrillic)", () => {
+    // &#1055;&#1051;&#1040;&#1058; = ПЛАТ
+    expect(decodeXml("&#1055;&#1051;&#1040;&#1058;")).toBe("ПЛАТ");
+  });
+  it("decodes hex numeric character references", () => {
+    // &#x41F; = 0x41F = 1055 = П
+    expect(decodeXml("&#x41F;")).toBe("П");
+  });
+  it("still decodes named entities", () => {
+    expect(decodeXml("&lt;a&gt; &amp; &quot;x&quot; &apos;y&apos;")).toBe(`<a> & "x" 'y'`);
+  });
+  it("does NOT mis-decode a literal &amp;#1055; into П", () => {
+    // raw text that means the literal string "&#1055;" must stay literal
+    expect(decodeXml("&amp;#1055;")).toBe("&#1055;");
+  });
+});
+
+describe("sheetTexts numeric entities", () => {
+  it("decodes numeric-entity cell text to readable Cyrillic", () => {
+    const bytes = zipSync({
+      "xl/workbook.xml": strToU8(`<workbook><sheets><sheet name="ПТ" sheetId="1" r:id="rId1"/></sheets></workbook>`),
+      "xl/_rels/workbook.xml.rels": strToU8(`<Relationships><Relationship Id="rId1" Type="ws" Target="worksheets/sheet1.xml"/></Relationships>`),
+      "xl/worksheets/sheet1.xml": strToU8(
+        `<worksheet><sheetData>` +
+        `<row r="1"><c r="B1" t="inlineStr"><is><t>&#1055;&#1051;&#1040;&#1058;&#1045;&#1046;</t></is></c></row>` +
+        `</sheetData></worksheet>`),
+    });
+    expect(sheetTexts(bytes)[0].lines).toEqual(["B1: ПЛАТЕЖ"]);
   });
 });

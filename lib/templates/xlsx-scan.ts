@@ -7,8 +7,19 @@ export interface SheetText { name: string; lines: string[] }
 
 const MAX_LINES_PER_SHEET = 200;
 
-const decodeXml = (s: string) =>
-  s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+// Decode XML char references. Numeric refs (&#NNNN; / &#xHHHH;) MUST be decoded
+// BEFORE &amp;→& so a literal "&amp;#1055;" is not mis-decoded into a Cyrillic char.
+// This образец-class file stores Cyrillic as numeric refs; without this the LLM
+// scan prompt gets unreadable, ~3x-bloated text and times out (see spec).
+export const decodeXml = (s: string) =>
+  s
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
 
 /** Sheet names in workbook order mapped to their zip entry paths, from already-unzipped files. */
 export function sheetsFromFiles(files: Record<string, Uint8Array>): SheetRef[] {
