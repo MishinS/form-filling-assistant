@@ -153,6 +153,28 @@ describe("openrouterModel", () => {
     expect(paidStarts).toHaveLength(1); // appears once, NOT re-appended as a tail
   });
 
+  it("the reserved paid tail runs on its own clock and succeeds after the free phase hangs out", async () => {
+    // The crux guarantee: when EVERY free model hangs to its timeout, the free phase is
+    // capped at FREE_PHASE_DEADLINE_MS and the paid tail still gets its reserved slice —
+    // here it resolves successfully, proving the tail runs (not just that it is reached).
+    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+    global.fetch = vi.fn((url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(init!.body as string) as { model: string };
+      if (body.model === PAID) {
+        return Promise.resolve(okFields([{ fieldId: "f1", value: "PAID", confidence: "high" }]));
+      }
+      return hangingFetch(url, init); // every free model hangs to its abort
+    }) as unknown as typeof fetch;
+
+    const events: AttemptEvent[] = [];
+    const p = openrouterModel(MODEL).extract(PT_FIELDS, "текст", (ev) => events.push(ev));
+    await vi.advanceTimersByTimeAsync(50_000);
+    await expect(p).resolves.toEqual([{ fieldId: "f1", value: "PAID", confidence: "high" }]);
+    const starts = events.filter((e) => e.phase === "start");
+    expect(starts[starts.length - 1].model).toBe(PAID);
+  });
+
   it("engages the fallback chain when the primary is the openrouter/free auto-router", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-key");
     let call = 0;
