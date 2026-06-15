@@ -3,7 +3,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Icon, Btn } from "@/components/primitives";
 import { ModelContext } from "@/components/shell/AppShell";
-import { FREE_MODELS } from "@/lib/extract/llm/catalog";
+import { FREE_MODELS, modelLabel } from "@/lib/extract/llm/catalog";
 import type { UploadFile } from "@/lib/upload/client";
 import type { ParsedDoc } from "@/lib/parse/types";
 import type { ExtractedValue } from "@/lib/types";
@@ -21,7 +21,6 @@ type Props = {
 type Phase = "parsing" | "extracting" | "llm-failed" | "error";
 type ResultEvent = { values: ExtractedValue[]; warnings: string[]; llmFailed: boolean; usedModel: string | null };
 
-const modelName = (slug: string) => FREE_MODELS.find((m) => m.id === slug)?.name ?? slug;
 
 export default function Processing({ sources, model, templateId, fields, onDone, onBack }: Props) {
   const { t } = useI18n();
@@ -38,7 +37,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
   const runExtract = useCallback(async (docs: ParsedDoc[], modelId: string) => {
     setPhase("extracting");
     setTried([]);
-    setCurrent(modelName(modelId));
+    setCurrent(modelLabel(modelId));
     setResult(null);
     setError(null);
     try {
@@ -60,9 +59,9 @@ export default function Processing({ sources, model, templateId, fields, onDone,
           | { type: "attempt-fail"; model: string; reason?: string }
           | ({ type: "result" } & ResultEvent);
         if (ev.type === "attempt") {
-          setCurrent(modelName(ev.model));
+          setCurrent(modelLabel(ev.model));
         } else if (ev.type === "attempt-fail") {
-          failed.push(modelName(ev.model));
+          failed.push(modelLabel(ev.model));
           setTried([...failed]);
         } else if (ev.type === "result") {
           finalBox.value = { values: ev.values, warnings: ev.warnings, llmFailed: ev.llmFailed, usedModel: ev.usedModel };
