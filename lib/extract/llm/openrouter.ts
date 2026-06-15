@@ -1,7 +1,7 @@
 import type { ExtractionModel, LlmFieldResult, OnAttempt } from "./types";
 import { ModelNotConfigured } from "./types";
 import type { ExtractField } from "../fields";
-import { FREE_MODEL_IDS, isFreeSlug } from "./catalog";
+import { FREE_MODEL_IDS, isFreeSlug, isPaidModel, PAID_LAST_RESORT } from "./catalog";
 import { buildExtractionPrompt } from "./prompt";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
@@ -23,6 +23,16 @@ const FREE_FALLBACKS = FREE_MODEL_IDS;
 // same 60s route budget (/api/templates).
 export const ATTEMPT_TIMEOUT_MS = 30_000;
 export const CHAIN_DEADLINE_MS = 50_000;
+
+// The free pool runs only until FREE_PHASE_DEADLINE_MS so a slice of the chain
+// budget is RESERVED for the paid last-resort tail — a hung free model must not
+// starve it. The tail then runs under PAID_TIMEOUT_MS within CHAIN_DEADLINE_MS.
+// Worst case: 35s free phase + 12s paid = 47s < 50s deadline < 60s route maxDuration.
+// PAID_TIMEOUT_MS applies only when the paid model is the reserved TAIL; chosen as a
+// primary it runs under the normal ATTEMPT_TIMEOUT_MS.
+// Exported for lib/templates/scan.ts, which reuses the same reservation.
+export const FREE_PHASE_DEADLINE_MS = 35_000;
+export const PAID_TIMEOUT_MS = 12_000;
 
 // Tolerate models that wrap JSON in a ```json fence despite response_format.
 function parseFields(txt: string): LlmFieldResult[] {
@@ -47,21 +57,40 @@ export function openrouterModel(modelName: string): ExtractionModel {
         'Ответь СТРОГО валидным JSON вида {"fields":[{"fieldId":"f1","value":"...","confidence":"high|med|low","sourceHint":"..."}]} без markdown и пояснений.',
       );
 
-      // Primary first, then the curated chain (deduped) — for any free slug,
-      // including the openrouter/free auto-router (no ":free" suffix).
-      const candidates = isFreeSlug(modelName)
-        ? [modelName, ...FREE_FALLBACKS.filter((m) => m !== modelName)]
-        : [modelName];
+      // Build the candidate chain so the paid last-resort is ALWAYS present:
+      //   free primary → [free, ...free pool, PAID tail]
+      //   paid primary → [PAID, ...free pool]   (user opted in; paid runs first)
+      //   unknown slug → [slug, PAID tail]      (preserve degradation, still backed)
+      let candidates: string[];
+      if (isPaidModel(modelName)) {
+        candidates = [modelName, ...FREE_FALLBACKS];
+      } else if (isFreeSlug(modelName)) {
+        candidates = [modelName, ...FREE_FALLBACKS, PAID_LAST_RESORT.id];
+      } else {
+        candidates = [modelName, PAID_LAST_RESORT.id];
+      }
+      candidates = Array.from(new Set(candidates));
+
+      // The reserved paid tail is the paid model only when it sits AFTER the primary
+      // (index > 0). As primary (index 0) it just runs first under the normal budget.
+      const paidIdx = candidates.indexOf(PAID_LAST_RESORT.id);
+      const paidTailIdx = paidIdx > 0 ? paidIdx : -1;
 
       let lastErr: Error = new Error("Нет доступных моделей OpenRouter");
       const t0 = Date.now();
       for (let i = 0; i < candidates.length; i++) {
-        const remaining = CHAIN_DEADLINE_MS - (Date.now() - t0);
-        if (remaining <= 0) break;
+        const elapsed = Date.now() - t0;
+        const isTail = i === paidTailIdx;
+        // Free candidates are bounded by the free-phase deadline when a paid tail is
+        // reserved after them; the tail itself runs under the full chain deadline.
+        const phaseDeadline = (isTail || paidTailIdx < 0) ? CHAIN_DEADLINE_MS : FREE_PHASE_DEADLINE_MS;
+        const phaseRemaining = phaseDeadline - elapsed;
+        if (phaseRemaining <= 0) continue; // free phase exhausted → fall through to the paid tail
         const model = candidates[i];
         onAttempt?.({ phase: "start", model, index: i + 1, total: candidates.length });
+        const perAttempt = isTail ? PAID_TIMEOUT_MS : ATTEMPT_TIMEOUT_MS;
         const ac = new AbortController();
-        const timer = setTimeout(() => ac.abort(), Math.min(ATTEMPT_TIMEOUT_MS, remaining));
+        const timer = setTimeout(() => ac.abort(), Math.min(perAttempt, phaseRemaining));
         try {
           const res = await fetch(ENDPOINT, {
             method: "POST",
