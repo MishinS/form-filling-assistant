@@ -54,6 +54,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   set_err_avatar:    { ru: "Не удалось загрузить изображение", en: "Couldn't upload the image" },
   search:          { ru: "Поиск по заполнениям, контрагентам, файлам…", en: "Search fills, counterparties, files…" },
   new_fill:        { ru: "Новое заполнение", en: "New fill" },
+  home_reload:     { ru: "На главную (обновить)", en: "Home (refresh)" },
   dash_eyebrow:    { ru: "Рабочая область", en: "Workspace" },
   dash_h1a:        { ru: "Заполняйте документы", en: "Fill documents" },
   dash_h1b:        { ru: "данными из ваших файлов — за секунды", en: "from your own files — in seconds" },

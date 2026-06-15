@@ -29,13 +29,17 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
   ];
   return (
     <div className="col" style={{ width: 244, flex: "none", borderRight: "1px solid var(--line)", background: "var(--surface-1)", padding: "20px 16px" }}>
-      <div className="row gap-10" style={{ padding: "4px 8px 22px" }}>
+      {/* Logo doubles as a "fresh entry" — hard-reload to the app root. */}
+      <button type="button" onClick={() => window.location.assign("/")} title={t("home_reload")}
+        className="row gap-10" style={{ padding: "4px 8px 22px", background: "transparent", border: 0, cursor: "pointer", textAlign: "left", width: "100%" }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = ".7"; }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
         <Logo size={22} />
         <div className="col" style={{ lineHeight: 1.05 }}>
           <span className="display nowrap" style={{ fontSize: 14.5, fontWeight: 600 }}>Form-Filling</span>
           <span className="mono dim nowrap" style={{ fontSize: 9.5, letterSpacing: ".18em" }}>ASSISTANT</span>
         </div>
-      </div>
+      </button>
 
       <Btn variant="primary" size="md" icon="plus" full onClick={onNewFill} style={{ marginBottom: 22 }}>{t("new_fill")}</Btn>
 
