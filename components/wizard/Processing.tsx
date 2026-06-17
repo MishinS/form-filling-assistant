@@ -8,6 +8,7 @@ import type { UploadFile } from "@/lib/upload/client";
 import type { ParsedDoc } from "@/lib/parse/types";
 import type { ExtractedValue } from "@/lib/types";
 import type { ExtractField } from "@/lib/extract/fields";
+import RaceList, { type RaceItem } from "@/components/wizard/RaceList";
 
 type Props = {
   sources: UploadFile[];
@@ -27,7 +28,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
   const { setModel } = useContext(ModelContext);
   const [phase, setPhase] = useState<Phase>("parsing");
   const [error, setError] = useState<string | null>(null);
-  const [current, setCurrent] = useState<string | null>(null); // model display name being tried
+  const [race, setRace] = useState<RaceItem[]>([]); // модель → статус в текущей гонке
   const [tried, setTried] = useState<string[]>([]); // failed model display names
   const [result, setResult] = useState<ResultEvent | null>(null); // last terminal result (for "continue")
   const docsRef = useRef<ParsedDoc[]>([]);
@@ -37,7 +38,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
   const runExtract = useCallback(async (docs: ParsedDoc[], modelId: string) => {
     setPhase("extracting");
     setTried([]);
-    setCurrent(modelLabel(modelId));
+    setRace([]);
     setResult(null);
     setError(null);
     try {
@@ -57,12 +58,16 @@ export default function Processing({ sources, model, templateId, fields, onDone,
         const ev = JSON.parse(line) as
           | { type: "attempt"; model: string }
           | { type: "attempt-fail"; model: string; reason?: string }
+          | { type: "attempt-win"; model: string }
           | ({ type: "result" } & ResultEvent);
         if (ev.type === "attempt") {
-          setCurrent(modelLabel(ev.model));
+          setRace((r) => (r.some((x) => x.model === ev.model) ? r : [...r, { model: ev.model, status: "running" }]));
         } else if (ev.type === "attempt-fail") {
           failed.push(modelLabel(ev.model));
           setTried([...failed]);
+          setRace((r) => r.map((x) => (x.model === ev.model ? { ...x, status: "fail" } : x)));
+        } else if (ev.type === "attempt-win") {
+          setRace((r) => r.map((x) => (x.model === ev.model ? { ...x, status: "win" } : x)));
         } else if (ev.type === "result") {
           finalBox.value = { values: ev.values, warnings: ev.warnings, llmFailed: ev.llmFailed, usedModel: ev.usedModel };
         }
@@ -181,7 +186,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
     );
   }
 
-  // --- parsing / extracting spinner ---
+  // --- parsing / extracting ---
   const parsing = phase === "parsing";
   return (
     <div className="col gap-16" style={{ maxWidth: 460, margin: "80px auto 0", textAlign: "center" }}>
@@ -189,14 +194,12 @@ export default function Processing({ sources, model, templateId, fields, onDone,
         <Icon name="spin" size={56} stroke={1.5} />
       </div>
       <div style={{ fontWeight: 600, fontSize: 16 }}>
-        {parsing ? t("proc_parse") : `${t("proc_trying")} ${current ?? ""}…`}
+        {parsing ? t("proc_parse") : t("proc_racing")}
       </div>
       <div className="muted" style={{ fontSize: 13 }}>
         {parsing ? t("proc_parse_d") : t("proc_extract_d")}
       </div>
-      {!parsing && tried.length > 0 && (
-        <div className="mono dim" style={{ fontSize: 11 }}>{tried[tried.length - 1]} {t("proc_unavailable")}</div>
-      )}
+      {!parsing && <RaceList items={race} />}
     </div>
   );
 }
