@@ -3,7 +3,7 @@ import { useContext, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { Icon, Tag, Btn } from "@/components/primitives";
-import { PT_FIELDS, isCellLocked, newManualField, type ExtractField, type Strategy } from "@/lib/extract/fields";
+import { PT_FIELDS, isCellLocked, isReservedCell, newManualField, type ExtractField, type Strategy } from "@/lib/extract/fields";
 import { validateCellRef } from "@/lib/templates/cellref";
 import { TemplateMappingContext } from "@/components/shell/AppShell";
 import MiniSheet from "./MiniSheet";
@@ -51,6 +51,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
     for (const f of draft) {
       const r = validateCellRef(f.cell, isPt ? undefined : tpl.sheets);
       if (!r.ok) errs[f.id] = r.reason === "sheet" ? (isPt ? t("cell_sheet_pt") : t("cell_sheet_bad")) : t("cell_invalid");
+      else if (isPt && !isCellLocked(f.id) && isReservedCell(r.normalized)) errs[f.id] = t("cell_reserved");
     }
     return errs;
   }, [draft, isPt, tpl.sheets, t]);
@@ -59,7 +60,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
     for (const f of draft) seen.set(f.cell, (seen.get(f.cell) ?? 0) + 1);
     return new Set([...Array.from(seen)].filter(([, n]) => n > 1).map(([c]) => c));
   }, [draft]);
-  const canSave = Object.keys(cellErrors).length === 0;
+  const canSave = Object.keys(cellErrors).length === 0 && dupeCells.size === 0;
 
   const editLabel = (id: string, v: string) =>
     setDraft(d => d.map(f => f.id === id ? { ...f, [ru ? "label_ru" : "label_en"]: v } : f));
@@ -71,9 +72,13 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
     setDraft(d => d.map(f => f.id === id ? { ...f, kind: k } : f));
   const del = (id: string) => setDraft(d => d.filter(f => f.id !== id));
   const add = () => {
-    const f = newManualField(draft, { label_ru: t("new_field_label"), label_en: t("new_field_label"), kind: "string", cell: "" });
-    setDraft(d => [...d, f]);
-    setSel(f.id);
+    // Compute the new id INSIDE the updater so a rapid double-add can't mint two
+    // fields with the same fN id (each updater sees the previous one's result).
+    setDraft(d => {
+      const f = newManualField(d, { label_ru: t("new_field_label"), label_en: t("new_field_label"), kind: "string", cell: "" });
+      setSel(f.id);
+      return [...d, f];
+    });
   };
   const save = async () => {
     // Normalize cells on save
@@ -241,11 +246,13 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
                     {f.required && <Icon name="check" size={10} stroke={2.4} />}
                   </button>
                 </div>
-                {/* delete */}
-                <button className="dim" style={{ width: 26, height: 26, borderRadius: 6, display: "grid", placeItems: "center" }}
-                  onClick={e => { e.stopPropagation(); del(f.id); }}
-                  onMouseEnter={e => e.currentTarget.style.background = "var(--surface-hi)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}><Icon name="trash" size={13} /></button>
+                {/* delete — hidden for schedule-locked rows (f4/f7 drive the amount cells) */}
+                {locked ? <span /> : (
+                  <button className="dim" style={{ width: 26, height: 26, borderRadius: 6, display: "grid", placeItems: "center" }}
+                    onClick={e => { e.stopPropagation(); del(f.id); }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--surface-hi)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}><Icon name="trash" size={13} /></button>
+                )}
               </div>
             );
           })}

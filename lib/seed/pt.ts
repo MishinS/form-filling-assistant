@@ -150,6 +150,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   cell_sheet_pt:   { ru: "Только лист ПТ", en: "Sheet ПТ only" },
   cell_dupe:       { ru: "Ячейка уже используется", en: "Cell already used" },
   cell_locked:     { ru: "Управляется формулой расписания", en: "Driven by schedule formula" },
+  cell_reserved:   { ru: "Ячейка занята расписанием (D13/D15)", en: "Cell reserved by the schedule (D13/D15)" },
   field_kind:      { ru: "Тип", en: "Type" },
   new_field_label: { ru: "Новое поле", en: "New field" },
   kind_string:     { ru: "Строка", en: "String" },

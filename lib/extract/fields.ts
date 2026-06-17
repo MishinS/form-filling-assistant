@@ -49,6 +49,15 @@ export function isCellLocked(fieldId: string): boolean {
   return (SCHEDULE_LOCKED_FIELDS as readonly string[]).includes(fieldId);
 }
 
+/** ПТ cells reserved by «График оплат» formulas (f4→D13, f7→D15). Remapping any
+ *  OTHER field onto them would overwrite the schedule formula — blocked in the editor. */
+export const SCHEDULE_LOCKED_CELLS = ["ПТ!D13", "ПТ!D15"] as const;
+
+/** True if a normalized ПТ cell ref is one of the schedule-formula cells. */
+export function isReservedCell(normalizedCell: string): boolean {
+  return (SCHEDULE_LOCKED_CELLS as readonly string[]).includes(normalizedCell);
+}
+
 /** Build a new manual field with the next free `fN` id, given the current field list. */
 export function newManualField(
   existing: ExtractField[],

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PT_FIELDS, PT_GROUPS, SCHEDULE_LOCKED_FIELDS, isCellLocked, newManualField } from "./fields";
+import { PT_FIELDS, PT_GROUPS, SCHEDULE_LOCKED_FIELDS, isCellLocked, isReservedCell, newManualField } from "./fields";
 
 describe("PT_FIELDS catalog", () => {
   it("has 12 fields with unique ids", () => {
@@ -27,6 +27,16 @@ describe("mapping helpers", () => {
     expect(isCellLocked("f4")).toBe(true);
     expect(isCellLocked("f7")).toBe(true);
     expect(isCellLocked("f1")).toBe(false);
+  });
+
+  it("flags the schedule-formula cells as reserved (f4→D13, f7→D15)", () => {
+    expect(isReservedCell("ПТ!D13")).toBe(true);
+    expect(isReservedCell("ПТ!D15")).toBe(true);
+    expect(isReservedCell("ПТ!D9")).toBe(false);
+    expect(isReservedCell("ПТ!D14")).toBe(false);
+    // the locked amount fields indeed sit on the reserved cells
+    expect(isReservedCell(PT_FIELDS.find(f => f.id === "f4")!.cell)).toBe(true);
+    expect(isReservedCell(PT_FIELDS.find(f => f.id === "f7")!.cell)).toBe(true);
   });
 
   it("creates a manual field with the next free fN id", () => {
