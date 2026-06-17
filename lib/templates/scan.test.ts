@@ -42,6 +42,18 @@ describe("proposeFields", () => {
     expect(fields).toHaveLength(1);
   });
 
+  it("skips empty sheets so a sheet-less cell qualifies to the first sheet WITH content", async () => {
+    const sheets = [
+      { name: "Лист1", lines: [] },                    // empty leading sheet (dropped)
+      { name: "Форма", lines: ["A1: Поставщик"] },
+    ];
+    const proposal = JSON.stringify({ fields: [{ label_ru: "Поставщик", cell: "B1", kind: "string" }] });
+    vi.stubGlobal("fetch", vi.fn(async () => okResponse(proposal)));
+    const { fields, failure } = await proposeFields(sheets);
+    expect(failure).toBeNull();
+    expect(fields[0].cell).toBe("Форма!B1"); // qualified to the content sheet, not empty «Лист1»
+  });
+
   it("failure 'llm' without an API key (no fetch made)", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "");
     const spy = vi.fn();

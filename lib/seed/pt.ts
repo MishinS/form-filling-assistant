@@ -48,7 +48,6 @@ export const STR: Record<string, { ru: string; en: string }> = {
   set_err_pw_weak: { ru: "Минимум 8 символов", en: "At least 8 characters" },
   set_err_generic: { ru: "Не удалось сохранить", en: "Could not save" },
   set_readonly_env:{ ru: "Аккаунт управляется через конфигурацию", en: "Account managed via configuration" },
-  set_avatar:        { ru: "Фото профиля", en: "Profile photo" },
   set_avatar_upload: { ru: "Загрузить фото", en: "Upload photo" },
   set_avatar_remove: { ru: "Удалить", en: "Remove" },
   set_err_avatar:    { ru: "Не удалось загрузить изображение", en: "Couldn't upload the image" },

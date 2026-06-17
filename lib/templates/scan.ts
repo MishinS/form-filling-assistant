@@ -91,8 +91,13 @@ function parseProposal(txt: string, sheetNames: string[]): ExtractField[] | null
 export async function proposeFields(sheets: SheetText[], onAttempt?: OnAttempt): Promise<ScanResult> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return { fields: [], failure: "llm" };
-  const prompt = buildScanPrompt(sheets);
-  const sheetNames = sheets.map(s => s.name);
+  // Drop empty sheets (blank «Лист1», helper tabs) — they bloat the prompt and would
+  // hijack sheet-less cell qualification (a bare "B1" must resolve to the first sheet
+  // WITH content, not a leading empty one). Keep all if every sheet is empty.
+  const withContent = sheets.filter(s => s.lines.length > 0);
+  const formSheets = withContent.length > 0 ? withContent : sheets;
+  const prompt = buildScanPrompt(formSheets);
+  const sheetNames = formSheets.map(s => s.name);
 
   const makeRacer = (model: string): Racer<ExtractField[]> => ({
     model,
