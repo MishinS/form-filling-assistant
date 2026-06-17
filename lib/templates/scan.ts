@@ -9,7 +9,8 @@
 // verdict is pool failure, and retry is the right affordance.
 // The caller (POST /api/templates) blocks template creation on any failure.
 import { FREE_MODEL_IDS, PAID_LAST_RESORT } from "@/lib/extract/llm/catalog";
-import { CHAIN_DEADLINE_MS, FREE_PHASE_DEADLINE_MS, PAID_TIMEOUT_MS } from "@/lib/extract/llm/openrouter";
+import { PAID_TIMEOUT_MS } from "@/lib/extract/llm/openrouter";
+import { raceModels, type Racer } from "@/lib/extract/llm/race";
 import type { ExtractField } from "@/lib/extract/fields";
 import type { FieldKind } from "@/lib/types";
 import type { OnAttempt } from "@/lib/extract/llm/types";
@@ -92,31 +93,13 @@ export async function proposeFields(sheets: SheetText[], onAttempt?: OnAttempt):
   if (!key) return { fields: [], failure: "llm" };
   const prompt = buildScanPrompt(sheets);
   const sheetNames = sheets.map(s => s.name);
-  // The free pool first, then the paid last-resort as a guaranteed reserved tail.
-  // Scan ignores the user's model pick by design, so the paid model is NEVER primary.
-  const candidates = [...FREE_MODEL_IDS, PAID_LAST_RESORT.id];
-  const total = candidates.length;
-  const paidTailIdx = total - 1;
-  let understood = false; // a model returned valid {"fields":[…]} → "nofields", not "llm"
-  // Same budget guard as openrouter.ts: a hung model must not eat the route's
-  // maxDuration=60 and kill the NDJSON stream before a terminal event is flushed.
-  // The free phase is capped at FREE_PHASE_DEADLINE_MS so the paid tail keeps its slice.
-  const t0 = Date.now();
-  for (let i = 0; i < total; i++) {
-    const elapsed = Date.now() - t0;
-    const isTail = i === paidTailIdx;
-    const phaseDeadline = isTail ? CHAIN_DEADLINE_MS : FREE_PHASE_DEADLINE_MS;
-    const phaseRemaining = phaseDeadline - elapsed;
-    if (phaseRemaining <= 0) continue; // free phase exhausted → reach the paid tail
-    const model = candidates[i];
-    onAttempt?.({ phase: "start", model, index: i + 1, total });
-    const perAttempt = isTail ? PAID_TIMEOUT_MS : SCAN_ATTEMPT_TIMEOUT_MS;
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), Math.min(perAttempt, phaseRemaining));
-    try {
+
+  const makeRacer = (model: string): Racer<ExtractField[]> => ({
+    model,
+    run: async (signal) => {
       const res = await fetch(ENDPOINT, {
         method: "POST",
-        signal: ac.signal,
+        signal,
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model,
@@ -125,28 +108,22 @@ export async function proposeFields(sheets: SheetText[], onAttempt?: OnAttempt):
           messages: [{ role: "user", content: prompt }],
         }),
       });
-      if (!res.ok) {
-        onAttempt?.({ phase: "fail", model, reason: `HTTP ${res.status}` });
-        continue;
-      }
+      if (!res.ok) return { win: false, reason: `HTTP ${res.status}` };
       const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
       const content = data.choices?.[0]?.message?.content ?? "";
       const fields = parseProposal(content, sheetNames);
-      if (fields === null) {
-        onAttempt?.({ phase: "fail", model, reason: "bad json" });
-        continue;
-      }
-      understood = true;
-      if (fields.length > 0) return { fields, failure: null };
-      onAttempt?.({ phase: "fail", model, reason: "no fields" });
-    } catch (e) {
-      const reason = ac.signal.aborted
-        ? `Таймаут ответа модели (${model})`
-        : e instanceof Error ? e.message : String(e);
-      onAttempt?.({ phase: "fail", model, reason });
-    } finally {
-      clearTimeout(timer);
-    }
-  }
+      if (fields === null) return { win: false, reason: "bad json" };
+      if (fields.length === 0) return { win: false, reason: "no fields", understood: true };
+      return { win: true, value: fields };
+    },
+  });
+
+  const free = await raceModels(FREE_MODEL_IDS.map(makeRacer), { timeoutMs: SCAN_ATTEMPT_TIMEOUT_MS, onAttempt });
+  if (free.ok) return { fields: free.value, failure: null };
+
+  const paid = await raceModels([makeRacer(PAID_LAST_RESORT.id)], { timeoutMs: PAID_TIMEOUT_MS, onAttempt });
+  if (paid.ok) return { fields: paid.value, failure: null };
+
+  const understood = [...free.failures, ...paid.failures].some(f => f.understood);
   return { fields: [], failure: understood ? "nofields" : "llm" };
 }

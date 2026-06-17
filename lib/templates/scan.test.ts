@@ -74,16 +74,20 @@ describe("proposeFields", () => {
     expect(await proposeFields(SHEETS)).toEqual({ fields: [], failure: "nofields" });
   });
 
-  it("emits onAttempt start/fail along the chain", async () => {
+  it("emits a start for every free racer and a win", async () => {
     const events: AttemptEvent[] = [];
-    vi.stubGlobal("fetch", vi.fn()
-      .mockResolvedValueOnce({ ok: false, status: 429 } as Response)
-      .mockResolvedValue(okResponse(PROPOSAL)));
+    vi.stubGlobal("fetch", vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(init!.body as string) as { model: string };
+      if (body.model === FREE_MODEL_IDS[0]) return { ok: false, status: 429 } as Response;
+      return okResponse(PROPOSAL);
+    }));
     const { fields } = await proposeFields(SHEETS, (ev) => events.push(ev));
     expect(fields).toHaveLength(1);
-    expect(events[0]).toMatchObject({ phase: "start", model: expect.any(String), index: 1, total: FREE_MODEL_IDS.length + 1 });
-    expect(events[1]).toMatchObject({ phase: "fail", reason: "HTTP 429" });
-    expect(events[2]).toMatchObject({ phase: "start", index: 2 });
+    const starts = events.filter((e) => e.phase === "start");
+    expect(starts).toHaveLength(FREE_MODEL_IDS.length);
+    expect(starts.every((e) => e.total === FREE_MODEL_IDS.length)).toBe(true);
+    expect(events.some((e) => e.phase === "fail" && e.reason === "HTTP 429")).toBe(true);
+    expect(events.some((e) => e.phase === "win")).toBe(true);
   });
 
   it("falls back to the paid last-resort after the free pool fails", async () => {
@@ -100,8 +104,7 @@ describe("proposeFields", () => {
     expect(starts[starts.length - 1].model).toBe(PAID_LAST_RESORT.id);
   });
 
-  it("aborts a hung model after the per-attempt timeout and falls back to the next", async () => {
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+  it("a hung model does not block the scan — a healthy racer wins immediately", async () => {
     let call = 0;
     vi.stubGlobal("fetch", vi.fn((_url: unknown, init?: RequestInit) => {
       call += 1;
@@ -110,16 +113,8 @@ describe("proposeFields", () => {
       });
       return Promise.resolve(okResponse(PROPOSAL));
     }));
-    const events: AttemptEvent[] = [];
-    const p = proposeFields(SHEETS, (ev) => events.push(ev));
-    // Scan answers are small/fast (healthy ≤2s local, ≤10s on Vercel) — the scan chain
-    // aborts a hung attempt at 20s so even two hangs fit the 50s chain deadline.
-    await vi.advanceTimersByTimeAsync(20_000);
-    const { fields, failure } = await p;
-    vi.useRealTimers();
+    const { fields, failure } = await proposeFields(SHEETS);
     expect(failure).toBeNull();
     expect(fields).toHaveLength(1);
-    expect(events[1]).toMatchObject({ phase: "fail" });
-    expect(events[1].reason).toContain("Таймаут");
   });
 });
