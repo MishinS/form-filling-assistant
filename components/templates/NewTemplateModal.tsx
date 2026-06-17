@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { useI18n } from "@/lib/i18n";
-import { modelLabel } from "@/lib/extract/llm/catalog";
+import RaceList, { type RaceItem } from "@/components/wizard/RaceList";
 import { Btn, Icon } from "@/components/primitives";
 import { MIME } from "@/lib/parse/types";
 
@@ -18,6 +18,7 @@ type StreamEvent =
   | { type: "stage"; stage: "sheets" | "save" }
   | { type: "attempt"; model: string; index?: number; total?: number }
   | { type: "attempt-fail"; model: string; reason?: string }
+  | { type: "attempt-win"; model: string }
   | { type: "result"; id: string; fields: number }
   | { type: "error"; code: FailCode };
 
@@ -40,6 +41,7 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
   const [stage, setStage] = useState("");
   const [fail, setFail] = useState<FailCode | null>(null);
   const [err, setErr] = useState<string | null>(null); // file-pick validation
+  const [race, setRace] = useState<RaceItem[]>([]); // модель → статус в текущей гонке скана
   const blobUrlRef = useRef<string | null>(null); // survives a failed scan → retry skips re-upload
   const fileRef = useRef<HTMLInputElement>(null);
   const busy = phase === "busy";
@@ -74,12 +76,9 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
 
   const failWith = (code: FailCode) => { setFail(code); setPhase("failed"); };
 
-  const modelStage = (name: string, i: number, n: number) =>
-    t("tpl_scan_model").replace("{name}", name).replace("{i}", String(i)).replace("{n}", String(n));
-
   const create = async () => {
     if (!file || !name.trim()) return;
-    setPhase("busy"); setFail(null); setErr(null);
+    setPhase("busy"); setFail(null); setErr(null); setRace([]);
     try {
       let url = blobUrlRef.current;
       if (!url) {
@@ -108,8 +107,12 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
         try { ev = JSON.parse(line) as StreamEvent; } catch { return; }
         if (ev.type === "stage" && ev.stage === "sheets") { setStage(t("tpl_scan_sheets")); setPct(25); }
         else if (ev.type === "attempt") {
-          const i = ev.index ?? 1; const n = ev.total ?? 1;
-          setStage(modelStage(modelLabel(ev.model), i, n)); setPct(30 + Math.round(((i - 1) / n) * 60));
+          setStage(t("proc_racing")); setPct(60);
+          setRace((r) => (r.some((x) => x.model === ev.model) ? r : [...r, { model: ev.model, status: "running" }]));
+        } else if (ev.type === "attempt-fail") {
+          setRace((r) => r.map((x) => (x.model === ev.model ? { ...x, status: "fail" } : x)));
+        } else if (ev.type === "attempt-win") {
+          setRace((r) => r.map((x) => (x.model === ev.model ? { ...x, status: "win" } : x)));
         } else if (ev.type === "stage" && ev.stage === "save") { setStage(t("tpl_scan_save")); setPct(95); }
         else if (ev.type === "result") { box.result = ev; }
         else if (ev.type === "error") { box.error = ev.code; }
@@ -167,7 +170,7 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
           {err && <span style={{ fontSize: 12.5, color: "var(--bad)" }}>{err}</span>}
 
           {busy && (
-            <div className="col gap-6">
+            <div className="col gap-10">
               <div className="row" style={{ justifyContent: "space-between" }}>
                 <span className="muted" style={{ fontSize: 12 }}>{stage}</span>
                 <span className="mono dim" style={{ fontSize: 11.5 }}>{pct}%</span>
@@ -175,6 +178,7 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
               <div style={{ height: 6, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden" }}>
                 <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)", transition: "width .3s var(--ease)" }} />
               </div>
+              {race.length > 0 && <RaceList items={race} />}
             </div>
           )}
 
