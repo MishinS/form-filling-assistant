@@ -3,197 +3,122 @@ import { openrouterModel } from "./openrouter";
 import { ModelNotConfigured } from "./types";
 import type { AttemptEvent } from "./types";
 import { PT_FIELDS } from "../fields";
-import { PAID_LAST_RESORT } from "./catalog";
+import { FREE_MODEL_IDS, PAID_LAST_RESORT } from "./catalog";
 
-const MODEL = "moonshotai/kimi-k2.6:free";
+const MODEL = "moonshotai/kimi-k2.6:free"; // free slug НЕ из каталога → попадает в волну первым
 const PAID = PAID_LAST_RESORT.id;
 const okFields = (fields: unknown[]) =>
   new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ fields }) } }] }));
-
-afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); vi.useRealTimers(); });
-
-// A fetch mock that never settles until its abort signal fires (simulates a hung model).
 const hangingFetch = (_url: unknown, init?: RequestInit) =>
   new Promise<Response>((_resolve, reject) => {
     init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
   });
 
-describe("openrouterModel", () => {
+afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); vi.useRealTimers(); });
+
+describe("openrouterModel (parallel race)", () => {
   it("throws ModelNotConfigured without an API key", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "");
     await expect(openrouterModel(MODEL).extract(PT_FIELDS, "текст"))
       .rejects.toBeInstanceOf(ModelNotConfigured);
   });
 
-  it("parses the JSON message content into LlmFieldResult[]", async () => {
+  it("returns the winning model's parsed fields", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-key");
-    const payload = { fields: [{ fieldId: "f1", value: 'ООО «Ромашка»', confidence: "high" }] };
-    global.fetch = vi.fn(async () => new Response(JSON.stringify({
-      choices: [{ message: { content: JSON.stringify(payload) } }],
-    }))) as unknown as typeof fetch;
-
+    const payload = [{ fieldId: "f1", value: "ООО «Ромашка»", confidence: "high" }];
+    global.fetch = vi.fn(async () => okFields(payload)) as unknown as typeof fetch;
     const out = await openrouterModel(MODEL).extract(PT_FIELDS, "текст");
-    expect(out).toEqual(payload.fields);
+    expect(out).toEqual(payload);
   });
 
-  it("throws on a non-OK HTTP response", async () => {
+  it("a healthy model wins immediately even while another hangs (no need to wait the timeout)", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-key");
-    global.fetch = vi.fn(async () => new Response("rate limited", { status: 429 })) as unknown as typeof fetch;
-    await expect(openrouterModel(MODEL).extract(PT_FIELDS, "текст")).rejects.toThrow("OpenRouter HTTP 429");
-  });
-
-  it("emits a start event for the primary model before fetching", async () => {
-    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
-    const payload = { fields: [{ fieldId: "f1", value: "X", confidence: "high" }] };
-    global.fetch = vi.fn(async () => new Response(JSON.stringify({
-      choices: [{ message: { content: JSON.stringify(payload) } }],
-    }))) as unknown as typeof fetch;
-
-    const events: AttemptEvent[] = [];
-    await openrouterModel(MODEL).extract(PT_FIELDS, "текст", (ev) => events.push(ev));
-
-    expect(events[0]).toMatchObject({ phase: "start", model: MODEL, index: 1 });
-    expect(events[0].total).toBeGreaterThanOrEqual(1);
-  });
-
-  it("emits start then fail then start when the first model 429s and the next succeeds", async () => {
-    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
-    let call = 0;
-    global.fetch = vi.fn(async () => {
-      call += 1;
-      if (call === 1) return new Response("rate limited", { status: 429 });
-      return new Response(JSON.stringify({
-        choices: [{ message: { content: JSON.stringify({ fields: [] }) } }],
-      }));
-    }) as unknown as typeof fetch;
-
-    const events: AttemptEvent[] = [];
-    await openrouterModel(MODEL).extract(PT_FIELDS, "текст", (ev) => events.push(ev));
-
-    expect(events[0]).toMatchObject({ phase: "start", model: MODEL });
-    expect(events[1]).toMatchObject({ phase: "fail", model: MODEL });
-    expect(events[1].reason).toContain("429");
-    expect(events[2]).toMatchObject({ phase: "start" });
-  });
-
-  it("aborts a hung model after the per-attempt timeout and falls back to the next", async () => {
-    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
     let call = 0;
     global.fetch = vi.fn((url: unknown, init?: RequestInit) => {
       call += 1;
       if (call === 1) return hangingFetch(url, init);
-      return Promise.resolve(new Response(JSON.stringify({
-        choices: [{ message: { content: JSON.stringify({ fields: [] }) } }],
-      })));
+      return Promise.resolve(okFields([]));
     }) as unknown as typeof fetch;
-
-    const events: AttemptEvent[] = [];
-    const p = openrouterModel(MODEL).extract(PT_FIELDS, "текст", (ev) => events.push(ev));
-    await vi.advanceTimersByTimeAsync(30_000);
-    await expect(p).resolves.toEqual([]);
-    expect(events[1]).toMatchObject({ phase: "fail", model: MODEL });
-    expect(events[1].reason).toContain("Таймаут");
+    await expect(openrouterModel(MODEL).extract(PT_FIELDS, "текст")).resolves.toEqual([]);
   });
 
-  it("stops the chain at the overall deadline so the route can flush a terminal result", async () => {
+  it("emits a start for every free racer, then a win", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-key");
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
-    global.fetch = vi.fn(hangingFetch) as unknown as typeof fetch;
-
+    global.fetch = vi.fn(async () => okFields([])) as unknown as typeof fetch;
     const events: AttemptEvent[] = [];
-    const p = openrouterModel(MODEL).extract(PT_FIELDS, "текст", (ev) => events.push(ev));
-    const guarded = p.catch((e: Error) => e); // settle-once handle: no unhandled rejection while clocks advance
-    await vi.advanceTimersByTimeAsync(50_000);
-    const err = await guarded;
-    expect(err).toBeInstanceOf(Error);
-    expect((err as Error).message).toContain("Таймаут");
-    // free phase (35s) burns primary(30s)+one free(5s); the RESERVED paid tail then
-    // runs within the 50s chain deadline → 3 attempts, last is the paid last-resort.
-    expect(global.fetch).toHaveBeenCalledTimes(3);
+    await openrouterModel(MODEL).extract(PT_FIELDS, "текст", (e) => events.push(e));
     const starts = events.filter((e) => e.phase === "start");
-    expect(starts).toHaveLength(3);
-    expect(starts[2].model).toBe(PAID);
+    expect(starts.length).toBe(new Set([MODEL, ...FREE_MODEL_IDS]).size);
+    expect(events.some((e) => e.phase === "win")).toBe(true);
   });
 
-  it("falls back to the paid last-resort after the free pool is exhausted", async () => {
+  it("falls back to the paid last-resort after the whole free wave fails", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-key");
     global.fetch = vi.fn(async (_url: unknown, init?: RequestInit) => {
       const body = JSON.parse(init!.body as string) as { model: string };
       if (body.model === PAID) return okFields([{ fieldId: "f1", value: "X", confidence: "high" }]);
       return new Response("rate limited", { status: 429 });
     }) as unknown as typeof fetch;
-
     const events: AttemptEvent[] = [];
-    const out = await openrouterModel(MODEL).extract(PT_FIELDS, "текст", (ev) => events.push(ev));
+    const out = await openrouterModel(MODEL).extract(PT_FIELDS, "текст", (e) => events.push(e));
     expect(out).toEqual([{ fieldId: "f1", value: "X", confidence: "high" }]);
     const starts = events.filter((e) => e.phase === "start");
-    expect(starts[starts.length - 1].model).toBe(PAID); // paid is the appended tail
+    expect(starts[starts.length - 1].model).toBe(PAID);
   });
 
-  it("runs the paid model first when it is the selected primary", async () => {
+  it("throws after both the free wave and the paid tail fail", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-key");
-    global.fetch = vi.fn(async () => okFields([])) as unknown as typeof fetch;
-    const events: AttemptEvent[] = [];
-    await openrouterModel(PAID).extract(PT_FIELDS, "текст", (ev) => events.push(ev));
-    expect(events[0]).toMatchObject({ phase: "start", model: PAID, index: 1 });
-    expect(global.fetch).toHaveBeenCalledTimes(1); // succeeded first → no fallback needed
+    global.fetch = vi.fn(async () => new Response("rate limited", { status: 429 })) as unknown as typeof fetch;
+    await expect(openrouterModel(MODEL).extract(PT_FIELDS, "текст")).rejects.toThrow("429");
   });
 
-  it("does not duplicate the paid model when it is primary (dedup)", async () => {
-    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
-    let call = 0;
-    global.fetch = vi.fn(async () => {
-      call += 1;
-      if (call === 1) return new Response("err", { status: 429 }); // paid primary fails
-      return okFields([]); // first free fallback succeeds
-    }) as unknown as typeof fetch;
-    const events: AttemptEvent[] = [];
-    await openrouterModel(PAID).extract(PT_FIELDS, "текст", (ev) => events.push(ev));
-    const paidStarts = events.filter((e) => e.phase === "start" && e.model === PAID);
-    expect(paidStarts).toHaveLength(1); // appears once, NOT re-appended as a tail
-  });
-
-  it("the reserved paid tail runs on its own clock and succeeds after the free phase hangs out", async () => {
-    // The crux guarantee: when EVERY free model hangs to its timeout, the free phase is
-    // capped at FREE_PHASE_DEADLINE_MS and the paid tail still gets its reserved slice —
-    // here it resolves successfully, proving the tail runs (not just that it is reached).
+  it("when the whole free wave hangs, aborts it at the free timeout and the paid tail still runs", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-key");
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
     global.fetch = vi.fn((url: unknown, init?: RequestInit) => {
       const body = JSON.parse(init!.body as string) as { model: string };
-      if (body.model === PAID) {
-        return Promise.resolve(okFields([{ fieldId: "f1", value: "PAID", confidence: "high" }]));
-      }
-      return hangingFetch(url, init); // every free model hangs to its abort
+      if (body.model === PAID) return Promise.resolve(okFields([{ fieldId: "f1", value: "PAID", confidence: "high" }]));
+      return hangingFetch(url, init);
     }) as unknown as typeof fetch;
-
     const events: AttemptEvent[] = [];
-    const p = openrouterModel(MODEL).extract(PT_FIELDS, "текст", (ev) => events.push(ev));
-    await vi.advanceTimersByTimeAsync(50_000);
+    const p = openrouterModel(MODEL).extract(PT_FIELDS, "текст", (e) => events.push(e));
+    await vi.advanceTimersByTimeAsync(30_000);
     await expect(p).resolves.toEqual([{ fieldId: "f1", value: "PAID", confidence: "high" }]);
     const starts = events.filter((e) => e.phase === "start");
     expect(starts[starts.length - 1].model).toBe(PAID);
   });
 
-  it("engages the fallback chain when the primary is the openrouter/free auto-router", async () => {
+  it("runs the paid model alone when it is the selected primary (one fetch on success)", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-key");
-    let call = 0;
-    global.fetch = vi.fn(async () => {
-      call += 1;
-      if (call === 1) return new Response("rate limited", { status: 429 });
-      return new Response(JSON.stringify({
-        choices: [{ message: { content: JSON.stringify({ fields: [] }) } }],
-      }));
+    global.fetch = vi.fn(async () => okFields([])) as unknown as typeof fetch;
+    await openrouterModel(PAID).extract(PT_FIELDS, "текст");
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("paid primary that fails falls back to the free wave, without re-racing paid", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+    global.fetch = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(init!.body as string) as { model: string };
+      if (body.model === PAID) return new Response("err", { status: 429 });
+      return okFields([]);
     }) as unknown as typeof fetch;
-
     const events: AttemptEvent[] = [];
-    await openrouterModel("openrouter/free").extract(PT_FIELDS, "текст", (ev) => events.push(ev));
+    await openrouterModel(PAID).extract(PT_FIELDS, "текст", (e) => events.push(e));
+    const paidStarts = events.filter((e) => e.phase === "start" && e.model === PAID);
+    expect(paidStarts).toHaveLength(1);
+  });
 
-    // primary = сам роутер, после его 429 цепочка ДОЛЖНА продолжиться каталожной моделью
-    expect(events[0]).toMatchObject({ phase: "start", model: "openrouter/free", index: 1 });
-    expect(events[1]).toMatchObject({ phase: "fail", model: "openrouter/free" });
-    expect(events[2]).toMatchObject({ phase: "start" });
-    expect(events[2].model).not.toBe("openrouter/free");
+  it("engages the fallback wave when the primary is the openrouter/free auto-router", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+    global.fetch = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(init!.body as string) as { model: string };
+      if (body.model === "openrouter/free") return new Response("rate limited", { status: 429 });
+      return okFields([]);
+    }) as unknown as typeof fetch;
+    const events: AttemptEvent[] = [];
+    const out = await openrouterModel("openrouter/free").extract(PT_FIELDS, "текст", (e) => events.push(e));
+    expect(out).toEqual([]);
+    expect(events.some((e) => e.phase === "fail" && e.model === "openrouter/free")).toBe(true);
+    expect(events.some((e) => e.phase === "win" && e.model !== "openrouter/free")).toBe(true);
   });
 });
