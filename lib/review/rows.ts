@@ -3,6 +3,12 @@ import type { ExtractField } from "@/lib/extract/fields";
 import type { PtField } from "@/lib/seed/pt";
 import type { ParsedDoc } from "@/lib/parse/types";
 
+/** Required fields whose current (editable) value is empty — surfaced as a
+ *  non-blocking warning on the Review step. `vals` is the live id→value map. */
+export function missingRequired(fields: ExtractField[], vals: Record<string, string>): ExtractField[] {
+  return fields.filter((f) => f.required && !(vals[f.id] ?? "").trim());
+}
+
 export function buildRows(
   fields: ExtractField[],
   values: ExtractedValue[],

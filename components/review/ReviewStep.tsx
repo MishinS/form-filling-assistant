@@ -4,7 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import { Tag, Icon } from "@/components/primitives";
 import { PT_FIELDS, PT_GROUPS, type ExtractField } from "@/lib/extract/fields";
 import { FIELDS as SEED_FIELDS, type PtField } from "@/lib/seed/pt";
-import { buildRows } from "@/lib/review/rows";
+import { buildRows, missingRequired } from "@/lib/review/rows";
 import type { ExtractedValue } from "@/lib/types";
 import type { ParsedDoc } from "@/lib/parse/types";
 import FieldRow from "./FieldRow";
@@ -26,6 +26,7 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vals]);
   const lowCount = rows.filter(f => f.conf === "low").length;
+  const missingReq = missingRequired(fields, vals); // required-but-empty (live) → non-blocking warning
   const confLabel = (lvl: PtField["conf"]) => t(lvl === "high" ? "conf_high" : lvl === "med" ? "conf_med" : "conf_low");
 
   return (
@@ -50,6 +51,18 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
           </div>
           <ul className="muted" style={{ margin: 0, paddingLeft: 26, fontSize: 12.5, lineHeight: 1.5 }}>
             {warnings.map((w, i) => <li key={i}>{w}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {missingReq.length > 0 && (
+        <div className="col gap-8" role="alert" style={{ marginTop: 16, padding: "12px 14px", borderRadius: "var(--r-lg)",
+          background: "var(--surface-2)", border: "1px solid rgba(215,177,105,.4)" }}>
+          <div className="row gap-8" style={{ color: "var(--warn)", fontSize: 13, fontWeight: 600 }}>
+            <Icon name="alert" size={14} />{t("review_required_h")}
+          </div>
+          <ul className="muted" style={{ margin: 0, paddingLeft: 26, fontSize: 12.5, lineHeight: 1.5 }}>
+            {missingReq.map(f => <li key={f.id}>{lang === "ru" ? f.label_ru : f.label_en}</li>)}
           </ul>
         </div>
       )}

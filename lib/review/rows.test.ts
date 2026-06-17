@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { buildRows } from "./rows";
+import { buildRows, missingRequired } from "./rows";
 import { PT_FIELDS } from "@/lib/extract/fields";
+import type { ExtractField } from "@/lib/extract/fields";
 import type { ParsedDoc } from "@/lib/parse/types";
 import type { ExtractedValue } from "@/lib/types";
 
@@ -25,5 +26,27 @@ describe("buildRows", () => {
     expect(f6.value).toBe("");
     expect(f6.src.file).toBe("—");
     expect(f6.src.loc).toBe("проставьте вручную");
+  });
+});
+
+describe("missingRequired", () => {
+  const fields = [
+    { id: "a", required: true } as ExtractField,
+    { id: "b", required: true } as ExtractField,
+    { id: "c", required: false } as ExtractField,
+  ];
+
+  it("returns required fields whose value is empty or whitespace", () => {
+    const out = missingRequired(fields, { a: "", b: "   ", c: "" });
+    expect(out.map(f => f.id)).toEqual(["a", "b"]);
+  });
+
+  it("ignores non-required fields and filled required ones", () => {
+    const out = missingRequired(fields, { a: "значение", b: "", c: "" });
+    expect(out.map(f => f.id)).toEqual(["b"]); // c not required, a filled
+  });
+
+  it("treats a missing key as empty", () => {
+    expect(missingRequired(fields, {}).map(f => f.id)).toEqual(["a", "b"]);
   });
 });
