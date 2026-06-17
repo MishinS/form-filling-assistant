@@ -38,9 +38,9 @@ export async function POST(req: Request): Promise<Response> {
       };
       const fail = (code: "file" | "xlsx" | "llm" | "nofields" | "server") => write({ type: "error", code });
       const onAttempt: OnAttempt = (ev) => {
-        write(ev.phase === "start"
-          ? { type: "attempt", model: ev.model, index: ev.index, total: ev.total }
-          : { type: "attempt-fail", model: ev.model, reason: ev.reason });
+        if (ev.phase === "start") write({ type: "attempt", model: ev.model, total: ev.total });
+        else if (ev.phase === "win") write({ type: "attempt-win", model: ev.model });
+        else write({ type: "attempt-fail", model: ev.model, reason: ev.reason });
       };
 
       const run = async () => {
