@@ -8,13 +8,13 @@ export interface LlmFieldResult {
   sourceHint?: string;
 }
 
-/** Progress event emitted by an adapter as it walks its model-candidate chain. */
+/** Progress event emitted as adapters race their model candidates. */
 export interface AttemptEvent {
-  phase: "start" | "fail";
+  phase: "start" | "fail" | "win";
   model: string;
-  index?: number; // 1-based position in the candidate chain (start events)
-  total?: number; // candidate chain length (start events)
-  reason?: string; // failure reason (fail events)
+  total?: number;   // размер текущей волны гонки (start-события)
+  reason?: string;  // причина провала (fail-события)
+  index?: number;   // deprecated: при гонке не выставляется, оставлено для совместимости типов
 }
 
 export type OnAttempt = (ev: AttemptEvent) => void;
