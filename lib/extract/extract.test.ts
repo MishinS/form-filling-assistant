@@ -75,11 +75,13 @@ describe("extractFields", () => {
       ["f1","f2","f3","f4","f5","f6","f7","f8","f9","f10","f11","f12"]);
   });
 
-  it("reports llmFailed=false and usedModel=last started model on success", async () => {
+  it("reports llmFailed=false and usedModel=the winning model on success", async () => {
     mockGetModel.mockReturnValue({
       id: "m",
       extract: async (_f: unknown, _t: unknown, onAttempt?: (e: { phase: string; model: string }) => void) => {
         onAttempt?.({ phase: "start", model: "model-a" });
+        onAttempt?.({ phase: "win", model: "model-a" });   // победитель — model-a
+        onAttempt?.({ phase: "start", model: "model-b" });  // последний start ≠ победитель
         return [{ fieldId: "f1", value: "ООО «Тест»", confidence: "med" }];
       },
     });

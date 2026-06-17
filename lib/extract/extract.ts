@@ -50,15 +50,15 @@ export async function extractFields(
   const llmFields = fields.filter((f) => f.strategy === "llm");
   if (llmFields.length) {
     const text = docs.map((d) => d.blocks.map((b) => b.text).join("\n")).join("\n\n");
-    let lastStarted: string | null = null;
+    let winner: string | null = null;
     const wrapped: OnAttempt = (ev) => {
-      if (ev.phase === "start") lastStarted = ev.model;
+      if (ev.phase === "win") winner = ev.model;
       onAttempt?.(ev);
     };
     try {
       const model = getModel(modelId);
       const results = await model.extract(llmFields, text, wrapped);
-      usedModel = lastStarted;
+      usedModel = winner;
       for (const f of llmFields) {
         const r = results.find((x) => x.fieldId === f.id);
         if (r && r.value) {
