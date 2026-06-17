@@ -98,6 +98,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   proc_fill:       { ru: "Заполнение шаблона", en: "Filling the template" },
   proc_fill_d:     { ru: "Значения подставляются в ячейки «Платёжного требования»", en: "Values mapped into the Payment Request cells" },
   proc_trying:      { ru: "Извлечение полей — пробуем", en: "Extracting fields — trying" },
+  proc_racing:      { ru: "Пробуем модели параллельно…", en: "Trying models in parallel…" },
   proc_unavailable: { ru: "недоступна, пробуем следующую…", en: "unavailable, trying next…" },
   llm_failed_title: { ru: "Не удалось извлечь поля моделью", en: "Field extraction by model failed" },
   llm_tried:        { ru: "Пробовали:", en: "Tried:" },
