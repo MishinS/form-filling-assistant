@@ -58,15 +58,18 @@ describe("POST /api/templates", () => {
     expect(saveMapping).toHaveBeenCalledWith("u@x.ru", last.id, [FIELD]);
   });
 
-  it("forwards attempt events from the scan", async () => {
+  it("forwards attempt/fail/win events from the scan race", async () => {
     mockPropose.mockImplementationOnce(async (_sheets: unknown, onAttempt?: (ev: Record<string, unknown>) => void) => {
-      onAttempt?.({ phase: "start", model: "m1", index: 1, total: 5 });
+      onAttempt?.({ phase: "start", model: "m1", total: 5 });
       onAttempt?.({ phase: "fail", model: "m1", reason: "HTTP 429" });
+      onAttempt?.({ phase: "start", model: "m2", total: 5 });
+      onAttempt?.({ phase: "win", model: "m2" });
       return { fields: [FIELD], failure: null };
     });
     const evs = await events(await POST(post({ name: "Ф", url: OK_URL })));
-    expect(evs).toContainEqual({ type: "attempt", model: "m1", index: 1, total: 5 });
+    expect(evs).toContainEqual({ type: "attempt", model: "m1", total: 5 });
     expect(evs).toContainEqual({ type: "attempt-fail", model: "m1", reason: "HTTP 429" });
+    expect(evs).toContainEqual({ type: "attempt-win", model: "m2" });
   });
 
   it("empty scan (llm) → terminal error, template NOT created", async () => {
