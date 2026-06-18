@@ -3,11 +3,32 @@ import type { ParsedBlock, Locator } from "@/lib/parse/types";
 export interface RuleHit { value: string; locator: Locator; }
 export type Rule = (blocks: ParsedBlock[]) => RuleHit | null;
 
-const RE_INVOICE = /сч[её]т(?:-оферта|\s+на\s+оплату)?\s*№\s*([^\s,]+)\s*от\s*(\d{1,2}[.\-/]\d{1,2}[.\-/]\d{2,4})/i;
+// «Счёт»/«Договор» № <номер> [от <дата>]. The doc word may carry up to a few
+// qualifier words before the number marker («Договор поставки №…», «Счёт на оплату №…»),
+// the marker may be №/No/N/#, and the «от <дата>» tail is optional (a bare number
+// still counts). A left lookbehind stops «счёт» matching inside «расчёт»/«счётчик».
+const DATE = "\\d{1,2}[.\\-/]\\d{1,2}[.\\-/]\\d{2,4}";
+const docNoRe = (head: string) =>
+  new RegExp(
+    `(?<![а-яёa-z])${head}(?:\\s+[а-яё-]+){0,3}?\\s*(?:№|no\\.?|n\\.?|#)\\s*([^\\s,;]+)(?:\\s*от\\s*(${DATE}))?`,
+    "i",
+  );
+const RE_INVOICE = docNoRe("сч[её]т(?:-фактура|-оферта)?");
+const RE_CONTRACT = docNoRe("договор[а-яё]*");
+
+function formatDocNo(kind: "Счёт" | "Договор", num: string, date?: string): string {
+  return date ? `${kind} №${num} от ${date}` : `${kind} №${num}`;
+}
+
 export const invoiceNoDate: Rule = (blocks) => {
+  // Prefer an invoice (the document actually being paid) over a contract reference.
   for (const b of blocks) {
     const m = b.text.match(RE_INVOICE);
-    if (m) return { value: `Счёт №${m[1]} от ${m[2]}`, locator: b.locator };
+    if (m) return { value: formatDocNo("Счёт", m[1], m[2]), locator: b.locator };
+  }
+  for (const b of blocks) {
+    const m = b.text.match(RE_CONTRACT);
+    if (m) return { value: formatDocNo("Договор", m[1], m[2]), locator: b.locator };
   }
   return null;
 };
