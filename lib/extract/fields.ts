@@ -3,6 +3,15 @@ import type { RuleKey } from "./rules";
 
 export type Strategy = "rule" | "llm" | "manual";
 
+export type FillMode = "auto" | "constant" | "date";
+
+export interface DateRule {
+  /** Смещение относительно даты формирования файла. */
+  offset: "today" | "nextDay" | "nextMonthSameDay" | "firstOfNextMonth";
+  /** Формат вывода: "dmy" → дд.мм.гггг (станет Excel-датой), "monthYear" → «Июль 2026» (текст). */
+  format: "dmy" | "monthYear";
+}
+
 export interface ExtractField {
   id: string;
   group: "req" | "pay" | "terms";
@@ -19,6 +28,12 @@ export interface ExtractField {
   isCounterparty?: boolean;
   /** Подсказка LLM по стилю/формату значения; попадает в строку поля в промпте. */
   hint_ru?: string;
+  /** Как заполняется ячейка: из документов (auto, по умолчанию), фикс-константой или дата-правилом. */
+  fillMode?: FillMode;
+  /** Фикс-значение, пишется как есть при fillMode === "constant". */
+  constantValue?: string;
+  /** Правило вычисления даты от момента формирования файла при fillMode === "date". */
+  dateRule?: DateRule;
 }
 
 export const PT_FIELDS: ExtractField[] = [
