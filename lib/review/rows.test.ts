@@ -50,3 +50,20 @@ describe("missingRequired", () => {
     expect(missingRequired(fields, {}).map(f => f.id)).toEqual(["a", "b"]);
   });
 });
+
+describe("режимы заполнения на Review", () => {
+  const f = (over: Partial<ExtractField>): ExtractField => ({
+    id: "x", group: "req", label_ru: "L", label_en: "L", cell: "ПТ!A1",
+    kind: "string", required: false, strategy: "manual", ...over,
+  });
+
+  it("buildRows скрывает constant/date поля", () => {
+    const fields = [f({ id: "a" }), f({ id: "b", fillMode: "constant", constantValue: "x" }), f({ id: "c", fillMode: "date", dateRule: { offset: "today", format: "dmy" } })];
+    const rows = buildRows(fields, [], []);
+    expect(rows.map(r => r.id)).toEqual(["a"]);
+  });
+  it("missingRequired игнорирует constant/date поля", () => {
+    const fields = [f({ id: "b", required: true, fillMode: "constant" })];
+    expect(missingRequired(fields, {})).toEqual([]);
+  });
+});
