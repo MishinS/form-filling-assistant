@@ -32,6 +32,7 @@ export async function extractFields(
   // 1) regex pass
   for (const f of fields) {
     if (f.strategy !== "rule" || !f.rule) continue;
+    if (f.fillMode === "constant" || f.fillMode === "date") continue;
     const rule = RULES[f.rule];
     if (!rule) continue; // unknown rule key (untrusted input) — skip rather than throw
     let value: ExtractedValue | null = null;
@@ -47,7 +48,9 @@ export async function extractFields(
   }
 
   // 2) llm pass
-  const llmFields = fields.filter((f) => f.strategy === "llm");
+  const llmFields = fields.filter(
+    (f) => f.strategy === "llm" && f.fillMode !== "constant" && f.fillMode !== "date",
+  );
   if (llmFields.length) {
     const text = docs.map((d) => d.blocks.map((b) => b.text).join("\n")).join("\n\n");
     let winner: string | null = null;

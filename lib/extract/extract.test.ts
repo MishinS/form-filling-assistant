@@ -5,6 +5,7 @@ const mockGetModel = vi.fn();
 vi.mock("./llm/registry", () => ({ getModel: (id: string) => mockGetModel(id) }));
 import { ModelNotConfigured } from "./llm/types";
 import { extractFields } from "./extract";
+import type { ExtractField } from "./fields";
 
 const doc: ParsedDoc = {
   fileId: "u1", name: "Счёт №8.pdf", mime: "application/pdf", pages: 1, scannedPages: [], warnings: [],
@@ -100,6 +101,21 @@ describe("extractFields", () => {
     expect(out.usedModel).toBeNull();
     expect(out.warnings.some(w => w.includes("429"))).toBe(true);
     expect(out.values.find(v => v.fieldId === "f3")!.value).toBe("Счёт №8 от 02.06.2026");
+  });
+
+  it("пропускает constant/date поля (не отдаёт их в LLM)", async () => {
+    const fields: ExtractField[] = [
+      { id: "f1", group: "req", label_ru: "Контрагент", label_en: "C", cell: "ПТ!D9", kind: "string", required: true, strategy: "llm", fillMode: "constant", constantValue: "АО Семейный доктор" },
+      { id: "f8", group: "pay", label_ru: "Вид", label_en: "T", cell: "ПТ!H15", kind: "string", required: true, strategy: "llm" },
+    ];
+    let sentToLlm: ExtractField[] = [];
+    mockGetModel.mockReturnValue({
+      id: "m",
+      extract: async (fs: ExtractField[]) => { sentToLlm = fs; return fs.map(f => ({ fieldId: f.id, value: "X", confidence: "high" as const })); },
+    });
+    const res = await extractFields([doc], "any-model", fields);
+    expect(sentToLlm.map(f => f.id)).toEqual(["f8"]);              // f1 (constant) НЕ ушёл в LLM
+    expect(res.values.find(v => v.fieldId === "f1")?.value).toBe(""); // пуст (override при заливке)
   });
 
   it("keeps llmFailed=false when the model returns our own company (benign warning)", async () => {
