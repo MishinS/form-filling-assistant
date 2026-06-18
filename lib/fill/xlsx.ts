@@ -1,7 +1,7 @@
 import { unzipSync, zipSync, strToU8, strFromU8 } from "fflate";
 import type { ExtractedValue } from "@/lib/types";
 import { PT_FIELDS, type ExtractField } from "@/lib/extract/fields";
-import { planWrites, sheetFile, scheduleFromValues, type CellWrite } from "./values";
+import { planWrites, sheetFile, scheduleFromValues, resolveValues, type CellWrite } from "./values";
 import { writeCell, setFormulaCache } from "./cell";
 import { sheetsFromFiles } from "@/lib/templates/xlsx-scan";
 import { parseAmount, parseDateSerial } from "./parse";
@@ -104,10 +104,12 @@ export function fillCustomXlsx(
   templateBytes: Uint8Array,
   values: ExtractedValue[],
   fields: ExtractField[],
+  now: Date = new Date(),
 ): Uint8Array {
+  const resolved = resolveValues(fields, values, now);
   const files = unzipSync(templateBytes);
   const fileBySheet = new Map(sheetsFromFiles(files).map(s => [s.name, s.file]));
-  const val = (id: string) => values.find(v => v.fieldId === id)?.value?.trim() ?? "";
+  const val = (id: string) => resolved.find(v => v.fieldId === id)?.value?.trim() ?? "";
 
   for (const f of fields) {
     const raw = val(f.id);
@@ -131,11 +133,17 @@ export function fillCustomXlsx(
 }
 
 /** Fill the ПТ образец with the given values, preserving everything else. Pure & sync. */
-export function fillPtXlsx(templateBytes: Uint8Array, values: ExtractedValue[], fields: ExtractField[] = PT_FIELDS): Uint8Array {
+export function fillPtXlsx(
+  templateBytes: Uint8Array,
+  values: ExtractedValue[],
+  fields: ExtractField[] = PT_FIELDS,
+  now: Date = new Date(),
+): Uint8Array {
+  const resolved = resolveValues(fields, values, now);
   const files = unzipSync(templateBytes);
 
   // Multi-row schedule → structural pass first (insert rows / retarget Итого formula).
-  const schedule = scheduleFromValues(values);
+  const schedule = scheduleFromValues(resolved);
   const k = schedule?.length ?? 1;
   if (k > 1) {
     const grafFile = sheetFile("График оплат");
@@ -145,7 +153,7 @@ export function fillPtXlsx(templateBytes: Uint8Array, values: ExtractedValue[], 
   }
 
   const byFile = new Map<string, CellWrite[]>();
-  for (const w of planWrites(values, fields, schedule)) {
+  for (const w of planWrites(resolved, fields, schedule)) {
     const file = sheetFile(w.sheet);
     const arr = byFile.get(file) ?? [];
     arr.push(w);

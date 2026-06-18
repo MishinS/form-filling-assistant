@@ -192,3 +192,37 @@ describe("fillPtXlsx single-row regression (no f9 split)", () => {
     expect(strFromU8(b["xl/worksheets/sheet3.xml"])).toContain("SUM(D5:D5)");
   });
 });
+
+import { PT_FIELDS, type ExtractField } from "@/lib/extract/fields";
+import { parseDateSerial } from "./parse";
+
+const sheet1 = (bytes: Uint8Array) => strFromU8(unzipSync(bytes)["xl/worksheets/sheet1.xml"]);
+
+describe("fillPtXlsx + режимы заполнения", () => {
+  const NOW = new Date(Date.UTC(2026, 5, 17)); // 17.06.2026
+
+  it("константное поле пишет своё значение в ячейку", () => {
+    // f8 «Вид платежа» → ПТ!H15, делаем константой
+    const fields: ExtractField[] = PT_FIELDS.map((f) =>
+      f.id === "f8" ? { ...f, fillMode: "constant", constantValue: "безналичный расчёт" } : f);
+    const out = fillPtXlsx(tpl, [], fields, NOW);
+    expect(sheet1(out)).toContain("безналичный расчёт");
+  });
+
+  it("date-поле формата dmy пишет Excel-serial", () => {
+    // f10 «Срок оплаты» → ПТ!H16 (kind date), правило nextDay
+    const fields: ExtractField[] = PT_FIELDS.map((f) =>
+      f.id === "f10" ? { ...f, fillMode: "date", dateRule: { offset: "nextDay", format: "dmy" } } : f);
+    const out = fillPtXlsx(tpl, [], fields, NOW);
+    const serial = parseDateSerial("18.06.2026"); // ожидаемый serial
+    // writeCell сохраняет атрибут стиля ячейки (s="15"), поэтому допускаем доп. атрибуты.
+    expect(sheet1(out)).toMatch(new RegExp(`<c r="H16"[^>]*><v>${serial}</v></c>`));
+  });
+
+  it("date-поле формата monthYear пишет текст", () => {
+    const fields: ExtractField[] = PT_FIELDS.map((f) =>
+      f.id === "f10" ? { ...f, fillMode: "date", dateRule: { offset: "nextMonthSameDay", format: "monthYear" } } : f);
+    const out = fillPtXlsx(tpl, [], fields, NOW);
+    expect(sheet1(out)).toContain("Июль 2026");
+  });
+});

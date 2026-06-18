@@ -76,7 +76,11 @@ export function planWrites(
       if (n !== null) writes.push({ sheet: "ПТ", ref, mode: "number", value: n });
     } else if (f.kind === "date") {
       const n = parseDateSerial(raw);
-      if (n !== null) writes.push({ sheet: "ПТ", ref, mode: "number", value: n });
+      // Serial when parseable; otherwise write verbatim text (e.g. date-rule «Июль 2026»),
+      // mirroring fillCustomXlsx's date fallback so ПТ and custom templates agree.
+      writes.push(n !== null
+        ? { sheet: "ПТ", ref, mode: "number", value: n }
+        : { sheet: "ПТ", ref, mode: "string", value: raw });
     } else {
       writes.push({ sheet: "ПТ", ref, mode: "string", value: raw });
     }
