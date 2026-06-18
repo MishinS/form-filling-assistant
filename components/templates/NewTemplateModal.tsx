@@ -36,6 +36,7 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [drag, setDrag] = useState(false);
   const [phase, setPhase] = useState<Phase>("form");
   const [pct, setPct] = useState(0);
   const [stage, setStage] = useState("");
@@ -161,11 +162,35 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
           <div className="col gap-6">
             <span className="muted" style={{ fontSize: 12 }}>{t("tpl_new_file")}</span>
             <input ref={fileRef} type="file" accept=".xlsx" onChange={e => { pick(e.target.files?.[0]); e.target.value = ""; }} style={{ display: "none" }} />
-            <button onClick={() => fileRef.current?.click()} disabled={busy} title={file ? file.name : undefined}
-              style={{ ...fieldStyle, textAlign: "left", cursor: "pointer", color: file ? "var(--text-1)" : "var(--text-3)",
-                display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {file ? file.name : "…"}
-            </button>
+            <div
+              onDragOver={busy ? undefined : e => { e.preventDefault(); setDrag(true); }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={busy ? undefined : e => { e.preventDefault(); setDrag(false); pick(e.dataTransfer.files?.[0]); }}
+              onClick={busy ? undefined : () => fileRef.current?.click()}
+              title={file ? file.name : undefined}
+              style={{ borderRadius: "var(--r-md)", cursor: busy ? "default" : "pointer", textAlign: "center",
+                padding: file ? "16px 14px" : "26px 16px",
+                border: `1.5px dashed ${drag ? "var(--line-strong)" : "var(--line-2)"}`,
+                background: drag ? "var(--surface-3)" : "var(--surface-2)", transition: "all .15s" }}>
+              {file ? (
+                <div className="row gap-10" style={{ justifyContent: "center", alignItems: "center", minWidth: 0 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 9, flex: "none", display: "grid", placeItems: "center", background: "var(--surface-3)", border: "1px solid var(--line-2)", color: "var(--ok)" }}>
+                    <Icon name="checkc" size={18} />
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{file.name}</span>
+                </div>
+              ) : (
+                <>
+                  <div style={{ width: 44, height: 44, margin: "0 auto 10px", borderRadius: 12, display: "grid", placeItems: "center",
+                    background: "var(--surface-3)", border: "1px solid var(--line-2)",
+                    transform: drag ? "translateY(-2px)" : "none", transition: "transform .2s var(--ease)" }}>
+                    <Icon name="upload" size={20} stroke={1.5} />
+                  </div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600 }}>{t("tpl_new_drop")}</div>
+                  <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{t("tpl_new_drop_sub")}</div>
+                </>
+              )}
+            </div>
           </div>
           {err && <span style={{ fontSize: 12.5, color: "var(--bad)" }}>{err}</span>}
 

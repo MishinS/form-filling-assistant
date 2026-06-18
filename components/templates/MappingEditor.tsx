@@ -202,9 +202,9 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.35fr 1fr", gap: 18, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 18, alignItems: "start" }}>
         <div style={{ border: "1px solid var(--line)", borderRadius: "var(--r-lg)", overflow: "hidden", background: "var(--surface-1)" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1.4fr 110px 50px 34px", gap: 12, padding: "11px 16px", borderBottom: "1px solid var(--line)", color: "var(--text-3)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1.15fr 1.7fr 92px 44px 30px", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--line)", color: "var(--text-3)" }}>
             {[t("field"), t("rule"), t("cell"), t("required"), ""].map((c, i) => (
               <div key={i} className="mono" style={{ fontSize: 10, letterSpacing: ".05em", textTransform: "uppercase" }}>{c}</div>
             ))}
@@ -216,7 +216,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
             const dupe = !cellErr && dupeCells.has(f.cell);
             return (
               <div key={f.id} onClick={() => setSel(f.id)}
-                style={{ display: "grid", gridTemplateColumns: "1.4fr 1.4fr 110px 50px 34px", gap: 12, padding: "12px 16px", alignItems: "center",
+                style={{ display: "grid", gridTemplateColumns: "1.15fr 1.7fr 92px 44px 30px", gap: 10, padding: "12px 16px", alignItems: "center",
                   cursor: "pointer", borderBottom: i === rows.length - 1 ? "none" : "1px solid var(--line)",
                   background: on ? "var(--surface-3)" : "transparent", transition: "background .12s" }}>
                 {/* field label */}
@@ -233,7 +233,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
                   </select>
                 </div>
                 {/* fill mode + controls */}
-                <div style={{ display: "flex", flexDirection: "column", minWidth: 0, gap: 4 }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: "flex", flexDirection: "column", minWidth: 0, gap: 4, overflow: "hidden" }} onClick={e => e.stopPropagation()}>
                   {locked ? (
                     <div className="row gap-6">
                       <span style={{ width: 5, height: 5, borderRadius: 99, background: ruleTone(f.strategy), flex: "none" }} />
@@ -242,7 +242,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
                   ) : (
                     <>
                       <select value={f.fillMode ?? "auto"} onChange={e => setMode(f.id, e.target.value as ExtractField["fillMode"])}
-                        className="mono" style={{ fontSize: 10.5, background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: 5, padding: "2px 4px" }}>
+                        className="mono" style={{ width: "100%", minWidth: 0, fontSize: 10.5, background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: 5, padding: "2px 4px" }}>
                         <option value="auto">{t("mode_auto")}</option>
                         <option value="constant">{t("mode_constant")}</option>
                         <option value="date">{t("mode_date")}</option>
@@ -252,19 +252,19 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
                       )}
                       {f.fillMode === "constant" && (
                         <input value={f.constantValue ?? ""} onChange={e => setConst(f.id, e.target.value)} placeholder={t("mode_const_ph")}
-                          style={{ fontSize: 11, padding: "2px 5px", borderRadius: 5, border: "1px solid var(--line-2)", background: "var(--surface-2)" }} />
+                          style={{ width: "100%", minWidth: 0, boxSizing: "border-box", fontSize: 11, padding: "2px 5px", borderRadius: 5, border: "1px solid var(--line-2)", background: "var(--surface-2)" }} />
                       )}
                       {f.fillMode === "date" && f.dateRule && (
-                        <div className="row gap-4">
+                        <div style={{ display: "flex", gap: 4, width: "100%" }}>
                           <select value={f.dateRule.offset} onChange={e => setDate(f.id, { offset: e.target.value as NonNullable<ExtractField["dateRule"]>["offset"] })}
-                            className="mono" style={{ fontSize: 10, background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: 5 }}>
+                            className="mono" style={{ flex: 1, minWidth: 0, width: "100%", fontSize: 10, padding: "2px 3px", background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: 5 }}>
                             <option value="today">{t("date_off_today")}</option>
                             <option value="nextDay">{t("date_off_nextDay")}</option>
                             <option value="nextMonthSameDay">{t("date_off_nextMonthSameDay")}</option>
                             <option value="firstOfNextMonth">{t("date_off_firstOfNextMonth")}</option>
                           </select>
                           <select value={f.dateRule.format} onChange={e => setDate(f.id, { format: e.target.value as NonNullable<ExtractField["dateRule"]>["format"] })}
-                            className="mono" style={{ fontSize: 10, background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: 5 }}>
+                            className="mono" style={{ flex: 1, minWidth: 0, width: "100%", fontSize: 10, padding: "2px 3px", background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: 5 }}>
                             <option value="dmy">{t("date_fmt_dmy")}</option>
                             <option value="monthYear">{t("date_fmt_monthYear")}</option>
                           </select>

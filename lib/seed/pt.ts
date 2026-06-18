@@ -172,6 +172,8 @@ export const STR: Record<string, { ru: string; en: string }> = {
   tpl_new_name:     { ru: "Название", en: "Name" },
   tpl_new_desc:     { ru: "Описание (необязательно)", en: "Description (optional)" },
   tpl_new_file:     { ru: "Файл шаблона (.xlsx, до 5 МБ)", en: "Template file (.xlsx, up to 5 MB)" },
+  tpl_new_drop:     { ru: "Перетащите файл шаблона сюда", en: "Drop the template file here" },
+  tpl_new_drop_sub: { ru: "или нажмите, чтобы выбрать .xlsx", en: "or click to browse .xlsx" },
   tpl_new_create:   { ru: "Создать", en: "Create" },
   tpl_scan_upload:        { ru: "Загружаем файл…", en: "Uploading the file…" },
   tpl_scan_sheets:        { ru: "Читаем листы…", en: "Reading sheets…" },
