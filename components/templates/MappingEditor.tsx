@@ -70,6 +70,17 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
     setDraft(d => d.map(f => f.id === id ? { ...f, required: !f.required } : f));
   const editKind = (id: string, k: ExtractField["kind"]) =>
     setDraft(d => d.map(f => f.id === id ? { ...f, kind: k } : f));
+  const setMode = (id: string, mode: ExtractField["fillMode"]) =>
+    setDraft(d => d.map(f => {
+      if (f.id !== id) return f;
+      if (mode === "constant") return { ...f, fillMode: "constant", constantValue: f.constantValue ?? "", dateRule: undefined };
+      if (mode === "date") return { ...f, fillMode: "date", dateRule: f.dateRule ?? { offset: "today", format: "dmy" }, constantValue: undefined };
+      return { ...f, fillMode: undefined, constantValue: undefined, dateRule: undefined }; // auto
+    }));
+  const setConst = (id: string, v: string) =>
+    setDraft(d => d.map(f => f.id === id ? { ...f, constantValue: v } : f));
+  const setDate = (id: string, patch: Partial<NonNullable<ExtractField["dateRule"]>>) =>
+    setDraft(d => d.map(f => f.id === id && f.dateRule ? { ...f, dateRule: { ...f.dateRule, ...patch } } : f));
   const del = (id: string) => setDraft(d => d.filter(f => f.id !== id));
   const add = () => {
     // Compute the new id INSIDE the updater so a rapid double-add can't mint two
@@ -221,10 +232,46 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
                     <option value="date">{t("kind_date")}</option>
                   </select>
                 </div>
-                {/* rule (read-only display) */}
-                <div className="row gap-6" style={{ minWidth: 0 }}>
-                  <span style={{ width: 5, height: 5, borderRadius: 99, background: ruleTone(f.strategy), flex: "none" }} />
-                  <span className="muted" style={{ fontSize: 11.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ruleText(f, ru)}</span>
+                {/* fill mode + controls */}
+                <div style={{ display: "flex", flexDirection: "column", minWidth: 0, gap: 4 }} onClick={e => e.stopPropagation()}>
+                  {locked ? (
+                    <div className="row gap-6">
+                      <span style={{ width: 5, height: 5, borderRadius: 99, background: ruleTone(f.strategy), flex: "none" }} />
+                      <span className="muted" style={{ fontSize: 11.5 }}>{ruleText(f, ru)}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <select value={f.fillMode ?? "auto"} onChange={e => setMode(f.id, e.target.value as ExtractField["fillMode"])}
+                        className="mono" style={{ fontSize: 10.5, background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: 5, padding: "2px 4px" }}>
+                        <option value="auto">{t("mode_auto")}</option>
+                        <option value="constant">{t("mode_constant")}</option>
+                        <option value="date">{t("mode_date")}</option>
+                      </select>
+                      {(!f.fillMode || f.fillMode === "auto") && (
+                        <span className="muted" style={{ fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ruleText(f, ru)}</span>
+                      )}
+                      {f.fillMode === "constant" && (
+                        <input value={f.constantValue ?? ""} onChange={e => setConst(f.id, e.target.value)} placeholder={t("mode_const_ph")}
+                          style={{ fontSize: 11, padding: "2px 5px", borderRadius: 5, border: "1px solid var(--line-2)", background: "var(--surface-2)" }} />
+                      )}
+                      {f.fillMode === "date" && f.dateRule && (
+                        <div className="row gap-4">
+                          <select value={f.dateRule.offset} onChange={e => setDate(f.id, { offset: e.target.value as NonNullable<ExtractField["dateRule"]>["offset"] })}
+                            className="mono" style={{ fontSize: 10, background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: 5 }}>
+                            <option value="today">{t("date_off_today")}</option>
+                            <option value="nextDay">{t("date_off_nextDay")}</option>
+                            <option value="nextMonthSameDay">{t("date_off_nextMonthSameDay")}</option>
+                            <option value="firstOfNextMonth">{t("date_off_firstOfNextMonth")}</option>
+                          </select>
+                          <select value={f.dateRule.format} onChange={e => setDate(f.id, { format: e.target.value as NonNullable<ExtractField["dateRule"]>["format"] })}
+                            className="mono" style={{ fontSize: 10, background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: 5 }}>
+                            <option value="dmy">{t("date_fmt_dmy")}</option>
+                            <option value="monthYear">{t("date_fmt_monthYear")}</option>
+                          </select>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
                 {/* cell */}
                 <div onClick={e => e.stopPropagation()}>
