@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { planWrites, sheetFile, scheduleFromValues, type CellWrite } from "./values";
+import { planWrites, sheetFile, scheduleFromValues, resolveValues, type CellWrite } from "./values";
 import type { ExtractedValue } from "@/lib/types";
 
 const ev = (fieldId: string, value: string): ExtractedValue => ({
@@ -126,5 +126,43 @@ describe("scheduleFromValues", () => {
   it("keeps the single-row legacy schedule without f9", () => {
     const rows = scheduleFromValues([ev("f4", "100 000,00"), ev("f10", "30.04.2026")]);
     expect(rows).toEqual([{ stage: "Аванс", percent: 100, amount: 100000, due: 46142 }]);
+  });
+});
+
+import type { ExtractField } from "@/lib/extract/fields";
+
+describe("resolveValues", () => {
+  const base = (over: Partial<ExtractField>): ExtractField => ({
+    id: "x", group: "req", label_ru: "L", label_en: "L", cell: "ПТ!A1",
+    kind: "string", required: false, strategy: "manual", ...over,
+  });
+  const NOW = new Date(Date.UTC(2026, 5, 17)); // 17.06.2026
+
+  it("константа берётся из конфига поля", () => {
+    const fields = [base({ id: "f1", fillMode: "constant", constantValue: "АО Семейный доктор" })];
+    const out = resolveValues(fields, [], NOW);
+    expect(out).toEqual([{ fieldId: "f1", value: "АО Семейный доктор", confidence: "high", source: { fileId: null, locator: "" } }]);
+  });
+
+  it("дата вычисляется по правилу", () => {
+    const fields = [base({ id: "f10", kind: "date", fillMode: "date", dateRule: { offset: "nextDay", format: "dmy" } })];
+    expect(resolveValues(fields, [], NOW)[0].value).toBe("18.06.2026");
+  });
+
+  it("auto-поле сохраняет извлечённое значение", () => {
+    const fields = [base({ id: "f3" })];
+    const extracted = [{ fieldId: "f3", value: "Счёт №142", confidence: "high" as const, source: { fileId: "u0", locator: "стр. 1" } }];
+    expect(resolveValues(fields, extracted, NOW)[0]).toEqual(extracted[0]);
+  });
+
+  it("f9-константа прогоняется через split графика", () => {
+    const fields = [
+      base({ id: "f4", kind: "amount" }),
+      base({ id: "f9", kind: "text", fillMode: "constant", constantValue: "Аванс 30%, постоплата 70%" }),
+    ];
+    const extracted = [{ fieldId: "f4", value: "100000", confidence: "high" as const, source: { fileId: null, locator: "" } }];
+    const resolved = resolveValues(fields, extracted, NOW);
+    const sched = scheduleFromValues(resolved);
+    expect(sched?.map(r => r.percent)).toEqual([30, 70]);
   });
 });

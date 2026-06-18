@@ -2,6 +2,7 @@ import { PT_FIELDS, type ExtractField } from "@/lib/extract/fields";
 import type { ExtractedValue } from "@/lib/types";
 import { parseAmount, parseDateSerial } from "./parse";
 import { buildSchedule, formatPercent, round2, type ScheduleRow } from "./schedule";
+import { applyDateRule } from "./daterule";
 
 export type WriteMode = "string" | "number" | "formulaCache";
 export interface CellWrite {
@@ -31,6 +32,29 @@ export function scheduleFromValues(values: ExtractedValue[]): ScheduleRow[] | nu
   const total = parseAmount(val("f4") || val("f7"));
   if (total === null) return null;
   return buildSchedule(total, parseDateSerial(val("f10")), val("f9"));
+}
+
+/** Применить режимы заполнения полей: constant/date берут значение из конфига поля
+ *  (дата считается от `now`), auto — сохраняют извлечённое значение. Один
+ *  ExtractedValue на поле. Вызывается в начале fill-функций перед planWrites. */
+export function resolveValues(
+  fields: ExtractField[],
+  extracted: ExtractedValue[],
+  now: Date,
+): ExtractedValue[] {
+  const byId = new Map(extracted.map((v) => [v.fieldId, v]));
+  return fields.map((f) => {
+    if (f.fillMode === "constant") {
+      return { fieldId: f.id, value: f.constantValue ?? "", confidence: "high",
+        source: { fileId: null, locator: "" } };
+    }
+    if (f.fillMode === "date" && f.dateRule) {
+      return { fieldId: f.id, value: applyDateRule(f.dateRule, now), confidence: "high",
+        source: { fileId: null, locator: "" } };
+    }
+    return byId.get(f.id) ?? { fieldId: f.id, value: "", confidence: "low",
+      source: { fileId: null, locator: "" } };
+  });
 }
 
 export function planWrites(
