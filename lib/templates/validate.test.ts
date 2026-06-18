@@ -44,6 +44,42 @@ describe("parseFieldList", () => {
     expect(out).not.toBeNull();
     expect(out?.[0].hint_ru).toBeUndefined();
   });
+
+  it("протаскивает fillMode/constantValue/dateRule лосслесс", () => {
+    const input = [{
+      id: "f8", group: "pay", label_ru: "Вид", label_en: "T", cell: "ПТ!H15",
+      kind: "string", strategy: "manual", required: true,
+      fillMode: "constant", constantValue: "безнал",
+    }, {
+      id: "f10", group: "terms", label_ru: "Срок", label_en: "Due", cell: "ПТ!H16",
+      kind: "date", strategy: "manual", required: false,
+      fillMode: "date", dateRule: { offset: "nextDay", format: "dmy" },
+    }];
+    const out = parseFieldList(input);
+    expect(out?.[0].fillMode).toBe("constant");
+    expect(out?.[0].constantValue).toBe("безнал");
+    expect(out?.[1].dateRule).toEqual({ offset: "nextDay", format: "dmy" });
+  });
+
+  it("отклоняет fillMode:date с кривым dateRule", () => {
+    const input = [{
+      id: "f10", group: "terms", label_ru: "Срок", label_en: "Due", cell: "ПТ!H16",
+      kind: "date", strategy: "manual", required: false,
+      fillMode: "date", dateRule: { offset: "WAT", format: "dmy" },
+    }];
+    expect(parseFieldList(input)).toBeNull();
+  });
+
+  it("игнорирует некорректный fillMode и длинный constantValue", () => {
+    const input = [{
+      id: "f1", group: "req", label_ru: "K", label_en: "C", cell: "ПТ!D9",
+      kind: "string", strategy: "manual", required: false,
+      fillMode: "weird", constantValue: "z".repeat(600),
+    }];
+    const out = parseFieldList(input);
+    expect(out?.[0].fillMode).toBeUndefined();
+    expect(out?.[0].constantValue).toBeUndefined();
+  });
 });
 
 describe("parseFieldList with allowedSheets", () => {
