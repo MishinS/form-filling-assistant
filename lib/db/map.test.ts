@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildFillRecord, buildDetailGroups, formatFillDate, type FillPayload, type ValueDetail } from "./map";
+import { buildFillRecord, buildDetailGroups, formatFillDate, formatSourceRow, filterSources, type FillPayload, type ValueDetail, type SourceRowData, type SourceRowView } from "./map";
 
 const payload: FillPayload = {
   templateId: "pt",
@@ -92,5 +92,65 @@ describe("buildDetailGroups", () => {
     expect(buildDetailGroups(values, "ru").find(x => x.group === "pay")!.groupLabel).toBe("Платёж");
     expect(buildDetailGroups(values, "en").find(x => x.group === "pay")!.groupLabel).toBe("Payment");
     expect(buildDetailGroups([], "ru")).toEqual([]);
+  });
+});
+
+const baseSrc: SourceRowData = {
+  id: "f1-s0", name: "schet-142.pdf", mime: "application/pdf", size: "204800",
+  pages: 2, blobKey: "https://blob/abc", fillId: "f1", createdAt: "2026-06-20T10:30:00.000Z",
+  counterparty: "ООО «Ромашка»",
+};
+
+describe("formatSourceRow", () => {
+  it("выводит ext из mime для pdf/xlsx/docx", () => {
+    expect(formatSourceRow({ ...baseSrc, mime: "application/pdf" }, "ru").ext).toBe("pdf");
+    expect(formatSourceRow({ ...baseSrc, mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }, "ru").ext).toBe("xlsx");
+    expect(formatSourceRow({ ...baseSrc, mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }, "ru").ext).toBe("docx");
+  });
+
+  it("неизвестный mime → расширение из имени, иначе 'file'", () => {
+    expect(formatSourceRow({ ...baseSrc, mime: "application/octet-stream", name: "doc.xlsx" }, "ru").ext).toBe("xlsx");
+    expect(formatSourceRow({ ...baseSrc, mime: "application/octet-stream", name: "noext" }, "ru").ext).toBe("file");
+  });
+
+  it("форматирует размер по-человечески (КБ/МБ)", () => {
+    expect(formatSourceRow({ ...baseSrc, size: "500" }, "ru").sizeText).toBe("500 Б");
+    expect(formatSourceRow({ ...baseSrc, size: "204800" }, "ru").sizeText).toBe("200 КБ");
+    expect(formatSourceRow({ ...baseSrc, size: "5242880" }, "ru").sizeText).toBe("5.0 МБ");
+    expect(formatSourceRow({ ...baseSrc, size: "500" }, "en").sizeText).toBe("500 B");
+  });
+
+  it("прокидывает дату, контрагент и blobKey", () => {
+    const v = formatSourceRow(baseSrc, "ru");
+    expect(v.dateText).toContain("20");
+    expect(v.counterparty).toBe("ООО «Ромашка»");
+    expect(v.blobKey).toBe("https://blob/abc");
+  });
+
+  it("counterparty null остаётся null", () => {
+    expect(formatSourceRow({ ...baseSrc, counterparty: null }, "ru").counterparty).toBeNull();
+  });
+});
+
+describe("filterSources", () => {
+  const rows: SourceRowView[] = [
+    { id: "1", name: "schet-142.pdf", ext: "pdf", sizeText: "200 КБ", pages: 2, dateText: "20.06.2026", counterparty: "ООО «Ромашка»", blobKey: "u" },
+    { id: "2", name: "dogovor.docx", ext: "docx", sizeText: "10 КБ", pages: 1, dateText: "19.06.2026", counterparty: "ООО «Лютик»", blobKey: "u" },
+    { id: "3", name: "kp.xlsx", ext: "xlsx", sizeText: "5 КБ", pages: 1, dateText: "18.06.2026", counterparty: null, blobKey: null },
+  ];
+
+  it("пустой запрос → все строки", () => {
+    expect(filterSources(rows, "")).toHaveLength(3);
+    expect(filterSources(rows, "   ")).toHaveLength(3);
+  });
+  it("матч по контрагенту, регистронезависимо", () => {
+    expect(filterSources(rows, "ромашка").map((r) => r.id)).toEqual(["1"]);
+  });
+  it("матч по имени файла", () => {
+    expect(filterSources(rows, "dogovor").map((r) => r.id)).toEqual(["2"]);
+  });
+  it("counterparty null не падает, матчится только по имени", () => {
+    expect(filterSources(rows, "kp").map((r) => r.id)).toEqual(["3"]);
+    expect(filterSources(rows, "несуществует")).toHaveLength(0);
   });
 });

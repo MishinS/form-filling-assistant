@@ -124,3 +124,76 @@ export function buildDetailGroups(values: ValueDetail[], lang: "ru" | "en"): Det
     rows: buckets.get(g.id)!,
   }));
 }
+
+export interface SourceRowData {
+  id: string;
+  name: string;
+  mime: string;
+  size: string;
+  pages: number;
+  blobKey: string | null;
+  fillId: string;
+  createdAt: string;
+  counterparty: string | null;
+}
+
+export interface SourceRowView {
+  id: string;
+  name: string;
+  ext: string;
+  sizeText: string;
+  pages: number;
+  dateText: string;
+  counterparty: string | null;
+  blobKey: string | null;
+}
+
+const MIME_EXT: Record<string, string> = {
+  "application/pdf": "pdf",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+};
+
+function sourceExt(mime: string, name: string): string {
+  const byMime = MIME_EXT[mime];
+  if (byMime) return byMime;
+  const parts = name.split(".");
+  if (parts.length > 1) {
+    const ext = parts.pop()!.toLowerCase();
+    if (ext) return ext;
+  }
+  return "file";
+}
+
+function formatSize(bytes: string, lang: "ru" | "en"): string {
+  const n = Number(bytes) || 0;
+  const U = lang === "ru" ? ["Б", "КБ", "МБ"] : ["B", "KB", "MB"];
+  if (n < 1024) return `${n} ${U[0]}`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} ${U[1]}`;
+  return `${(n / 1024 / 1024).toFixed(1)} ${U[2]}`;
+}
+
+/** Map a raw source-file row into the view shape the archive list renders. Pure / isomorphic. */
+export function formatSourceRow(r: SourceRowData, lang: "ru" | "en"): SourceRowView {
+  return {
+    id: r.id,
+    name: r.name,
+    ext: sourceExt(r.mime, r.name),
+    sizeText: formatSize(r.size, lang),
+    pages: r.pages,
+    dateText: formatFillDate(r.createdAt, lang),
+    counterparty: r.counterparty,
+    blobKey: r.blobKey,
+  };
+}
+
+/** Case-insensitive substring filter over file name OR counterparty. Empty query → all rows. */
+export function filterSources(rows: SourceRowView[], q: string): SourceRowView[] {
+  const needle = q.trim().toLocaleLowerCase();
+  if (!needle) return rows;
+  return rows.filter(
+    (r) =>
+      r.name.toLocaleLowerCase().includes(needle) ||
+      (r.counterparty ?? "").toLocaleLowerCase().includes(needle),
+  );
+}
