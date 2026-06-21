@@ -96,7 +96,7 @@ describe("buildDetailGroups", () => {
 });
 
 const baseSrc: SourceRowData = {
-  id: "f1-s0", name: "schet-142.pdf", mime: "application/pdf", size: "204800",
+  id: "f1-s0", name: "schet-142.pdf", mime: "application/pdf", size: "200.0 КБ",
   pages: 2, blobKey: "https://blob/abc", fillId: "f1", createdAt: "2026-06-20T10:30:00.000Z",
   counterparty: "ООО «Ромашка»",
 };
@@ -113,11 +113,9 @@ describe("formatSourceRow", () => {
     expect(formatSourceRow({ ...baseSrc, mime: "application/octet-stream", name: "noext" }, "ru").ext).toBe("file");
   });
 
-  it("форматирует размер по-человечески (КБ/МБ)", () => {
-    expect(formatSourceRow({ ...baseSrc, size: "500" }, "ru").sizeText).toBe("500 Б");
-    expect(formatSourceRow({ ...baseSrc, size: "204800" }, "ru").sizeText).toBe("200 КБ");
-    expect(formatSourceRow({ ...baseSrc, size: "5242880" }, "ru").sizeText).toBe("5.0 МБ");
-    expect(formatSourceRow({ ...baseSrc, size: "500" }, "en").sizeText).toBe("500 B");
+  it("size — passthrough уже отформатированной строки (не пере-форматирует)", () => {
+    expect(formatSourceRow({ ...baseSrc, size: "200.0 КБ" }, "ru").sizeText).toBe("200.0 КБ");
+    expect(formatSourceRow({ ...baseSrc, size: "1.5 МБ" }, "ru").sizeText).toBe("1.5 МБ");
   });
 
   it("прокидывает дату, контрагент и blobKey", () => {

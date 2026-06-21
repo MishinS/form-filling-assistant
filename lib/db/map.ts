@@ -165,21 +165,13 @@ function sourceExt(mime: string, name: string): string {
   return "file";
 }
 
-function formatSize(bytes: string, lang: "ru" | "en"): string {
-  const n = Number(bytes) || 0;
-  const U = lang === "ru" ? ["Б", "КБ", "МБ"] : ["B", "KB", "MB"];
-  if (n < 1024) return `${n} ${U[0]}`;
-  if (n < 1024 * 1024) return `${Math.round(n / 1024)} ${U[1]}`;
-  return `${(n / 1024 / 1024).toFixed(1)} ${U[2]}`;
-}
-
 /** Map a raw source-file row into the view shape the archive list renders. Pure / isomorphic. */
 export function formatSourceRow(r: SourceRowData, lang: "ru" | "en"): SourceRowView {
   return {
     id: r.id,
     name: r.name,
     ext: sourceExt(r.mime, r.name),
-    sizeText: formatSize(r.size, lang),
+    sizeText: r.size,
     pages: r.pages,
     dateText: formatFillDate(r.createdAt, lang),
     counterparty: r.counterparty,
