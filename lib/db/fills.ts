@@ -1,7 +1,7 @@
 import { sql, eq, and, desc, count } from "drizzle-orm";
 import { getDb } from "./client";
 import { fills, sourceFiles, extractedValues } from "./schema";
-import { buildFillRecord, type FillPayload, type HistoryRowData, type FillDetail } from "./map";
+import { buildFillRecord, type FillPayload, type HistoryRowData, type FillDetail, type SourceRowData } from "./map";
 
 /** Atomically persist a completed fill (fills + source_files + extracted_values). */
 export async function createFill(userId: string, payload: FillPayload): Promise<string> {
@@ -54,6 +54,42 @@ export async function listFills(userId: string, limit = 20): Promise<HistoryRowD
     counterparty: r.counterparty,
     amount: r.amount,
     currency: r.currency,
+  }));
+}
+
+export async function listSources(userId: string, limit = 50): Promise<SourceRowData[]> {
+  const db = getDb();
+  // See listFills: an unqualified `${sourceFiles.fillId}` inside the correlated subquery would
+  // resolve to the INNER table (ev), so reference the outer column with an explicit literal.
+  const sfFill = sql.raw('"source_files"."fill_id"');
+  const rows = await db
+    .select({
+      id: sourceFiles.id,
+      name: sourceFiles.name,
+      mime: sourceFiles.mime,
+      size: sourceFiles.size,
+      pages: sourceFiles.pages,
+      blobKey: sourceFiles.blobKey,
+      fillId: sourceFiles.fillId,
+      createdAt: fills.createdAt,
+      counterparty: sql<string | null>`(select ev.value from ${extractedValues} ev where ev.fill_id = ${sfFill} and ev.field_id = 'f1' limit 1)`,
+    })
+    .from(sourceFiles)
+    .innerJoin(fills, eq(fills.id, sourceFiles.fillId))
+    .where(eq(fills.userId, userId))
+    .orderBy(desc(fills.createdAt), sourceFiles.id)
+    .limit(limit);
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    mime: r.mime,
+    size: r.size,
+    pages: Number(r.pages ?? 1),
+    blobKey: r.blobKey,
+    fillId: r.fillId,
+    createdAt: (r.createdAt as Date).toISOString(),
+    counterparty: r.counterparty,
   }));
 }
 
