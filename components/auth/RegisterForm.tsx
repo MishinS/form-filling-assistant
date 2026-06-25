@@ -13,6 +13,7 @@ export default function RegisterForm() {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+  const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errKey, setErrKey] = useState<string | null>(null);
 
@@ -23,12 +24,12 @@ export default function RegisterForm() {
     const res = await fetch("/api/register", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, name, password, inviteCode }),
+      body: JSON.stringify({ email, name, password, inviteCode, acceptTos: agree }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       const code = (data as { error?: string }).error;
-      setErrKey(code === "invite" ? "register_err_invite" : code === "email_taken" ? "register_err_taken" : code === "server" ? "register_err_server" : "register_err_generic");
+      setErrKey(code === "invite" ? "register_err_invite" : code === "email_taken" ? "register_err_taken" : code === "consent" ? "register_err_consent" : code === "server" ? "register_err_server" : "register_err_generic");
       setBusy(false);
       return;
     }
@@ -69,8 +70,16 @@ export default function RegisterForm() {
           {t("register_invite")}
           <input type="text" required value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} style={inputStyle} />
         </label>
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", fontSize: 12.5, color: "var(--text-2)" }}>
+          <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
+          <span>
+            <span style={{ fontWeight: 600 }}>{t("reg_tos_label")}</span>
+            {" — "}
+            <span className="muted">{t("reg_tos_text")}</span>
+          </span>
+        </label>
         {errKey && <div role="alert" style={{ fontSize: 12.5, color: "var(--bad)" }}>{t(errKey)}</div>}
-        <Btn variant="primary" size="lg" full disabled={busy}>
+        <Btn variant="primary" size="lg" full disabled={busy || !agree}>
           {busy ? t("register_loading") : t("register_submit")}
         </Btn>
         <Link href="/login" style={{ fontSize: 12.5, color: "var(--text-3)", textAlign: "center" }}>{t("register_have_account")}</Link>

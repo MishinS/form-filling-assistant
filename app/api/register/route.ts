@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { validateRegistration } from "@/lib/auth/register";
 import { parseUsers } from "@/lib/auth/users";
 import { getUserByEmail, createUser } from "@/lib/db/users";
+import { TOS_VERSION } from "@/lib/auth/tos";
 
 export const runtime = "nodejs"; // bcrypt + DB
 
@@ -22,6 +23,8 @@ export async function POST(req: Request) {
   );
   if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
 
+  if (body.acceptTos !== true) return NextResponse.json({ error: "consent" }, { status: 400 });
+
   // Email must not already be an env user (pure check, no DB).
   const envTaken = parseUsers(process.env.AUTH_USERS).some((u) => u.email.toLowerCase() === v.email);
   if (envTaken) return NextResponse.json({ error: "email_taken" }, { status: 409 });
@@ -29,7 +32,7 @@ export async function POST(req: Request) {
   try {
     if (await getUserByEmail(v.email)) return NextResponse.json({ error: "email_taken" }, { status: 409 });
     const passwordHash = bcrypt.hashSync(password, 10);
-    await createUser({ email: v.email, name: v.name, passwordHash });
+    await createUser({ email: v.email, name: v.name, passwordHash, tosAcceptedAt: new Date(), tosVersion: TOS_VERSION });
   } catch (e) {
     // A unique-violation = race where the email was registered between our check and insert.
     if ((e as { code?: string })?.code === "23505") {

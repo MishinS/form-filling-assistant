@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "./client";
 import { users } from "./schema";
 
-export interface DbUser { email: string; name: string; passwordHash: string; tosAcceptedAt?: Date | null; }
+export interface DbUser { email: string; name: string; passwordHash: string; tosAcceptedAt?: Date | null; tosVersion?: string | null; }
 
 /** Look up a registered DB user by (lowercased) email. */
 export async function getUserByEmail(email: string): Promise<DbUser | null> {
@@ -18,7 +18,7 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
 /** Insert a new user. A primary-key conflict throws (route maps it to 409). */
 export async function createUser(u: DbUser): Promise<void> {
   const db = getDb();
-  await db.insert(users).values({ email: u.email.toLowerCase(), name: u.name, passwordHash: u.passwordHash });
+  await db.insert(users).values({ email: u.email.toLowerCase(), name: u.name, passwordHash: u.passwordHash, tosAcceptedAt: u.tosAcceptedAt ?? null, tosVersion: u.tosVersion ?? null });
 }
 
 /** Update a registered user's display name. */
