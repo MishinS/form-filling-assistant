@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth/guard";
+import { auth } from "@/auth";
+import { isGuest, unauthorized } from "@/lib/auth/guard";
 import { extractFields } from "@/lib/extract/extract";
 import { parseFieldList } from "@/lib/templates/validate";
+import { PT_FIELDS } from "@/lib/extract/fields";
+import { DEFAULT_MODEL } from "@/lib/extract/llm/catalog";
 import type { OnAttempt } from "@/lib/extract/llm/types";
 import type { ParsedDoc } from "@/lib/parse/types";
 import type { ExtractField } from "@/lib/extract/fields";
@@ -11,8 +14,9 @@ export const maxDuration = 60;
 type Body = { templateId?: string; model: string; docs: ParsedDoc[]; fields?: unknown };
 
 export async function POST(req: Request): Promise<Response> {
-  const denied = await requireUser();
-  if (denied) return denied;
+  const session = await auth();
+  if (!session?.user) return unauthorized();
+  const guest = isGuest(session);
   let body: Body;
   try {
     body = (await req.json()) as Body;
@@ -27,6 +31,8 @@ export async function POST(req: Request): Promise<Response> {
     fields = parseFieldList(body.fields);
     if (!fields) return NextResponse.json({ error: "Некорректный список полей" }, { status: 400 });
   }
+  const effModel = guest ? DEFAULT_MODEL : body.model;
+  const effFields = guest ? PT_FIELDS : (fields ?? undefined);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -39,7 +45,7 @@ export async function POST(req: Request): Promise<Response> {
       };
       try {
         const { values, warnings, llmFailed, usedModel } =
-          await extractFields(body.docs, body.model, fields ?? undefined, onAttempt);
+          await extractFields(body.docs, effModel, effFields, onAttempt, { freeOnly: guest });
         write({ type: "result", values, warnings, llmFailed, usedModel });
       } catch (e) {
         // extractFields degrades internally and shouldn't throw for LLM failure, but guard the stream.
