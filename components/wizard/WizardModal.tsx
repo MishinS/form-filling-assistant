@@ -86,7 +86,7 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
   const card = (
     <div style={{ width: "min(1080px, 100%)", maxHeight: embedded ? "none" : "92vh", margin: embedded ? "0 auto" : undefined,
       background: "var(--bg)", border: "1px solid var(--line-2)", borderRadius: "var(--r-xl)",
-      display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: embedded ? "0 24px 80px rgba(0,0,0,.35)" : "0 40px 120px rgba(0,0,0,.6)" }}>
+      display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: embedded ? "0 8px 32px rgba(0,0,0,.18)" : "0 40px 120px rgba(0,0,0,.6)" }}>
         {/* header */}
         <div className="row" style={{ justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid var(--line)", gap: 24 }}>
           <div className="row gap-12" style={{ minWidth: 0 }}>
@@ -97,7 +97,9 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
             </div>
           </div>
           <Stepper step={step} />
-          <button onClick={onClose} className="muted" style={{ width: 34, height: 34, borderRadius: 9, display: "grid", placeItems: "center", border: "1px solid var(--line-2)" }}><Icon name="x" size={15} /></button>
+          {embedded
+            ? <span aria-hidden style={{ width: 34, height: 34 }} />
+            : <button onClick={onClose} className="muted" style={{ width: 34, height: 34, borderRadius: 9, display: "grid", placeItems: "center", border: "1px solid var(--line-2)" }}><Icon name="x" size={15} /></button>}
         </div>
 
         {/* body */}
@@ -126,7 +128,9 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
         {/* footer */}
         {step !== 1 && step !== 3 && (
           <div className="row" style={{ justifyContent: "space-between", padding: "16px 24px", borderTop: "1px solid var(--line)", background: "var(--surface-1)" }}>
-            <Btn variant="quiet" size="md" icon="arrowL" onClick={() => step === 0 ? onClose() : setStep(step - 1)}>{t("back")}</Btn>
+            {embedded && step === 0
+              ? <span aria-hidden />
+              : <Btn variant="quiet" size="md" icon="arrowL" onClick={() => step === 0 ? onClose() : setStep(step - 1)}>{t("back")}</Btn>}
             {step === 0 && <Btn variant="primary" size="md" iconRight="arrowR" disabled={!canStart} onClick={startParse}>{t("start_process")}</Btn>}
             {step === 2 && <Btn variant="primary" size="md" icon="check" onClick={() => setStep(3)}>{t("confirm_fill")}</Btn>}
           </div>
