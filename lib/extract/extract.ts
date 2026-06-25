@@ -4,7 +4,7 @@ import { PT_FIELDS, type ExtractField } from "./fields";
 import { RULES } from "./rules";
 import { locatorRu } from "./format";
 import { getModel } from "./llm/registry";
-import { ModelNotConfigured, type OnAttempt } from "./llm/types";
+import { ModelNotConfigured, type OnAttempt, type ExtractionModel } from "./llm/types";
 import { isOwnCompany } from "./own-company";
 
 export interface ExtractResult {
@@ -23,7 +23,7 @@ export async function extractFields(
   modelId: string,
   fields: ExtractField[] = PT_FIELDS,
   onAttempt?: OnAttempt,
-  opts?: { freeOnly?: boolean },
+  opts?: { freeOnly?: boolean; modelOverride?: ExtractionModel },
 ): Promise<ExtractResult> {
   const warnings: string[] = [];
   const byField = new Map<string, ExtractedValue>();
@@ -60,7 +60,7 @@ export async function extractFields(
       onAttempt?.(ev);
     };
     try {
-      const model = getModel(modelId, opts);
+      const model = opts?.modelOverride ?? getModel(modelId, opts);
       const results = await model.extract(llmFields, text, wrapped);
       usedModel = winner;
       for (const f of llmFields) {

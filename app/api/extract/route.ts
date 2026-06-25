@@ -5,10 +5,14 @@ import { extractFields } from "@/lib/extract/extract";
 import { parseFieldList } from "@/lib/templates/validate";
 import { PT_FIELDS } from "@/lib/extract/fields";
 import { DEFAULT_MODEL } from "@/lib/extract/llm/catalog";
-import type { OnAttempt } from "@/lib/extract/llm/types";
+import type { OnAttempt, ExtractionModel } from "@/lib/extract/llm/types";
 import type { ParsedDoc } from "@/lib/parse/types";
 import type { ExtractField } from "@/lib/extract/fields";
+import { getModelById } from "@/lib/db/user-models";
+import { decryptSecret } from "@/lib/crypto/secrets";
+import { openaiCompatModel } from "@/lib/extract/llm/openai-compat";
 
+export const runtime = "nodejs";
 export const maxDuration = 60;
 
 type Body = { templateId?: string; model: string; docs: ParsedDoc[]; fields?: unknown };
@@ -34,6 +38,14 @@ export async function POST(req: Request): Promise<Response> {
   const effModel = guest ? DEFAULT_MODEL : body.model;
   const effFields = guest ? PT_FIELDS : (fields ?? undefined);
 
+  let modelOverride: ExtractionModel | undefined;
+  if (!guest && body.model.startsWith("custom:")) {
+    const id = body.model.slice("custom:".length);
+    const row = await getModelById((session.user.email ?? "").toLowerCase(), id);
+    if (!row) return NextResponse.json({ error: "Модель не найдена" }, { status: 404 });
+    modelOverride = openaiCompatModel({ baseUrl: row.baseUrl, apiKey: decryptSecret(row.keyCipher), modelSlug: row.modelSlug });
+  }
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -45,7 +57,7 @@ export async function POST(req: Request): Promise<Response> {
       };
       try {
         const { values, warnings, llmFailed, usedModel } =
-          await extractFields(body.docs, effModel, effFields, onAttempt, { freeOnly: guest });
+          await extractFields(body.docs, effModel, effFields, onAttempt, { freeOnly: guest, modelOverride });
         write({ type: "result", values, warnings, llmFailed, usedModel });
       } catch (e) {
         // extractFields degrades internally and shouldn't throw for LLM failure, but guard the stream.

@@ -12,11 +12,18 @@ vi.mock("@/lib/extract/extract", () => ({
     };
   }),
 }));
+vi.mock("@/lib/db/user-models", () => ({ getModelById: vi.fn() }));
+vi.mock("@/lib/crypto/secrets", () => ({ decryptSecret: vi.fn(() => "plain-key") }));
+vi.mock("@/lib/extract/llm/openai-compat", () => ({
+  openaiCompatModel: vi.fn(() => ({ id: "custom-model", extract: vi.fn(async () => []) })),
+}));
 
 import { POST } from "./route";
 import { auth } from "@/auth";
 import { PT_FIELDS } from "@/lib/extract/fields";
 import { DEFAULT_MODEL } from "@/lib/extract/llm/catalog";
+import { getModelById } from "@/lib/db/user-models";
+import { openaiCompatModel } from "@/lib/extract/llm/openai-compat";
 
 function req(body: unknown) {
   return new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) });
@@ -63,6 +70,36 @@ describe("POST /api/extract", () => {
     expect(call[1]).toBe(DEFAULT_MODEL);
     expect(call[2]).toBe(PT_FIELDS);
     expect(call[4]).toEqual({ freeOnly: true });
+  });
+});
+
+describe("/api/extract custom model", () => {
+  it("resolves custom:<id> → modelOverride when the row exists", async () => {
+    const fakeRow = { id: "abc", email: "t@t.ru", label: "My LLM", provider: "openai", baseUrl: "https://api.openai.com/v1", modelSlug: "gpt-4o", keyCipher: "enc", createdAt: new Date(), updatedAt: new Date(), lastOkAt: null };
+    (getModelById as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce(fakeRow);
+    const { extractFields } = await import("@/lib/extract/extract");
+    (extractFields as unknown as { mockClear: () => void }).mockClear();
+    const res = await POST(req({ model: "custom:abc", docs: [] }));
+    expect(res.status).toBe(200);
+    const call = (extractFields as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
+    const opts = call[4] as { modelOverride?: unknown };
+    expect(opts.modelOverride).toBeDefined();
+    expect(openaiCompatModel).toHaveBeenCalledWith(expect.objectContaining({ baseUrl: "https://api.openai.com/v1", modelSlug: "gpt-4o" }));
+  });
+
+  it("returns 404 when the custom model row is not found", async () => {
+    (getModelById as unknown as { mockResolvedValueOnce: (v: null) => void }).mockResolvedValueOnce(null);
+    const res = await POST(req({ model: "custom:missing", docs: [] }));
+    expect(res.status).toBe(404);
+  });
+
+  it("guest cannot use custom: model (falls back to DEFAULT_MODEL, no custom path)", async () => {
+    (auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ user: { role: "guest" } });
+    (getModelById as unknown as { mockClear: () => void }).mockClear();
+    const res = await POST(req({ model: "custom:abc", docs: [] }));
+    // guest path: freeOnly, DEFAULT_MODEL used; getModelById never called
+    expect(res.status).toBe(200);
+    expect(getModelById).not.toHaveBeenCalled();
   });
 });
 

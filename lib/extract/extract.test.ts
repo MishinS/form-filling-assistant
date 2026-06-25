@@ -127,4 +127,15 @@ describe("extractFields", () => {
     expect(out.llmFailed).toBe(false);
     expect(out.warnings.some(w => w.includes("Контрагент не распознан"))).toBe(true);
   });
+
+  it("uses an injected modelOverride instead of the registry", async () => {
+    const override = {
+      id: "custom:1",
+      extract: vi.fn(async () => [{ fieldId: "f8", value: "Банковский перевод", confidence: "high" as const }]),
+    };
+    const docs = [{ fileId: "f", pages: 1, scannedPages: [], blocks: [{ text: "оплата банковский перевод", locator: "p1" }] }];
+    const res = await extractFields(docs as never, "custom:1", undefined, undefined, { modelOverride: override });
+    expect(override.extract).toHaveBeenCalledTimes(1);
+    expect(res.values.some((v) => v.value === "Банковский перевод")).toBe(true);
+  });
 });
