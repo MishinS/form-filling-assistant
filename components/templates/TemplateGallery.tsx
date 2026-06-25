@@ -57,7 +57,10 @@ export default function TemplateGallery() {
         {/* new template tile */}
         <button onClick={() => setCreating(true)}
           style={{ borderRadius: "var(--r-lg)", border: "1.5px dashed var(--line-2)", background: "transparent",
-          minHeight: 210, display: "grid", placeItems: "center", color: "var(--text-3)", opacity: .85, cursor: "pointer" }}>
+          minHeight: 210, display: "grid", placeItems: "center", color: "var(--text-3)", opacity: .85, cursor: "pointer",
+          transition: "border-color .15s, transform .15s var(--ease), opacity .15s" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--line-strong)"; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.opacity = "1"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--line-2)"; e.currentTarget.style.transform = "none"; e.currentTarget.style.opacity = ".85"; }}>
           <div className="col gap-10" style={{ alignItems: "center" }}>
             <span style={{ width: 44, height: 44, borderRadius: 12, display: "grid", placeItems: "center", border: "1px solid var(--line-2)" }}><Icon name="plus" size={20} /></span>
             <span style={{ fontSize: 13, fontWeight: 600 }}>{t("new_template")}</span>

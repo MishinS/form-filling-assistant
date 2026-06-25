@@ -55,10 +55,10 @@ function GuestHeader() {
     <header className="row" style={{ justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid var(--line)" }}>
       {/* Logo doubles as a "fresh entry" — hard-reload to the portal root. */}
       <button type="button" onClick={() => window.location.assign("/")} title={t("home_reload")}
-        className="row gap-12" style={{ background: "transparent", border: 0, cursor: "pointer", padding: 0 }}
+        className="row gap-12 logo-host" style={{ background: "transparent", border: 0, cursor: "pointer", padding: 0 }}
         onMouseEnter={e => { e.currentTarget.style.opacity = ".7"; }}
         onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
-        <span className="logo-host" style={{ width: 30, height: 30, borderRadius: 8, background: "var(--surface-3)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center" }}><Logo size={15} /></span>
+        <span style={{ width: 30, height: 30, borderRadius: 8, background: "var(--surface-3)", border: "1px solid var(--line-2)", display: "grid", placeItems: "center" }}><Logo size={15} /></span>
         <span style={{ fontWeight: 700 }}>Form-Filling Assistant</span>
       </button>
       <div className="row gap-12">

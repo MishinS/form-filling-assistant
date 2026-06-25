@@ -92,6 +92,11 @@ export function Btn({ children, variant = "ghost", size = "md", icon, iconRight,
     subtle:  { background: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--line)" },
     quiet:   { background: "transparent", color: "var(--text-2)", border: "1px solid transparent" },
   }[variant];
+  // Hover lift (echoes Card's translateY) + soft shadow signals the button is live;
+  // press-scale composes on top. Pressed wins over hover.
+  const [hover, setHover] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const transform = disabled ? "none" : pressed ? "scale(.975)" : hover ? "translateY(-1px)" : "none";
   return (
     <button onClick={onClick} disabled={disabled}
       style={{
@@ -99,13 +104,15 @@ export function Btn({ children, variant = "ghost", size = "md", icon, iconRight,
         height: sizes.h, padding: `0 ${sizes.px}px`, borderRadius: "var(--pill)",
         fontSize: sizes.fs, fontWeight: 600, letterSpacing: "-.01em", whiteSpace: "nowrap",
         width: full ? "100%" : "auto", opacity: disabled ? .45 : 1,
-        cursor: disabled ? "not-allowed" : "pointer",
-        transition: "transform .12s var(--ease), background .15s, border-color .15s, opacity .15s",
+        cursor: disabled ? "not-allowed" : "pointer", transform,
+        boxShadow: hover && !disabled ? "0 6px 16px -8px rgba(0,0,0,.45)" : "none",
+        transition: "transform .12s var(--ease), box-shadow .15s, background .15s, border-color .15s, opacity .15s",
         ...variants, ...style,
       }}
-      onMouseDown={e => !disabled && (e.currentTarget.style.transform = "scale(.975)")}
-      onMouseUp={e => (e.currentTarget.style.transform = "")}
-      onMouseLeave={e => (e.currentTarget.style.transform = "")}>
+      onMouseEnter={() => !disabled && setHover(true)}
+      onMouseDown={() => !disabled && setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      onMouseLeave={() => { setHover(false); setPressed(false); }}>
       {icon && <Icon name={icon} size={sizes.fs + 2} />}
       {children}
       {iconRight && <Icon name={iconRight} size={sizes.fs + 2} />}
