@@ -23,6 +23,7 @@ export async function extractFields(
   modelId: string,
   fields: ExtractField[] = PT_FIELDS,
   onAttempt?: OnAttempt,
+  opts?: { freeOnly?: boolean },
 ): Promise<ExtractResult> {
   const warnings: string[] = [];
   const byField = new Map<string, ExtractedValue>();
@@ -59,7 +60,7 @@ export async function extractFields(
       onAttempt?.(ev);
     };
     try {
-      const model = getModel(modelId);
+      const model = getModel(modelId, opts);
       const results = await model.extract(llmFields, text, wrapped);
       usedModel = winner;
       for (const f of llmFields) {

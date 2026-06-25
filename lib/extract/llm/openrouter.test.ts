@@ -121,4 +121,17 @@ describe("openrouterModel (parallel race)", () => {
     expect(events.some((e) => e.phase === "fail" && e.model === "openrouter/free")).toBe(true);
     expect(events.some((e) => e.phase === "win" && e.model !== "openrouter/free")).toBe(true);
   });
+
+  it("freeOnly: платную модель не запрашивает даже при провале free-пула", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "k");
+    const seen: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (_u: unknown, init?: RequestInit) => {
+      seen.push(JSON.parse(String(init?.body)).model as string);
+      return new Response("", { status: 429 }); // весь free-пул падает
+    }));
+    await expect(openrouterModel(MODEL, { freeOnly: true }).extract(PT_FIELDS, "текст"))
+      .rejects.toBeInstanceOf(Error);
+    expect(seen.length).toBeGreaterThan(0);     // free-волна реально запускалась
+    expect(seen).not.toContain(PAID);            // платный хвост НЕ трогали
+  });
 });

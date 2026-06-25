@@ -3,7 +3,7 @@ import { ModelNotConfigured } from "./types";
 import type { ExtractField } from "../fields";
 import { FREE_MODEL_IDS, isFreeSlug, isPaidModel, PAID_LAST_RESORT } from "./catalog";
 import { buildExtractionPrompt } from "./prompt";
-import { raceModels, type Racer, type RaceFailure } from "./race";
+import { raceModels, type Racer, type RaceFailure, type RaceOutcome } from "./race";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -21,7 +21,7 @@ function parseFields(txt: string): LlmFieldResult[] {
   return parsed.fields ?? [];
 }
 
-export function openrouterModel(modelName: string): ExtractionModel {
+export function openrouterModel(modelName: string, opts?: { freeOnly?: boolean }): ExtractionModel {
   return {
     id: modelName,
     async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt): Promise<LlmFieldResult[]> {
@@ -67,7 +67,10 @@ export function openrouterModel(modelName: string): ExtractionModel {
 
       const wave = (models: string[], timeoutMs: number) =>
         raceModels(models.map(makeRacer), { timeoutMs, onAttempt });
-      const paidWave = () => wave([PAID_LAST_RESORT.id], PAID_TIMEOUT_MS);
+      const paidWave = (): Promise<RaceOutcome<LlmFieldResult[]>> =>
+        opts?.freeOnly
+          ? Promise.resolve({ ok: false, failures: [] })
+          : wave([PAID_LAST_RESORT.id], PAID_TIMEOUT_MS);
 
       let failures: RaceFailure[] = [];
 
