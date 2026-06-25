@@ -9,6 +9,9 @@ vi.mock("@/lib/parse", () => ({
 
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
 
+const delMock = vi.fn(async (_u: string) => {});
+vi.mock("@vercel/blob", () => ({ del: (u: string) => delMock(u) }));
+
 import { POST } from "./route";
 
 beforeEach(() => {
@@ -42,5 +45,26 @@ describe("/api/parse auth", () => {
     (parseAuth as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
     const res = await POST(req({ sources: [] }));
     expect(res.status).toBe(401);
+  });
+});
+
+describe("/api/parse guest blob cleanup", () => {
+  it("гость: удаляет загруженный Blob после парсинга", async () => {
+    (parseAuth as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce({
+      user: { role: "guest" },
+    });
+    delMock.mockClear();
+    const body = { sources: [{ fileId: "ok", url: "https://blob/x", name: "a.pdf", mime: "application/pdf" }] };
+    const res = await POST(req(body));
+    expect(res.status).toBe(200);
+    expect(delMock).toHaveBeenCalledWith("https://blob/x");
+  });
+
+  it("обычный юзер: Blob не удаляет", async () => {
+    delMock.mockClear();
+    const body = { sources: [{ fileId: "ok", url: "https://blob/x", name: "a.pdf", mime: "application/pdf" }] };
+    const res = await POST(req(body));
+    expect(res.status).toBe(200);
+    expect(delMock).not.toHaveBeenCalled();
   });
 });

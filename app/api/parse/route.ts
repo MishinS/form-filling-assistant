@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth/guard";
+import { auth } from "@/auth";
+import { isGuest, unauthorized } from "@/lib/auth/guard";
+import { del } from "@vercel/blob";
 import { parseDocument } from "@/lib/parse";
 import type { ParsedDoc } from "@/lib/parse/types";
 
@@ -8,8 +10,9 @@ export const maxDuration = 60;
 type Source = { fileId: string; url: string; name: string; mime: string };
 
 export async function POST(req: Request): Promise<Response> {
-  const denied = await requireUser();
-  if (denied) return denied;
+  const session = await auth();
+  if (!session?.user) return unauthorized();
+  const guest = isGuest(session);
   let sources: Source[];
   try {
     ({ sources } = (await req.json()) as { sources: Source[] });
@@ -39,6 +42,11 @@ export async function POST(req: Request): Promise<Response> {
       }
     }),
   );
+
+  if (guest) {
+    // Гость: исходник не храним — удаляем сразу после чтения. Best-effort.
+    await Promise.all(sources.map((s) => del(s.url).catch(() => {})));
+  }
 
   return NextResponse.json({ docs });
 }
