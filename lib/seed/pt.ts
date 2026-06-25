@@ -224,6 +224,10 @@ export const STR: Record<string, { ru: string; en: string }> = {
   guest_login:    { ru: "Войти", en: "Sign in" },
   guest_register: { ru: "Регистрация", en: "Sign up" },
   guest_loading:  { ru: "Готовим гостевой доступ…", en: "Preparing guest access…" },
+  guest_hero_h:    { ru: "Заполните документ за минуту", en: "Fill a document in a minute" },
+  guest_hero_sub:  { ru: "Загрузите счёт или договор — AI извлечёт данные и заполнит бланк", en: "Upload an invoice or contract — AI extracts the data and fills the form" },
+  guest_hero_note: { ru: "без регистрации · бесплатные модели", en: "no signup · free models" },
+  guest_again:     { ru: "Заполнить ещё документ", en: "Fill another document" },
 };
 
 export const STATUS: Record<StatusKey, { key: string; tone: "ok" | "warn" | "info" | "muted" | "bad" }> = {
