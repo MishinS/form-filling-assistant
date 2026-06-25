@@ -87,7 +87,7 @@ export default function DoneStep({ onClose, templateId, values, fields, sources 
           <span className="mono dim" style={{ fontSize: 10.5 }}>{t("pdf_soon")}</span>
         </div>
       </div>
-      <button onClick={onClose} className="muted" style={{ marginTop: 18, fontSize: 13, fontWeight: 600 }}>{t("open_dash")}</button>
+      <button onClick={onClose} className="muted" style={{ marginTop: 18, fontSize: 13, fontWeight: 600 }}>{guest ? t("guest_again") : t("open_dash")}</button>
     </div>
   );
 }
