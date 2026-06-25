@@ -1,4 +1,16 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
+
+vi.mock("node:dns/promises", async () => {
+  const real = await vi.importActual<typeof import("node:dns/promises")>("node:dns/promises");
+  return {
+    ...real,
+    lookup: vi.fn((host: string) => {
+      if (host === "api.example.com") return Promise.resolve([{ address: "1.1.1.1" }]);
+      return (real.lookup as (h: string, o: { all: true }) => Promise<unknown>)(host, { all: true });
+    }),
+  };
+});
+
 import { probeModel } from "./probe";
 
 const cfg = { baseUrl: "https://api.example.com/v1", apiKey: "sk-test", modelSlug: "gpt-x" };
