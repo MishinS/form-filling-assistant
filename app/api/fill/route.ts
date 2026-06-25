@@ -1,11 +1,12 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { auth } from "@/auth";
-import { unauthorized } from "@/lib/auth/guard";
+import { isGuest, unauthorized } from "@/lib/auth/guard";
 import type { ExtractedValue } from "@/lib/types";
 import { fillPtXlsx, fillCustomXlsx } from "@/lib/fill/xlsx";
 import { parseFieldList } from "@/lib/templates/validate";
 import { getTemplate } from "@/lib/db/templates";
+import { PT_FIELDS } from "@/lib/extract/fields";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,8 @@ const xlsxResponse = (bytes: Uint8Array, name: string) =>
 
 export async function POST(req: Request): Promise<Response> {
   const session = await auth();
-  if (!session?.user?.email) return unauthorized();
+  if (!session?.user) return unauthorized();
+  const guest = isGuest(session);
   let body: { templateId?: string; values?: ExtractedValue[]; fields?: unknown };
   try {
     body = await req.json();
@@ -33,11 +35,16 @@ export async function POST(req: Request): Promise<Response> {
   if (typeof body.templateId !== "string" || !Array.isArray(body.values)) {
     return new Response("Bad request", { status: 400 });
   }
+  if (guest && body.templateId !== "pt") {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   // Built-in ПТ: repo file + schedule logic (unchanged).
   if (body.templateId === "pt") {
     let fields;
-    if (body.fields !== undefined) {
+    if (guest) {
+      fields = PT_FIELDS; // гость не управляет полями
+    } else if (body.fields !== undefined) {
       fields = parseFieldList(body.fields);
       if (!fields) return new Response("Bad fields", { status: 400 });
     }
@@ -59,6 +66,7 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return new Response("Fill failed: db", { status: 500 });
   }
+  if (!session.user.email) return unauthorized();
   const email = session.user.email.toLowerCase();
   if (!tpl || tpl.deletedAt || tpl.userId !== email || !tpl.fileKey) {
     return new Response("Bad request", { status: 400 });

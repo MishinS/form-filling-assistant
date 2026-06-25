@@ -61,6 +61,22 @@ describe("/api/fill auth", () => {
   });
 });
 
+describe("/api/fill guest access", () => {
+  it("гость + не-ПТ шаблон → 403", async () => {
+    (fillAuth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ user: { role: "guest" } });
+    const res = await POST(new Request("http://t/api/fill", { method: "POST",
+      body: JSON.stringify({ templateId: "custom", values: [] }) }));
+    expect(res.status).toBe(403);
+  });
+  it("гость + ПТ → отдаёт xlsx (без email)", async () => {
+    (fillAuth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ user: { role: "guest" } });
+    const res = await POST(new Request("http://t/api/fill", { method: "POST",
+      body: JSON.stringify({ templateId: "pt", values: [{ fieldId: "f1", value: "ООО Тест" }] }) }));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("spreadsheet");
+  });
+});
+
 import { getTemplate } from "@/lib/db/templates";
 import { zipSync as zipC, strToU8 as s2u } from "fflate";
 
