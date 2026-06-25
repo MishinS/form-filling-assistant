@@ -138,6 +138,18 @@ a{ color:inherit; text-decoration:none; }
 .sparkle-logo[data-trigger="hover"]:hover .sl-spark,
 .logo-host:hover .sparkle-logo[data-trigger="host"] .sl-spark{ animation:slSpark 1.7s cubic-bezier(.22,.61,.36,1) .35s infinite; }
 
+/* Sign-out: the arrow keeps stepping out the door while the menu row is hovered.
+ * Slides right + fades, then re-enters from a hair left — a looping "departure". */
+@keyframes signOutLeave{
+  0%{ transform:translateX(0); opacity:1; }
+  55%{ transform:translateX(4px); opacity:0; }
+  56%{ transform:translateX(-3px); opacity:0; }
+  100%{ transform:translateX(0); opacity:1; }
+}
+.sign-out-ic{ transform-box:fill-box; transform-origin:center; }
+.sign-out-host:hover .sign-out-ic{ animation:signOutLeave 1.3s cubic-bezier(.22,.61,.36,1) infinite; }
+
 @media (prefers-reduced-motion: reduce){
   .sparkle-logo .sl-star, .sparkle-logo .sl-spark{ animation:none !important; }
+  .sign-out-host:hover .sign-out-ic{ animation:none !important; }
 }
