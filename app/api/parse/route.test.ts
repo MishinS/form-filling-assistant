@@ -9,7 +9,7 @@ vi.mock("@/lib/parse", () => ({
 
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
 
-const delMock = vi.fn(async (_u: string) => {});
+const delMock = vi.fn(async () => {});
 vi.mock("@vercel/blob", () => ({ del: (u: string) => delMock(u) }));
 
 import { POST } from "./route";
