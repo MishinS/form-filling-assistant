@@ -2,13 +2,13 @@ import { eq } from "drizzle-orm";
 import { getDb } from "./client";
 import { users } from "./schema";
 
-export interface DbUser { email: string; name: string; passwordHash: string; }
+export interface DbUser { email: string; name: string; passwordHash: string; tosAcceptedAt?: Date | null; }
 
 /** Look up a registered DB user by (lowercased) email. */
 export async function getUserByEmail(email: string): Promise<DbUser | null> {
   const db = getDb();
   const rows = await db
-    .select({ email: users.email, name: users.name, passwordHash: users.passwordHash })
+    .select({ email: users.email, name: users.name, passwordHash: users.passwordHash, tosAcceptedAt: users.tosAcceptedAt })
     .from(users)
     .where(eq(users.email, email.toLowerCase()))
     .limit(1);
@@ -31,4 +31,11 @@ export async function updateUserName(email: string, name: string): Promise<void>
 export async function updateUserPassword(email: string, passwordHash: string): Promise<void> {
   const db = getDb();
   await db.update(users).set({ passwordHash }).where(eq(users.email, email.toLowerCase()));
+}
+
+/** Record that a user accepted the Terms of Service at a specific version. */
+export async function acceptTos(email: string, version: string): Promise<void> {
+  const db = getDb();
+  await db.update(users).set({ tosAcceptedAt: new Date(), tosVersion: version })
+    .where(eq(users.email, email.toLowerCase()));
 }

@@ -77,10 +77,25 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  tosAcceptedAt: timestamp("tos_accepted_at"),
+  tosVersion: text("tos_version"),
 });
 
 export const userAvatars = pgTable("user_avatars", {
   email: text("email").primaryKey(),            // stored lowercased
   url: text("url").notNull(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const userModels = pgTable("user_models", {
+  id: text("id").primaryKey(),                 // uuid; surfaced as custom:<id>
+  email: text("email").notNull(),              // owner, lowercased
+  label: text("label").notNull(),
+  provider: text("provider").notNull(),        // openrouter|openai|anthropic|google|custom
+  baseUrl: text("base_url").notNull(),
+  modelSlug: text("model_slug").notNull(),
+  keyCipher: text("key_cipher").notNull(),     // AES-256-GCM, base64
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  lastOkAt: timestamp("last_ok_at"),
 });
