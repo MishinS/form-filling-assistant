@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isGuest, unauthorized } from "@/lib/auth/guard";
 import { del } from "@vercel/blob";
+import { isOwnBlobUrl } from "@/lib/upload/avatar";
 import { parseDocument } from "@/lib/parse";
 import type { ParsedDoc } from "@/lib/parse/types";
 
@@ -45,7 +46,11 @@ export async function POST(req: Request): Promise<Response> {
 
   if (guest) {
     // Гость: исходник не храним — удаляем сразу после чтения. Best-effort.
-    await Promise.all(sources.map((s) => del(s.url).catch(() => {})));
+    // Удаляем только URL нашего Blob-стора (как остальные del-вызовы), чтобы гость
+    // не мог попросить удалить чужой/произвольный URL.
+    await Promise.all(
+      sources.filter((s) => isOwnBlobUrl(s.url)).map((s) => del(s.url).catch(() => {})),
+    );
   }
 
   return NextResponse.json({ docs });

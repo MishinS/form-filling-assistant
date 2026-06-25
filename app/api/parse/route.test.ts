@@ -55,15 +55,27 @@ describe("/api/parse guest blob cleanup", () => {
       user: { role: "guest" },
     });
     delMock.mockClear();
-    const body = { sources: [{ fileId: "ok", url: "https://blob/x", name: "a.pdf", mime: "application/pdf" }] };
+    const blobUrl = "https://store123.public.blob.vercel-storage.com/x-abc.pdf";
+    const body = { sources: [{ fileId: "ok", url: blobUrl, name: "a.pdf", mime: "application/pdf" }] };
     const res = await POST(req(body));
     expect(res.status).toBe(200);
-    expect(delMock).toHaveBeenCalledWith("https://blob/x");
+    expect(delMock).toHaveBeenCalledWith(blobUrl);
   });
 
   it("обычный юзер: Blob не удаляет", async () => {
     delMock.mockClear();
-    const body = { sources: [{ fileId: "ok", url: "https://blob/x", name: "a.pdf", mime: "application/pdf" }] };
+    const body = { sources: [{ fileId: "ok", url: "https://store123.public.blob.vercel-storage.com/x-abc.pdf", name: "a.pdf", mime: "application/pdf" }] };
+    const res = await POST(req(body));
+    expect(res.status).toBe(200);
+    expect(delMock).not.toHaveBeenCalled();
+  });
+
+  it("гость: чужой/произвольный URL не удаляется (только наш Blob-стор)", async () => {
+    (parseAuth as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce({
+      user: { role: "guest" },
+    });
+    delMock.mockClear();
+    const body = { sources: [{ fileId: "ok", url: "https://evil.example.com/x.pdf", name: "a.pdf", mime: "application/pdf" }] };
     const res = await POST(req(body));
     expect(res.status).toBe(200);
     expect(delMock).not.toHaveBeenCalled();
