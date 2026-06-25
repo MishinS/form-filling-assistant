@@ -12,19 +12,21 @@ export const authConfig: NextAuthConfig = {
   session: { strategy: "jwt" },
   providers: [], // real provider added in auth.ts
   callbacks: {
-    // Used by middleware: matched routes (see middleware matcher) require a session.
     authorized({ auth }) {
       return !!auth?.user;
     },
-    // Persist client session.update({ name }) / ({ image }) into the JWT so the
-    // sidebar/ProfileCard reflect a rename or avatar change without a re-login.
-    jwt({ token, trigger, session }) {
+    jwt({ token, trigger, session, user }) {
+      if (user) token.role = (user as { role?: "user" | "guest" }).role ?? "user";
       if (trigger === "update" && session) {
         const s = session as { name?: unknown; image?: unknown };
         if (typeof s.name === "string") token.name = s.name;
         if ("image" in s) token.picture = (s.image as string | null) ?? null;
       }
       return token;
+    },
+    session({ session, token }) {
+      if (session.user) session.user.role = (token.role as "user" | "guest") ?? "user";
+      return session;
     },
   },
 };

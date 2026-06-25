@@ -5,6 +5,7 @@ import { authConfig } from "./auth.config";
 import { parseUsers, verifyCredentials } from "@/lib/auth/users";
 import { getUserByEmail } from "@/lib/db/users";
 import { getAvatar } from "@/lib/db/avatars";
+import { guestUser } from "@/lib/auth/guest";
 
 // Look up the user's avatar; a DB failure must never block login.
 async function avatarFor(email: string): Promise<string | null> {
@@ -37,6 +38,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
         return null;
       },
+    }),
+    Credentials({
+      id: "guest",
+      name: "Guest",
+      credentials: {},
+      authorize: async () => guestUser(),
     }),
   ],
 });
