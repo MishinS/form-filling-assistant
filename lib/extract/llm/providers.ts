@@ -34,7 +34,14 @@ export function isBlockedIp(ip: string): boolean {
   }
   const lower = ip.toLowerCase();
   if (lower === "::1" || lower === "::") return true;
-  if (lower.startsWith("fe80") || lower.startsWith("fc") || lower.startsWith("fd")) return true;
+  // IPv4-mapped IPv6
+  if (lower.startsWith("::ffff:")) {
+    return isBlockedIp(lower.slice(7)); // embedded IPv4, e.g. "169.254.169.254"
+  }
+  // Unique-local and link-local
+  if (lower.startsWith("fc") || lower.startsWith("fd")) return true; // unique-local fc00::/7
+  const head = parseInt(lower.slice(0, 4), 16);
+  if (lower.startsWith("fe") && head >= 0xfe80 && head <= 0xfebf) return true; // link-local fe80::/10
   return false;
 }
 
