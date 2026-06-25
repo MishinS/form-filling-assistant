@@ -35,6 +35,11 @@ function GuestWizard() {
         <ModelContext.Provider value={{ model, setModel }}>
           <GuestContext.Provider value={{ guest: true }}>
             <div style={{ padding: "24px 16px 64px" }}>
+              <div style={{ maxWidth: "min(1080px, 100%)", margin: "0 auto 24px", textAlign: "center" }}>
+                <h1 style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-.02em", lineHeight: 1.15 }}>{t("guest_hero_h")}</h1>
+                <p className="muted" style={{ fontSize: 15, marginTop: 10, maxWidth: 560, marginInline: "auto" }}>{t("guest_hero_sub")}</p>
+                <p className="mono dim" style={{ fontSize: 11.5, marginTop: 12 }}>{t("guest_hero_note")}</p>
+              </div>
               <WizardModal key={key} start={0} embedded onClose={() => setKey((k) => k + 1)} />
             </div>
           </GuestContext.Provider>
