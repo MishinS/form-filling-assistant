@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Icon, Tag, Btn } from "@/components/primitives";
+import { GuestContext } from "@/components/shell/GuestContext";
 import type { ExtractedValue } from "@/lib/types";
 import type { ExtractField } from "@/lib/extract/fields";
 import type { SourceInput } from "@/lib/db/map";
@@ -10,6 +11,7 @@ type Props = { onClose: () => void; templateId: string; values: ExtractedValue[]
 
 export default function DoneStep({ onClose, templateId, values, fields, sources }: Props) {
   const { t, lang } = useI18n();
+  const { guest } = useContext(GuestContext);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -36,8 +38,8 @@ export default function DoneStep({ onClose, templateId, values, fields, sources 
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      // Best-effort: record this completed fill once. Never blocks or fails the download.
-      if (!saved) {
+      // Best-effort: record this completed fill once. Never blocks or fails the download. Guests are not persisted.
+      if (!guest && !saved) {
         setSaved(true);
         void fetch("/api/fills", {
           method: "POST",
