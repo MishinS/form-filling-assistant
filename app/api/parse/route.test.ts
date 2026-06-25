@@ -9,10 +9,11 @@ vi.mock("@/lib/parse", () => ({
 
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
 
-const delMock = vi.fn(async () => {});
-vi.mock("@vercel/blob", () => ({ del: (u: string) => delMock(u) }));
+vi.mock("@vercel/blob", () => ({ del: vi.fn(async () => {}) }));
 
 import { POST } from "./route";
+import { del } from "@vercel/blob";
+const delMock = del as unknown as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   global.fetch = vi.fn(async () => new Response(new Uint8Array([1, 2, 3]))) as unknown as typeof fetch;
