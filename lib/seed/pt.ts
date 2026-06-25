@@ -221,6 +221,9 @@ export const STR: Record<string, { ru: string; en: string }> = {
   register_err_generic: { ru: "Проверьте поля: email и имя обязательны, пароль от 8 символов", en: "Check the fields: email and name required, password 8+ chars" },
   register_err_server:  { ru: "Ошибка сервера, попробуйте позже", en: "Server error, please try again" },
   register_have_account: { ru: "Уже есть аккаунт? Войти", en: "Already have an account? Sign in" },
+  guest_login:    { ru: "Войти", en: "Sign in" },
+  guest_register: { ru: "Регистрация", en: "Sign up" },
+  guest_loading:  { ru: "Готовим гостевой доступ…", en: "Preparing guest access…" },
 };
 
 export const STATUS: Record<StatusKey, { key: string; tone: "ok" | "warn" | "info" | "muted" | "bad" }> = {

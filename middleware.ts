@@ -8,5 +8,5 @@ export const { auth: middleware } = NextAuth(authConfig);
 export const config = {
   // Run on everything EXCEPT API routes (they self-guard with 401), Next internals,
   // static assets, and the login page itself.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|fonts|login|register).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|fonts|login|register|$).*)"],
 };
