@@ -17,3 +17,23 @@ export async function requireUser(): Promise<Response | null> {
   const session = await auth();
   return session?.user ? null : unauthorized();
 }
+
+type SessionLike = { user?: { role?: string | null } | null } | null;
+
+/** True only for an anonymous guest session. */
+export function isGuest(session: SessionLike): boolean {
+  return session?.user?.role === "guest";
+}
+
+/**
+ * 403 for guests, 401 when unauthenticated, null for a full (non-guest) user.
+ * Use on routes guests must never touch.
+ */
+export async function requireFullUser(): Promise<Response | null> {
+  const session = await auth();
+  if (!session?.user) return unauthorized();
+  if (isGuest(session)) {
+    return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
+  }
+  return null;
+}
