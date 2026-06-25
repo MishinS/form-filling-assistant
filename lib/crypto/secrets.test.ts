@@ -30,6 +30,11 @@ describe("secrets", () => {
     expect(() => encryptSecret("x")).toThrow(/BYOK_ENCRYPTION_KEY/);
   });
 
+  it("throws on a malformed (non-base64) master key", () => {
+    vi.stubEnv("BYOK_ENCRYPTION_KEY", "not valid base64!!!");
+    expect(() => encryptSecret("x")).toThrow(/base64/i);
+  });
+
   it("masks first 2 + last 4, rest stars", () => {
     expect(maskKey("sk-or-v1-abcdab12")).toBe("sk" + "•".repeat(11) + "ab12");
   });

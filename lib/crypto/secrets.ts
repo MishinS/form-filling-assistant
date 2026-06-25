@@ -7,6 +7,8 @@ const TAG_LEN = 16;
 function masterKey(): Buffer {
   const b64 = process.env.BYOK_ENCRYPTION_KEY;
   if (!b64) throw new Error("BYOK_ENCRYPTION_KEY is not set");
+  if (!/^[A-Za-z0-9+/]+=*$/.test(b64))
+    throw new Error("BYOK_ENCRYPTION_KEY is not valid base64");
   const key = Buffer.from(b64, "base64");
   if (key.length !== 32) throw new Error("BYOK_ENCRYPTION_KEY must be 32 bytes (base64)");
   return key;
