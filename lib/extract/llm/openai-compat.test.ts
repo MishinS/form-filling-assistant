@@ -20,7 +20,7 @@ describe("openaiCompatModel", () => {
     const spy = vi.fn(async () => okBody([]));
     global.fetch = spy as unknown as typeof fetch;
     await openaiCompatModel(cfg).extract(PT_FIELDS, "текст");
-    const [url, init] = spy.mock.calls[0] as [string, RequestInit];
+    const [url, init] = spy.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://api.example.com/v1/chat/completions");
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer sk-test");
     expect(JSON.parse(init.body as string).model).toBe("gpt-x");
@@ -58,7 +58,7 @@ describe("openaiCompatModel", () => {
     const spy = vi.fn(async () => okBody([]));
     global.fetch = spy as unknown as typeof fetch;
     await openaiCompatModel(cfg).extract(PT_FIELDS, "текст");
-    const [, init] = spy.mock.calls[0] as [string, RequestInit];
+    const [, init] = spy.mock.calls[0] as unknown as [string, RequestInit];
     // The signal should exist and not throw a TypeError
     expect(init.signal).toBeDefined();
   });
@@ -70,7 +70,7 @@ describe("openaiCompatModel", () => {
     // Call chatComplete directly with the custom signal
     const { chatComplete } = await import("./openai-compat");
     await chatComplete(cfg, "test prompt", customSignal);
-    const [, init] = spy.mock.calls[0] as [string, RequestInit];
+    const [, init] = spy.mock.calls[0] as unknown as [string, RequestInit];
     // Verify the caller's signal is used
     expect(init.signal).toBe(customSignal);
   });
@@ -80,7 +80,7 @@ describe("openaiCompatModel", () => {
     const spy = vi.fn(async () => okBody([]));
     global.fetch = spy as unknown as typeof fetch;
     await openaiCompatModel(cfgWithTrailingSlash).extract(PT_FIELDS, "текст");
-    const [url] = spy.mock.calls[0] as [string, RequestInit];
+    const [url] = spy.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://api.example.com/v1/chat/completions");
   });
 });
