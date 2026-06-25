@@ -12,6 +12,10 @@ import type { ExtractField } from "@/lib/extract/fields";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
+  if (session?.user?.role === "guest") {
+    const { redirect } = await import("next/navigation");
+    redirect("/");
+  }
   const user = { name: session?.user?.name ?? "", email: session?.user?.email ?? "", image: session?.user?.image ?? null };
 
   const jar = await cookies();

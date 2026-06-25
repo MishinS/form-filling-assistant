@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { isGuest } from "@/lib/auth/guard";
 import { getUserByEmail, updateUserName } from "@/lib/db/users";
 
 export const runtime = "nodejs"; // DB access
 
 export async function PATCH(req: Request) {
   const session = await auth();
+  if (isGuest(session)) return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 

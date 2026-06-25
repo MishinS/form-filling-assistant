@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { unauthorized } from "@/lib/auth/guard";
+import { unauthorized, isGuest } from "@/lib/auth/guard";
 import { parseFieldList } from "@/lib/templates/validate";
 import { getMapping, saveMapping, deleteMapping } from "@/lib/db/mappings";
 import { getTemplate, isTemplateAccessible } from "@/lib/db/templates";
@@ -11,6 +11,7 @@ const MAX_FIELDS = 100;
 
 export async function GET(req: Request): Promise<Response> {
   const session = await auth();
+  if (isGuest(session)) return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
   if (!session?.user?.email) return unauthorized();
   const templateId = new URL(req.url).searchParams.get("templateId") ?? "pt";
 
@@ -30,6 +31,7 @@ export async function GET(req: Request): Promise<Response> {
 
 export async function POST(req: Request): Promise<Response> {
   const session = await auth();
+  if (isGuest(session)) return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
   if (!session?.user?.email) return unauthorized();
 
   let body: { templateId?: unknown; fields?: unknown };
@@ -72,6 +74,7 @@ export async function POST(req: Request): Promise<Response> {
 
 export async function DELETE(req: Request): Promise<Response> {
   const session = await auth();
+  if (isGuest(session)) return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
   if (!session?.user?.email) return unauthorized();
 
   let body: { templateId?: unknown };

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
+import { isGuest } from "@/lib/auth/guard";
 import { getUserByEmail, updateUserPassword } from "@/lib/db/users";
 import { isValidPassword } from "@/lib/auth/register";
 
@@ -8,6 +9,7 @@ export const runtime = "nodejs"; // bcrypt + DB
 
 export async function POST(req: Request) {
   const session = await auth();
+  if (isGuest(session)) return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 

@@ -55,6 +55,13 @@ describe("POST /api/mappings", () => {
     expect(res.status).toBe(400);
     expect(saveMapping).not.toHaveBeenCalled();
   });
+
+  it("гость → 403 (not 401/200)", async () => {
+    (auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ user: { role: "guest" } });
+    const res = await POST(body({ templateId: "pt", fields: [validField] }));
+    expect(res.status).toBe(403);
+    expect(saveMapping).not.toHaveBeenCalled();
+  });
 });
 
 describe("DELETE /api/mappings", () => {
@@ -62,6 +69,13 @@ describe("DELETE /api/mappings", () => {
     (auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
     const res = await DELETE(delReq({ templateId: "pt" }));
     expect(res.status).toBe(401);
+    expect(deleteMapping).not.toHaveBeenCalled();
+  });
+
+  it("гость → 403 (not 401/200)", async () => {
+    (auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ user: { role: "guest" } });
+    const res = await DELETE(delReq({ templateId: "pt" }));
+    expect(res.status).toBe(403);
     expect(deleteMapping).not.toHaveBeenCalled();
   });
 

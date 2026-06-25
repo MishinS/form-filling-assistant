@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { isGuest } from "@/lib/auth/guard";
 import { isOwnBlobUrl } from "@/lib/upload/avatar";
 import { createTemplate } from "@/lib/db/templates";
 import { saveMapping } from "@/lib/db/mappings";
@@ -18,6 +19,7 @@ const MAX_DESC = 200;
 // On an empty scan the template is NOT created; the blob stays for a retry.
 export async function POST(req: Request): Promise<Response> {
   const session = await auth();
+  if (isGuest(session)) return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 

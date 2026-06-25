@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { del } from "@vercel/blob";
 import { auth } from "@/auth";
+import { isGuest } from "@/lib/auth/guard";
 import { getAvatar, setAvatar, deleteAvatar } from "@/lib/db/avatars";
 import { isOwnBlobUrl } from "@/lib/upload/avatar";
 
@@ -15,6 +16,7 @@ async function tryDelBlob(url: string | null): Promise<void> {
 
 export async function POST(req: Request) {
   const session = await auth();
+  if (isGuest(session)) return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
@@ -36,6 +38,7 @@ export async function POST(req: Request) {
 
 export async function DELETE() {
   const session = await auth();
+  if (isGuest(session)) return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 

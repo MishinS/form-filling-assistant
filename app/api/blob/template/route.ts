@@ -1,6 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth/guard";
+import { requireFullUser } from "@/lib/auth/guard";
 import { MIME } from "@/lib/parse/types";
 import { del } from "@vercel/blob";
 import { isOwnBlobUrl } from "@/lib/upload/avatar";
@@ -8,7 +8,7 @@ import { isOwnBlobUrl } from "@/lib/upload/avatar";
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export async function POST(request: Request): Promise<Response> {
-  const denied = await requireUser();
+  const denied = await requireFullUser();
   if (denied) return denied;
   try {
     const body = (await request.json()) as HandleUploadBody;
@@ -33,7 +33,7 @@ export async function POST(request: Request): Promise<Response> {
 // Best-effort cleanup of an uploaded-but-unclaimed template blob (modal cancel /
 // file replace). A failed del never fails the request — worst case an orphan stays.
 export async function DELETE(req: Request): Promise<Response> {
-  const denied = await requireUser();
+  const denied = await requireFullUser();
   if (denied) return denied;
   let url = "";
   try {

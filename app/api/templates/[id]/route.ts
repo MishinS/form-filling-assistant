@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { del } from "@vercel/blob";
 import { auth } from "@/auth";
+import { isGuest } from "@/lib/auth/guard";
 import { renameTemplate, softDeleteTemplate } from "@/lib/db/templates";
 
 export const runtime = "nodejs"; // DB access
@@ -12,6 +13,7 @@ type Ctx = { params: { id: string } };
 
 export async function PATCH(req: Request, { params }: Ctx): Promise<Response> {
   const session = await auth();
+  if (isGuest(session)) return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
@@ -40,6 +42,7 @@ export async function PATCH(req: Request, { params }: Ctx): Promise<Response> {
 
 export async function DELETE(_req: Request, { params }: Ctx): Promise<Response> {
   const session = await auth();
+  if (isGuest(session)) return NextResponse.json({ error: "Недоступно в гостевом режиме" }, { status: 403 });
   const email = session?.user?.email;
   if (!email) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 

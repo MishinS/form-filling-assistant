@@ -1,11 +1,11 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth/guard";
+import { requireFullUser } from "@/lib/auth/guard";
 
 const MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 
 export async function POST(request: Request): Promise<Response> {
-  const denied = await requireUser();
+  const denied = await requireFullUser();
   if (denied) return denied;
   try {
     const body = (await request.json()) as HandleUploadBody;
