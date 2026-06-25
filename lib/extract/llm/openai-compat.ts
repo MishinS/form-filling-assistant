@@ -25,10 +25,11 @@ export interface CompatConfig { baseUrl: string; apiKey: string; modelSlug: stri
 /** Single OpenAI-compatible chat call. Throws LlmRequestError. Returns assistant text. */
 export async function chatComplete(cfg: CompatConfig, prompt: string, signal?: AbortSignal): Promise<string> {
   const endpoint = cfg.baseUrl.replace(/\/+$/, "") + "/chat/completions";
+  const effectiveSignal = signal ?? AbortSignal.timeout(STANDALONE_TIMEOUT_MS);
   let res: Response;
   try {
     res = await fetch(endpoint, {
-      method: "POST", signal,
+      method: "POST", signal: effectiveSignal,
       headers: {
         Authorization: `Bearer ${cfg.apiKey}`,
         "Content-Type": "application/json",

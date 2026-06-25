@@ -53,4 +53,34 @@ describe("openaiCompatModel", () => {
     await expect(openaiCompatModel(cfg).extract(PT_FIELDS, "текст"))
       .rejects.toMatchObject({ code: "unreachable" });
   });
+
+  it("applies default timeout when no signal is provided", async () => {
+    const spy = vi.fn(async () => okBody([]));
+    global.fetch = spy as unknown as typeof fetch;
+    await openaiCompatModel(cfg).extract(PT_FIELDS, "текст");
+    const [, init] = spy.mock.calls[0] as [string, RequestInit];
+    // The signal should exist and not throw a TypeError
+    expect(init.signal).toBeDefined();
+  });
+
+  it("uses caller-provided signal unchanged", async () => {
+    const customSignal = AbortSignal.timeout(5000);
+    const spy = vi.fn(async () => okBody([]));
+    global.fetch = spy as unknown as typeof fetch;
+    // Call chatComplete directly with the custom signal
+    const { chatComplete } = await import("./openai-compat");
+    await chatComplete(cfg, "test prompt", customSignal);
+    const [, init] = spy.mock.calls[0] as [string, RequestInit];
+    // Verify the caller's signal is used
+    expect(init.signal).toBe(customSignal);
+  });
+
+  it("handles trailing slash in baseUrl", async () => {
+    const cfgWithTrailingSlash = { ...cfg, baseUrl: "https://api.example.com/v1/" };
+    const spy = vi.fn(async () => okBody([]));
+    global.fetch = spy as unknown as typeof fetch;
+    await openaiCompatModel(cfgWithTrailingSlash).extract(PT_FIELDS, "текст");
+    const [url] = spy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://api.example.com/v1/chat/completions");
+  });
 });
