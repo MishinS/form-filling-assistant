@@ -79,8 +79,9 @@ type BtnProps = {
   children?: ReactNode; variant?: "primary" | "ghost" | "subtle" | "quiet";
   size?: "sm" | "md" | "lg"; icon?: string; iconRight?: string;
   onClick?: () => void; disabled?: boolean; full?: boolean; style?: CSSProperties;
+  type?: "button" | "submit" | "reset";
 };
-export function Btn({ children, variant = "ghost", size = "md", icon, iconRight, onClick, disabled, full, style }: BtnProps) {
+export function Btn({ children, variant = "ghost", size = "md", icon, iconRight, onClick, disabled, full, style, type }: BtnProps) {
   const sizes = {
     sm: { h: 32, px: 12, fs: 13, gap: 6 },
     md: { h: 40, px: 16, fs: 14, gap: 8 },
@@ -98,7 +99,7 @@ export function Btn({ children, variant = "ghost", size = "md", icon, iconRight,
   const [pressed, setPressed] = useState(false);
   const transform = disabled ? "none" : pressed ? "scale(.975)" : hover ? "translateY(-1px)" : "none";
   return (
-    <button onClick={onClick} disabled={disabled}
+    <button type={type} onClick={onClick} disabled={disabled}
       style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center", gap: sizes.gap,
         height: sizes.h, padding: `0 ${sizes.px}px`, borderRadius: "var(--pill)",

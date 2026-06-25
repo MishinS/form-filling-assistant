@@ -4,14 +4,15 @@ import { useI18n } from "@/lib/i18n";
 import { Btn, Icon } from "@/components/primitives";
 import { errorLabelKey } from "@/lib/llm/custom-model-view";
 import type { CustomModelDTO } from "@/lib/db/user-models";
+import { PROVIDER_PRESETS } from "@/lib/extract/llm/providers-data";
 
-// Client-safe copy of presets (providers.ts imports node:dns/promises, can't be bundled here)
+// Built from the shared providers-data module (client-safe — no node:dns import)
 const PROVIDER_OPTIONS: { value: string; label: string }[] = [
-  { value: "openrouter", label: "OpenRouter" },
-  { value: "openai",     label: "OpenAI" },
-  { value: "anthropic",  label: "Anthropic" },
-  { value: "google",     label: "Google Gemini" },
-  { value: "custom",     label: "Custom" },
+  ...(Object.keys(PROVIDER_PRESETS) as (keyof typeof PROVIDER_PRESETS)[]).map((id) => ({
+    value: id,
+    label: PROVIDER_PRESETS[id].label,
+  })),
+  { value: "custom", label: "Custom" },
 ];
 
 const fieldStyle = {
@@ -189,10 +190,10 @@ export default function CustomModels() {
           )}
 
           <div className="row gap-8">
-            <Btn variant="primary" size="sm" disabled={busy || !form.modelSlug.trim() || !form.apiKey.trim() || !form.consent}>
+            <Btn type="submit" variant="primary" size="sm" disabled={busy || !form.modelSlug.trim() || !form.apiKey.trim() || !form.consent}>
               {busy ? t("cm_testing") : t("cm_add")}
             </Btn>
-            <Btn variant="ghost" size="sm" onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setFlash(null); }}>
+            <Btn type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setFlash(null); }}>
               <Icon name="x" size={13} />
             </Btn>
           </div>
