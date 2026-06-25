@@ -3,7 +3,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("@/lib/db/user-models", () => ({
   listModels: vi.fn(), insertModel: vi.fn(), getModelById: vi.fn(), deleteModel: vi.fn(),
-  toDTO: (row: { id: string }, _k: string) => ({ id: row.id, masked: true }),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  toDTO: (row: { id: string }, _plainKey: string) => ({ id: row.id, masked: true }),
 }));
 vi.mock("@/lib/db/users", () => ({ getUserByEmail: vi.fn(), acceptTos: vi.fn() }));
 vi.mock("@/lib/extract/llm/probe", () => ({ probeModel: vi.fn() }));

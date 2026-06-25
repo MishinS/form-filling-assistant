@@ -3,19 +3,27 @@ import { useState, useRef, useEffect, useContext } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Icon } from "@/components/primitives";
 import { FREE_MODELS, PAID_LAST_RESORT, isPaidModel } from "@/lib/extract/llm/catalog";
+import { customPickerRows } from "@/lib/llm/custom-model-view";
 import { ModelContext } from "./AppShell";
 
 export default function ModelSelect() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { model: sel, setModel } = useContext(ModelContext);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const MODELS = [...FREE_MODELS, PAID_LAST_RESORT];
+  const [custom, setCustom] = useState<{ id: string; label: string; provider: string }[]>([]);
+  const MODELS = [...FREE_MODELS, PAID_LAST_RESORT, ...customPickerRows(custom)];
   const cur = MODELS.find(m => m.id === sel) ?? MODELS[0];
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
+  }, []);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/models").then(r => (r.ok ? r.json() : { models: [] }))
+      .then((d) => { if (alive) setCustom(d.models ?? []); }).catch(() => {});
+    return () => { alive = false; };
   }, []);
   return (
     <div ref={ref} style={{ position: "relative" }}>
@@ -40,7 +48,10 @@ export default function ModelSelect() {
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>{m.name}</div>
                   <div className="mono dim" style={{ fontSize: 10 }}>{m.provider}</div>
                 </div>
-                {isPaidModel(m.id) ? (
+                {"custom" in m && m.custom ? (
+                  <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
+                    border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>{t("cm_your_key")}</span>
+                ) : isPaidModel(m.id) ? (
                   <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
                     border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>платная</span>
                 ) : (
