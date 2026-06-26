@@ -77,7 +77,7 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
               <SettingsCog size={15} spin="host" className="muted" aria-hidden /><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{t("nav_settings")}</span>
             </button>
-            <button role="menuitem" onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/login" }); }}
+            <button role="menuitem" onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}
               className="row gap-10 sign-out-host" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)", background: "transparent", transition: "background .12s" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
