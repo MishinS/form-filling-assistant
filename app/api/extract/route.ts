@@ -11,6 +11,7 @@ import type { ExtractField } from "@/lib/extract/fields";
 import { getModelById } from "@/lib/db/user-models";
 import { decryptSecret } from "@/lib/crypto/secrets";
 import { openaiCompatModel } from "@/lib/extract/llm/openai-compat";
+import { assertSafeBaseUrl } from "@/lib/extract/llm/providers";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -43,7 +44,16 @@ export async function POST(req: Request): Promise<Response> {
     const id = body.model.slice("custom:".length);
     const row = await getModelById((session.user.email ?? "").toLowerCase(), id);
     if (!row) return NextResponse.json({ error: "Модель не найдена" }, { status: 404 });
-    modelOverride = openaiCompatModel({ baseUrl: row.baseUrl, apiKey: decryptSecret(row.keyCipher), modelSlug: row.modelSlug });
+    // SSRF: a user-entered base URL is validated at add-time, but DNS can be re-pointed
+    // afterwards — re-check it on every use. Preset hosts are fixed and trusted, so skip them.
+    if (row.provider === "custom") {
+      try { await assertSafeBaseUrl(row.baseUrl); }
+      catch { return NextResponse.json({ error: "Недопустимый адрес", code: "bad_endpoint" }, { status: 400 }); }
+    }
+    let apiKey: string;
+    try { apiKey = decryptSecret(row.keyCipher); }
+    catch { return NextResponse.json({ error: "Ошибка конфигурации модели", code: "provider_error" }, { status: 500 }); }
+    modelOverride = openaiCompatModel({ baseUrl: row.baseUrl, apiKey, modelSlug: row.modelSlug });
   }
 
   const encoder = new TextEncoder();

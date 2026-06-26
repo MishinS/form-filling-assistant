@@ -41,6 +41,11 @@ export function isBlockedIp(ip: string): boolean {
   return false;
 }
 
+// Residual risk (accepted, follow-up): this resolves DNS and checks the IP, but the
+// subsequent fetch re-resolves independently — a TOCTOU window for DNS rebinding. Fully
+// closing it needs a custom undici dispatcher that connects to the validated IP. Mitigated
+// for now by `redirect: "error"` on the call + re-validating custom hosts on every use, and
+// by registration being invite-gated (callers are not anonymous).
 export async function assertSafeBaseUrl(
   url: string,
   lookup: (h: string) => Promise<{ address: string }[]> = (h) => dnsLookup(h, { all: true }),

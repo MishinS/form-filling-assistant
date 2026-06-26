@@ -93,6 +93,16 @@ describe("/api/extract custom model", () => {
     expect(res.status).toBe(404);
   });
 
+  it("custom provider: re-validates baseUrl on use → 400 bad_endpoint for an internal host", async () => {
+    // DNS can be re-pointed after add-time; the route must re-check on every use.
+    // A literal metadata IP is blocked synchronously (no DNS), so this is deterministic.
+    const evilRow = { id: "evil", email: "t@t.ru", label: "x", provider: "custom", baseUrl: "https://169.254.169.254/v1", modelSlug: "m", keyCipher: "enc", createdAt: new Date(), updatedAt: new Date(), lastOkAt: null };
+    (getModelById as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce(evilRow);
+    const res = await POST(req({ model: "custom:evil", docs: [] }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe("bad_endpoint");
+  });
+
   it("guest cannot use custom: model (falls back to DEFAULT_MODEL, no custom path)", async () => {
     (auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ user: { role: "guest" } });
     (getModelById as unknown as { mockClear: () => void }).mockClear();

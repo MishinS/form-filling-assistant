@@ -30,6 +30,9 @@ export async function chatComplete(cfg: CompatConfig, prompt: string, signal?: A
   try {
     res = await fetch(endpoint, {
       method: "POST", signal: effectiveSignal,
+      // SSRF: refuse to follow redirects — a validated https host could 3xx to an
+      // internal/metadata address, bypassing the base-URL guard. A redirect → throw → "unreachable".
+      redirect: "error",
       headers: {
         Authorization: `Bearer ${cfg.apiKey}`,
         "Content-Type": "application/json",

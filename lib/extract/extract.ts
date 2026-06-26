@@ -5,7 +5,20 @@ import { RULES } from "./rules";
 import { locatorRu } from "./format";
 import { getModel } from "./llm/registry";
 import { ModelNotConfigured, type OnAttempt, type ExtractionModel } from "./llm/types";
+import { LlmRequestError, type ProbeCode } from "./llm/openai-compat";
 import { isOwnCompany } from "./own-company";
+
+// Localized text for a standalone (custom-model) failure — keeps the typed ProbeCode
+// meaningful to the user instead of leaking a raw "HTTP 401". Mirrors the spec taxonomy.
+const PROBE_MESSAGE_RU: Record<ProbeCode, string> = {
+  auth: "Ключ отклонён или нет доступа",
+  model_not_found: "Модель не найдена у провайдера",
+  rate_limited: "Лимит запросов исчерпан",
+  unreachable: "Провайдер недоступен",
+  bad_response: "Модель ответила некорректно",
+  bad_endpoint: "Недопустимый адрес",
+  provider_error: "Ошибка провайдера",
+};
 
 export interface ExtractResult {
   values: ExtractedValue[];
@@ -81,9 +94,11 @@ export async function extractFields(
     } catch (e) {
       llmFailed = true;
       usedModel = null;
-      warnings.push(e instanceof ModelNotConfigured
-        ? e.message
-        : `Извлечение LLM не выполнено: ${e instanceof Error ? e.message : String(e)}`);
+      warnings.push(
+        e instanceof ModelNotConfigured ? e.message
+        : e instanceof LlmRequestError ? PROBE_MESSAGE_RU[e.code]
+        : `Извлечение LLM не выполнено: ${e instanceof Error ? e.message : String(e)}`,
+      );
       for (const f of llmFields) byField.set(f.id, empty(f.id));
     }
   }
