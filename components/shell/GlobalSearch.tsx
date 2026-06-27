@@ -68,8 +68,12 @@ export default function GlobalSearch() {
         <div
           style={{
             position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0, zIndex: 60,
-            background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12,
-            boxShadow: "0 12px 32px rgba(6,9,8,.18)", overflow: "hidden", maxHeight: 420, overflowY: "auto",
+            // frosted elevated panel: translucent surface-3 over a backdrop blur so the
+            // dropdown reads as a floating layer and never blends into the work area behind it.
+            background: "color-mix(in srgb, var(--surface-3) 86%, transparent)",
+            backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid var(--line-2)", borderRadius: 12,
+            boxShadow: "0 12px 32px rgba(6,9,8,.28)", overflow: "hidden", maxHeight: 420, overflowY: "auto",
           }}
         >
           {total === 0 ? (
