@@ -1,16 +1,13 @@
 "use client";
 import { useI18n, type Lang } from "@/lib/i18n";
-import { Icon } from "@/components/primitives";
+import GlobalSearch from "./GlobalSearch";
 import ThemeToggle from "./ThemeToggle";
 
 export default function Topbar() {
-  const { t, lang, setLang } = useI18n();
+  const { lang, setLang } = useI18n();
   return (
     <div className="row" style={{ height: 64, flex: "none", borderBottom: "1px solid var(--line)", padding: "0 28px", gap: 18 }}>
-      <div className="row gap-10 grow" style={{ maxWidth: 460 }}>
-        <Icon name="search" size={16} className="dim" />
-        <input placeholder={t("search")} style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 13.5 }} />
-      </div>
+      <GlobalSearch />
       <div className="grow" />
       <div className="row" style={{ borderRadius: "var(--pill)", border: "1px solid var(--line-2)", padding: 3, gap: 2 }}>
         {(["ru", "en"] as Lang[]).map(l => (
