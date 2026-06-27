@@ -98,7 +98,8 @@ function Group({ label, hits, onPick }: { label: string; hits: SearchHit[]; onPi
       {hits.map((h) => (
         <button
           key={`${h.kind}-${h.fillId}-${h.title}`}
-          // preventDefault on mousedown so the outside-click handler doesn't fire before onClick
+          type="button"
+          // preventDefault on mousedown keeps focus on the input so it doesn't blur before onClick fires
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onPick(h)}
           className="row gap-12"

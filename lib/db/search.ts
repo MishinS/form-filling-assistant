@@ -38,7 +38,7 @@ const EMPTY: SearchResults = { fills: [], sources: [] };
 /**
  * Global search over one user's fills + sources, matching counterparty (extracted f1)
  * and file name. Two groups so the same document is not listed twice:
- *  - fills:   one row per fill matching counterparty OR primary file name;
+ *  - fills:   one row per fill matching counterparty OR any of its file names;
  *  - sources: one row per file matching its name (counterparty matches are already
  *             represented in the fills group).
  */
