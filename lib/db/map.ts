@@ -178,14 +178,3 @@ export function formatSourceRow(r: SourceRowData, lang: "ru" | "en"): SourceRowV
     blobKey: r.blobKey,
   };
 }
-
-/** Case-insensitive substring filter over file name OR counterparty. Empty query → all rows. */
-export function filterSources(rows: SourceRowView[], q: string): SourceRowView[] {
-  const needle = q.trim().toLocaleLowerCase();
-  if (!needle) return rows;
-  return rows.filter(
-    (r) =>
-      r.name.toLocaleLowerCase().includes(needle) ||
-      (r.counterparty ?? "").toLocaleLowerCase().includes(needle),
-  );
-}

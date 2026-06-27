@@ -1,33 +1,20 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
 import { FileGlyph } from "@/components/primitives";
-import { formatSourceRow, filterSources, type SourceRowData } from "@/lib/db/map";
+import { formatSourceRow, type SourceRowData } from "@/lib/db/map";
 
 const GRID = "2.2fr 1.6fr 0.9fr 0.7fr 1.1fr 96px";
 
 export default function SourcesArchive({ sources }: { sources: SourceRowData[] }) {
   const { t, lang } = useI18n();
-  const [q, setQ] = useState("");
 
+  // Per-page search was removed — the global topbar search covers fills + sources.
   const views = useMemo(() => sources.map((s) => formatSourceRow(s, lang)), [sources, lang]);
-  const shown = useMemo(() => filterSources(views, q), [views, q]);
 
   return (
     <div style={{ maxWidth: 980 }}>
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder={t("sources_search")}
-        aria-label={t("sources_search")}
-        style={{
-          width: "100%", maxWidth: 360, padding: "9px 14px", marginBottom: 22,
-          border: "1px solid var(--line)", borderRadius: 9, background: "var(--surface)",
-          color: "inherit", fontSize: 13.5, outline: "none",
-        }}
-      />
-
-      <div style={{ border: "1px solid var(--line)", borderRadius: 12, overflow: "hidden", background: "var(--surface)" }}>
+      <div style={{ border: "1px solid var(--line)", borderRadius: 12, overflow: "hidden", background: "var(--surface-1)" }}>
         <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 16, padding: "11px 20px",
           fontSize: 11, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--text-3)",
           borderBottom: "1px solid var(--line)", background: "var(--surface-2)" }}>
@@ -39,13 +26,13 @@ export default function SourcesArchive({ sources }: { sources: SourceRowData[] }
           <div />
         </div>
 
-        {shown.length === 0 ? (
+        {views.length === 0 ? (
           <div className="muted" style={{ padding: "26px 20px", fontSize: 13.5 }}>{t("sources_none")}</div>
         ) : (
-          shown.map((r, i) => (
+          views.map((r, i) => (
             <div key={r.id} style={{ display: "grid", gridTemplateColumns: GRID, gap: 16,
               padding: "14px 20px", alignItems: "center",
-              borderBottom: i === shown.length - 1 ? "none" : "1px solid var(--line)" }}>
+              borderBottom: i === views.length - 1 ? "none" : "1px solid var(--line)" }}>
               <div className="row gap-12" style={{ minWidth: 0 }}>
                 <FileGlyph type={r.ext} size={30} />
                 <div style={{ fontWeight: 600, fontSize: 13.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>

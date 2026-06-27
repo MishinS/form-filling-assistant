@@ -74,7 +74,6 @@ export const STR: Record<string, { ru: string; en: string }> = {
   col_amount:      { ru: "Сумма",        en: "Amount" },
   col_status:      { ru: "Статус",       en: "Status" },
   col_date:        { ru: "Дата",         en: "Date" },
-  sources_search:  { ru: "Контрагент или имя файла", en: "Counterparty or file name" },
   sources_none:    { ru: "Ничего не найдено", en: "Nothing found" },
   src_col_file:    { ru: "Документ", en: "Document" },
   src_col_party:   { ru: "Контрагент", en: "Counterparty" },

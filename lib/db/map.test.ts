@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildFillRecord, buildDetailGroups, formatFillDate, formatSourceRow, filterSources, type FillPayload, type ValueDetail, type SourceRowData, type SourceRowView } from "./map";
+import { buildFillRecord, buildDetailGroups, formatFillDate, formatSourceRow, type FillPayload, type ValueDetail, type SourceRowData } from "./map";
 
 const payload: FillPayload = {
   templateId: "pt",
@@ -127,28 +127,5 @@ describe("formatSourceRow", () => {
 
   it("counterparty null остаётся null", () => {
     expect(formatSourceRow({ ...baseSrc, counterparty: null }, "ru").counterparty).toBeNull();
-  });
-});
-
-describe("filterSources", () => {
-  const rows: SourceRowView[] = [
-    { id: "1", name: "schet-142.pdf", ext: "pdf", sizeText: "200 КБ", pages: 2, dateText: "20.06.2026", counterparty: "ООО «Ромашка»", blobKey: "u" },
-    { id: "2", name: "dogovor.docx", ext: "docx", sizeText: "10 КБ", pages: 1, dateText: "19.06.2026", counterparty: "ООО «Лютик»", blobKey: "u" },
-    { id: "3", name: "kp.xlsx", ext: "xlsx", sizeText: "5 КБ", pages: 1, dateText: "18.06.2026", counterparty: null, blobKey: null },
-  ];
-
-  it("пустой запрос → все строки", () => {
-    expect(filterSources(rows, "")).toHaveLength(3);
-    expect(filterSources(rows, "   ")).toHaveLength(3);
-  });
-  it("матч по контрагенту, регистронезависимо", () => {
-    expect(filterSources(rows, "ромашка").map((r) => r.id)).toEqual(["1"]);
-  });
-  it("матч по имени файла", () => {
-    expect(filterSources(rows, "dogovor").map((r) => r.id)).toEqual(["2"]);
-  });
-  it("counterparty null не падает, матчится только по имени", () => {
-    expect(filterSources(rows, "kp").map((r) => r.id)).toEqual(["3"]);
-    expect(filterSources(rows, "несуществует")).toHaveLength(0);
   });
 });
