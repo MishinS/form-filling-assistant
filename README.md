@@ -37,4 +37,4 @@ npm test        # Vitest unit tests (logic: contrast, i18n)
 
 - Spec: `../docs/superpowers/specs/2026-06-01-ffa-web-scaffold-design.md`
 - Plan: `../docs/superpowers/plans/2026-06-01-ffa-web-scaffold.md`
-- Prototype (visual ground truth): `../fill_forms/design_handoff_form_filling/`
+- Prototype (visual ground truth): `../docs/handoff/design_handoff_form_filling/`

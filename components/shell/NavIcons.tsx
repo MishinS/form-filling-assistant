@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 
 /*
  * Three animated sidebar nav icons, ported from the owner's design handoff
- * (form_filling_assistent/fill_forms (1)/nav_icons_handoff — the approved
+ * (../docs/handoff/nav_icons_handoff — the approved
  * "variant B" set). Each is stroke-based, inherits currentColor, and loops a
  * micro-animation while triggered. Keyframes/selectors live in app/globals.css
  * (.nav-ic) — mirrors how SettingsCog moved its CSS out of the handoff's runtime
