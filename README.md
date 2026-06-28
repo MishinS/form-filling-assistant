@@ -2,7 +2,7 @@
 
 Production Next.js 14 (App Router) + TypeScript + Tailwind recreation of the
 Form-Filling Assistant hi-fi prototype. Upload invoices / contracts / quotes →
-extract fields → fill a template (first: «Платёжное требование» ПТ-Ф15) →
+extract fields → fill a template (first: "Payment Request", form PT-F15) →
 export. RU/EN bilingual. Accent `#0b5394`.
 
 ## This slice
@@ -29,12 +29,6 @@ npm test        # Vitest unit tests (logic: contrast, i18n)
 
 - `app/(app)/` — routed screens behind the Sidebar + Topbar shell.
 - `components/` — ported UI (primitives, shell, dashboard, wizard, review, templates).
-- `lib/seed/pt.ts` — typed seed (ПТ template, fields with real cell addresses, history).
+- `lib/seed/pt.ts` — typed seed (Payment Request template, fields with real cell addresses, history).
 - `lib/i18n.tsx` — RU/EN provider + `useI18n()` hook.
 - `lib/types.ts`, `lib/db/schema.ts` — domain types + Drizzle persistence contract.
-
-## Reference
-
-- Spec: `../docs/superpowers/specs/2026-06-01-ffa-web-scaffold-design.md`
-- Plan: `../docs/superpowers/plans/2026-06-01-ffa-web-scaffold.md`
-- Prototype (visual ground truth): `../docs/handoff/design_handoff_form_filling/`
