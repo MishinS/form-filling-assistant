@@ -2,7 +2,7 @@
 
 Production Next.js 14 (App Router) + TypeScript + Tailwind recreation of the
 Form-Filling Assistant hi-fi prototype. Upload invoices / contracts / quotes →
-extract fields → fill a template (first: "Payment Request", form PT-F15) →
+extract fields → fill a template (first: "Payment Request", form PR-F15) →
 export. RU/EN bilingual. Accent `#0b5394`.
 
 ## This slice
