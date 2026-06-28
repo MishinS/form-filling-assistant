@@ -2,13 +2,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { Logo, Btn } from "@/components/primitives";
 
 export default function LoginForm() {
   const { t } = useI18n();
-  const router = useRouter();
   const params = useSearchParams();
   // Only allow same-origin relative paths — guards against open-redirect, since
   // redirect:false bypasses NextAuth's own callbackUrl sanitisation.
@@ -29,7 +28,11 @@ export default function LoginForm() {
       setBusy(false);
       return;
     }
-    router.push(callbackUrl);
+    // Hard navigation (not router.push): a soft nav serves the stale client
+    // router-cache render of "/" (the guest workspace populated on logout), so
+    // the server-side redirect("/fills") for the now-authenticated user never
+    // runs. RegisterForm lands the same way, for the same reason.
+    window.location.assign(callbackUrl);
   };
 
   const inputStyle: React.CSSProperties = {
