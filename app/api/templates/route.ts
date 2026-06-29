@@ -5,7 +5,7 @@ import { isOwnBlobUrl } from "@/lib/upload/avatar";
 import { createTemplate } from "@/lib/db/templates";
 import { saveMapping } from "@/lib/db/mappings";
 import { workbookSheets, sheetTexts } from "@/lib/templates/xlsx-scan";
-import { proposeFields, type ScanResult } from "@/lib/templates/scan";
+import { proposeFields, coerceFields, type ScanResult } from "@/lib/templates/scan";
 import type { OnAttempt } from "@/lib/extract/llm/types";
 
 export const runtime = "nodejs"; // DB access
@@ -28,6 +28,7 @@ export async function POST(req: Request): Promise<Response> {
   const name = typeof body.name === "string" ? body.name.trim().slice(0, MAX_NAME) : "";
   const desc = typeof body.desc === "string" ? body.desc.trim().slice(0, MAX_DESC) : "";
   const url = typeof body.url === "string" ? body.url : "";
+  const clientFields = Array.isArray(body.fields) ? (body.fields as unknown[]) : null;
   if (!name) return NextResponse.json({ error: "name" }, { status: 400 });
   if (!isOwnBlobUrl(url)) return NextResponse.json({ error: "url" }, { status: 400 });
 
@@ -61,22 +62,31 @@ export async function POST(req: Request): Promise<Response> {
           texts = sheetTexts(bytes);
         } catch { fail("xlsx"); return; }
 
-        let scan: ScanResult;
-        try { scan = await proposeFields(texts, onAttempt); }
-        catch { scan = { fields: [], failure: "llm" }; } // contract says it never throws; belt and braces
-        if (scan.failure || scan.fields.length === 0) { fail(scan.failure ?? "llm"); return; }
+        let defaultFields;
+        if (clientFields) {
+          // Desktop local-model path: fields already produced in the webview.
+          // Re-validate against the actual sheets (trust boundary) — no LLM here.
+          defaultFields = coerceFields(clientFields, sheets);
+          if (defaultFields.length === 0) { fail("nofields"); return; }
+        } else {
+          let scan: ScanResult;
+          try { scan = await proposeFields(texts, onAttempt); }
+          catch { scan = { fields: [], failure: "llm" }; } // contract says it never throws; belt and braces
+          if (scan.failure || scan.fields.length === 0) { fail(scan.failure ?? "llm"); return; }
+          defaultFields = scan.fields;
+        }
 
         write({ type: "stage", stage: "save" });
         const id = `tpl-${crypto.randomUUID().slice(0, 8)}`;
         try {
-          await createTemplate({ id, code: id.toUpperCase(), name, desc, fileKey: url, sheets, userId: email, defaultFields: scan.fields });
+          await createTemplate({ id, code: id.toUpperCase(), name, desc, fileKey: url, sheets, userId: email, defaultFields });
         } catch { fail("server"); return; }
         // The initial mapping is recoverable (GET /api/mappings falls back to the
         // template's defaultFields), so its failure must not fail the creation —
         // otherwise a transient DB hiccup answers "error" for a template that DOES
         // exist, and a retry mints a duplicate (seen in UAT on a Neon cold start).
-        try { await saveMapping(email, id, scan.fields); } catch { /* recoverable */ }
-        write({ type: "result", id, fields: scan.fields.length });
+        try { await saveMapping(email, id, defaultFields); } catch { /* recoverable */ }
+        write({ type: "result", id, fields: defaultFields.length });
       };
 
       await run();

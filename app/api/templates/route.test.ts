@@ -4,7 +4,10 @@ import { zipSync, strToU8 } from "fflate";
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("@/lib/db/templates", () => ({ createTemplate: vi.fn(async () => {}) }));
 vi.mock("@/lib/db/mappings", () => ({ saveMapping: vi.fn(async () => {}) }));
-vi.mock("@/lib/templates/scan", () => ({ proposeFields: vi.fn(async () => ({ fields: [], failure: "llm" })) }));
+vi.mock("@/lib/templates/scan", async (orig) => ({
+  ...(await orig() as object),
+  proposeFields: vi.fn(async () => ({ fields: [], failure: "llm" })),
+}));
 
 import { POST } from "./route";
 import { auth } from "@/auth";
@@ -129,5 +132,23 @@ describe("POST /api/templates", () => {
   it("401 without a session", async () => {
     mockAuth.mockResolvedValueOnce(null);
     expect((await POST(post({ name: "Ф", url: OK_URL }))).status).toBe(401);
+  });
+
+  it("fields present → skips proposeFields and saves the supplied fields", async () => {
+    const fields = [{ label_ru: "Поставщик", label_en: "Supplier", cell: "Лист1!B1", kind: "string" }];
+    const res = await POST(post({ name: "T", desc: "", url: OK_URL, fields }));
+    const evs = await events(res);
+    expect(mockPropose).not.toHaveBeenCalled();
+    expect(terminal(evs)).toMatchObject({ type: "result" });
+    expect(createTemplate).toHaveBeenCalledWith(expect.objectContaining({ defaultFields: expect.arrayContaining([expect.objectContaining({ label_ru: "Поставщик", cell: "Лист1!B1" })]) }));
+  });
+
+  it("fields present but all invalid → nofields, template not created", async () => {
+    const fields = [{ label_ru: "X", cell: "not-a-ref" }];
+    const res = await POST(post({ name: "T", desc: "", url: OK_URL, fields }));
+    const evs = await events(res);
+    expect(mockPropose).not.toHaveBeenCalled();
+    expect(terminal(evs)).toEqual({ type: "error", code: "nofields" });
+    expect(createTemplate).not.toHaveBeenCalled();
   });
 });
