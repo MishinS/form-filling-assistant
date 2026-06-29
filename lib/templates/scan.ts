@@ -29,7 +29,7 @@ const SCAN_ATTEMPT_TIMEOUT_MS = 20_000;
 export type ScanFailure = "llm" | "nofields";
 export interface ScanResult { fields: ExtractField[]; failure: ScanFailure | null }
 
-function buildScanPrompt(sheets: SheetText[]): string {
+export function buildScanPrompt(sheets: SheetText[]): string {
   const body = sheets
     .map(s => `### Лист "${s.name}"\n${s.lines.join("\n") || "(пусто)"}`)
     .join("\n\n");
@@ -51,26 +51,19 @@ function pickLabel(f: Record<string, unknown>): string | null {
   return null;
 }
 
-// null = junk (not JSON / no fields[] array) — the model didn't do the task at all;
-// [] = the model understood the schema but nothing valid survived.
-function parseProposal(txt: string, sheetNames: string[]): ExtractField[] | null {
-  const cleaned = txt.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-  let parsed: { fields?: unknown };
-  try {
-    parsed = JSON.parse(cleaned) as { fields?: unknown };
-  } catch {
-    return null;
-  }
-  if (!Array.isArray(parsed.fields)) return null;
+/** Coerce raw LLM/`client field objects into validated ExtractFields against the
+ *  allowed sheet names. Drops fields with no label or an unresolvable cell ref;
+ *  caps at MAX_FIELDS. Shared by parseProposal (server pool) and the desktop
+ *  local-scan path / server re-validation of client-supplied fields. */
+export function coerceFields(raw: unknown[], sheetNames: string[]): ExtractField[] {
   const out: ExtractField[] = [];
-  for (const raw of parsed.fields) {
+  for (const item of raw) {
     if (out.length >= MAX_FIELDS) break;
-    if (!raw || typeof raw !== "object") continue;
-    const f = raw as Record<string, unknown>;
+    if (!item || typeof item !== "object") continue;
+    const f = item as Record<string, unknown>;
     const label = pickLabel(f);
     if (!label) continue;
     const kind = typeof f.kind === "string" && KINDS.includes(f.kind as FieldKind) ? (f.kind as FieldKind) : "string";
-    // validateCellRef qualifies a sheet-less ref ("A1") with the first allowed sheet.
     const cell = validateCellRef(typeof f.cell === "string" ? f.cell : "", sheetNames);
     if (!cell.ok) continue;
     out.push({
@@ -85,6 +78,19 @@ function parseProposal(txt: string, sheetNames: string[]): ExtractField[] | null
     });
   }
   return out;
+}
+
+// null = junk (not JSON / no fields[] array); otherwise the coerced field list.
+function parseProposal(txt: string, sheetNames: string[]): ExtractField[] | null {
+  const cleaned = txt.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  let parsed: { fields?: unknown };
+  try {
+    parsed = JSON.parse(cleaned) as { fields?: unknown };
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed.fields)) return null;
+  return coerceFields(parsed.fields, sheetNames);
 }
 
 /** Propose fields for an uploaded template. Never throws; see ScanFailure. */

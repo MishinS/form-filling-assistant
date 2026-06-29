@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { proposeFields } from "./scan";
+import { proposeFields, coerceFields, buildScanPrompt } from "./scan";
 import type { AttemptEvent } from "@/lib/extract/llm/types";
 import { FREE_MODEL_IDS, PAID_LAST_RESORT } from "@/lib/extract/llm/catalog";
 
@@ -128,5 +128,49 @@ describe("proposeFields", () => {
     const { fields, failure } = await proposeFields(SHEETS);
     expect(failure).toBeNull();
     expect(fields).toHaveLength(1);
+  });
+});
+
+describe("coerceFields", () => {
+  const sheets = ["Лист1"];
+
+  it("coerces valid fields, qualifying sheet-less cell refs", () => {
+    const out = coerceFields(
+      [{ label_ru: "Поставщик", label_en: "Supplier", cell: "B1", kind: "string" }],
+      sheets,
+    );
+    expect(out).toEqual([{
+      id: "f1", group: "req", label_ru: "Поставщик", label_en: "Supplier",
+      cell: "Лист1!B1", kind: "string", required: false, strategy: "llm",
+    }]);
+  });
+
+  it("drops fields with no label or bad cell ref", () => {
+    const out = coerceFields(
+      [{ cell: "B1" }, { label_ru: "X", cell: "not-a-ref" }],
+      sheets,
+    );
+    expect(out).toEqual([]);
+  });
+
+  it("falls back to label_ru for label_en and defaults unknown kind to string", () => {
+    const out = coerceFields(
+      [{ label_ru: "Сумма", cell: "Лист1!C2", kind: "weird" }],
+      sheets,
+    );
+    expect(out[0]).toMatchObject({ label_en: "Сумма", kind: "string", cell: "Лист1!C2" });
+  });
+
+  it("caps at MAX_FIELDS (40)", () => {
+    const many = Array.from({ length: 50 }, (_, i) => ({ label_ru: `L${i}`, cell: `A${i + 1}` }));
+    expect(coerceFields(many, sheets)).toHaveLength(40);
+  });
+});
+
+describe("buildScanPrompt", () => {
+  it("includes sheet names and the strict-JSON instruction", () => {
+    const p = buildScanPrompt([{ name: "Лист1", lines: ["A1: Поставщик"] }]);
+    expect(p).toContain('Лист "Лист1"');
+    expect(p).toContain('{"fields":[');
   });
 });
