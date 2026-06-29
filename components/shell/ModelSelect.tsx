@@ -36,6 +36,38 @@ export default function ModelSelect() {
       .then((d) => { if (alive) setCustom(d.models ?? []); }).catch(() => {});
     return () => { alive = false; };
   }, []);
+
+  const renderRow = (m: typeof MODELS[number]) => {
+    const on = m.id === sel;
+    return (
+      <button key={m.id} onClick={() => { setModel(m.id); setOpen(false); }}
+        className="row gap-10" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)",
+          background: on ? "var(--surface-2)" : "transparent", transition: "background .12s" }}
+        onMouseEnter={e => { if (!on) e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
+        onMouseLeave={e => { if (!on) e.currentTarget.style.background = "transparent"; }}>
+        <Icon name="bolt" size={13} style={{ color: on ? "var(--text)" : "var(--text-3)", marginTop: 2 }} />
+        <div className="grow" style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>{m.name}</div>
+          <div className="mono dim" style={{ fontSize: 10 }}>{m.provider}</div>
+        </div>
+        {"local" in m && m.local ? (
+          <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
+            border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>{t("ms_local_badge")}</span>
+        ) : "custom" in m && m.custom ? (
+          <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
+            border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>{t("cm_your_key")}</span>
+        ) : isPaidModel(m.id) ? (
+          <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
+            border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>платная</span>
+        ) : (
+          <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--ok)", background: "var(--ok-bg)",
+            borderRadius: 99, padding: "2px 7px", flex: "none" }}>free</span>
+        )}
+        {on && <Icon name="check" size={13} stroke={2.2} style={{ color: "var(--text)", flex: "none" }} />}
+      </button>
+    );
+  };
+
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <div className="mono" style={{ fontSize: 9.5, letterSpacing: ".07em", textTransform: "uppercase", color: "var(--text-3)", margin: "0 4px 7px" }}>
@@ -46,36 +78,7 @@ export default function ModelSelect() {
         <div className="fade-in" style={{ position: "absolute", bottom: "calc(100% + 6px)", left: 0, right: 0, zIndex: 30,
           background: "var(--surface-hi)", border: "1px solid var(--line-strong)", borderRadius: "var(--r-md)",
           padding: 5, boxShadow: "0 18px 50px rgba(0,0,0,.55)" }}>
-          {MODELS.map(m => {
-            const on = m.id === sel;
-            return (
-              <button key={m.id} onClick={() => { setModel(m.id); setOpen(false); }}
-                className="row gap-10" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)",
-                  background: on ? "var(--surface-2)" : "transparent", transition: "background .12s" }}
-                onMouseEnter={e => { if (!on) e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
-                onMouseLeave={e => { if (!on) e.currentTarget.style.background = "transparent"; }}>
-                <Icon name="bolt" size={13} style={{ color: on ? "var(--text)" : "var(--text-3)", marginTop: 2 }} />
-                <div className="grow" style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>{m.name}</div>
-                  <div className="mono dim" style={{ fontSize: 10 }}>{m.provider}</div>
-                </div>
-                {"local" in m && m.local ? (
-                  <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
-                    border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>{t("ms_local_badge")}</span>
-                ) : "custom" in m && m.custom ? (
-                  <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
-                    border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>{t("cm_your_key")}</span>
-                ) : isPaidModel(m.id) ? (
-                  <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
-                    border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>платная</span>
-                ) : (
-                  <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--ok)", background: "var(--ok-bg)",
-                    borderRadius: 99, padding: "2px 7px", flex: "none" }}>free</span>
-                )}
-                {on && <Icon name="check" size={13} stroke={2.2} style={{ color: "var(--text)", flex: "none" }} />}
-              </button>
-            );
-          })}
+          {MODELS.filter(m => !("local" in m && m.local)).map(renderRow)}
           {isTauri() && (
             <div className="mono dim" style={{ fontSize: 9.5, textTransform: "uppercase", padding: "6px 10px 2px" }}>
               {t("ms_local_group")}
@@ -88,6 +91,7 @@ export default function ModelSelect() {
               <span style={{ fontSize: 11, marginLeft: "auto" }}>{t("ms_local_retry")}</span>
             </button>
           )}
+          {local.map(renderRow)}
           <div className="dim" style={{ fontSize: 10.5, lineHeight: 1.4, padding: "8px 10px 5px", borderTop: "1px solid var(--line)", marginTop: 4 }}>
             {lang === "ru" ? "Бесплатные модели; платная — резерв при перегрузке." : "Free models; the paid one is a fallback when busy."}
           </div>
