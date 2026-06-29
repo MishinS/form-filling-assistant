@@ -9,6 +9,8 @@ import type { ParsedDoc } from "@/lib/parse/types";
 import type { ExtractedValue } from "@/lib/types";
 import type { ExtractField } from "@/lib/extract/fields";
 import RaceList, { type RaceItem } from "@/components/wizard/RaceList";
+import { isTauri } from "@/lib/desktop/tauri";
+import { runLocalExtract } from "@/lib/extract/llm/run-local-extract";
 
 type Props = {
   sources: UploadFile[];
@@ -42,14 +44,6 @@ export default function Processing({ sources, model, templateId, fields, onDone,
     setResult(null);
     setError(null);
     try {
-      const res = await fetch("/api/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId, model: modelId, docs, fields }),
-      });
-      if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       const failed: string[] = [];
       const finalBox: { value: ResultEvent | null } = { value: null };
       let buf = "";
@@ -72,18 +66,31 @@ export default function Processing({ sources, model, templateId, fields, onDone,
           finalBox.value = { values: ev.values, warnings: ev.warnings, llmFailed: ev.llmFailed, usedModel: ev.usedModel };
         }
       };
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        let nl;
-        while ((nl = buf.indexOf("\n")) >= 0) {
-          handleLine(buf.slice(0, nl).trim());
-          buf = buf.slice(nl + 1);
+      if (isTauri() && modelId.startsWith("local:")) {
+        // Desktop local model: run extraction in the webview; feed the same consumer.
+        await runLocalExtract(docs, modelId, fields, (line) => handleLine(line.trim()));
+      } else {
+        const res = await fetch("/api/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ templateId, model: modelId, docs, fields }),
+        });
+        if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          let nl;
+          while ((nl = buf.indexOf("\n")) >= 0) {
+            handleLine(buf.slice(0, nl).trim());
+            buf = buf.slice(nl + 1);
+          }
         }
+        buf += decoder.decode(); // flush any bytes held in the decoder's internal state
+        handleLine(buf.trim());
       }
-      buf += decoder.decode(); // flush any bytes held in the decoder's internal state
-      handleLine(buf.trim());
       const final = finalBox.value;
       if (!final) throw new Error(t("stream_empty"));
       setResult(final);
