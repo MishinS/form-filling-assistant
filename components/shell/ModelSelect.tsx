@@ -1,9 +1,11 @@
 "use client";
-import { useState, useRef, useEffect, useContext } from "react";
+import { useState, useRef, useEffect, useContext, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Icon } from "@/components/primitives";
 import { FREE_MODELS, PAID_LAST_RESORT, isPaidModel } from "@/lib/extract/llm/catalog";
 import { customPickerRows } from "@/lib/llm/custom-model-view";
+import { isTauri, detectLocalRuntime, type LocalRuntime } from "@/lib/desktop/tauri";
+import { localPickerRows } from "@/lib/llm/local-model-view";
 import { ModelContext } from "./AppShell";
 
 export default function ModelSelect() {
@@ -12,7 +14,16 @@ export default function ModelSelect() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [custom, setCustom] = useState<{ id: string; label: string; provider: string }[]>([]);
-  const MODELS = [...FREE_MODELS, PAID_LAST_RESORT, ...customPickerRows(custom)];
+  const [runtime, setRuntime] = useState<LocalRuntime | null>(null);
+  const [probed, setProbed] = useState(false);
+  const probe = useCallback(() => {
+    if (!isTauri()) return;
+    setProbed(false);
+    detectLocalRuntime().then((rt) => { setRuntime(rt); setProbed(true); }).catch(() => setProbed(true));
+  }, []);
+  useEffect(() => { probe(); }, [probe]);
+  const local = localPickerRows(runtime);
+  const MODELS = [...FREE_MODELS, PAID_LAST_RESORT, ...customPickerRows(custom), ...local];
   const cur = MODELS.find(m => m.id === sel) ?? MODELS[0];
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
@@ -48,7 +59,10 @@ export default function ModelSelect() {
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>{m.name}</div>
                   <div className="mono dim" style={{ fontSize: 10 }}>{m.provider}</div>
                 </div>
-                {"custom" in m && m.custom ? (
+                {"local" in m && m.local ? (
+                  <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
+                    border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>{t("ms_local_badge")}</span>
+                ) : "custom" in m && m.custom ? (
                   <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
                     border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>{t("cm_your_key")}</span>
                 ) : isPaidModel(m.id) ? (
@@ -62,6 +76,18 @@ export default function ModelSelect() {
               </button>
             );
           })}
+          {isTauri() && (
+            <div className="mono dim" style={{ fontSize: 9.5, textTransform: "uppercase", padding: "6px 10px 2px" }}>
+              {t("ms_local_group")}
+            </div>
+          )}
+          {isTauri() && probed && local.length === 0 && (
+            <button type="button" onClick={probe}
+              className="row gap-10" style={{ width: "100%", textAlign: "left", padding: "9px 10px", opacity: .7 }}>
+              <span style={{ fontSize: 12 }}>{t("ms_local_none")}</span>
+              <span style={{ fontSize: 11, marginLeft: "auto" }}>{t("ms_local_retry")}</span>
+            </button>
+          )}
           <div className="dim" style={{ fontSize: 10.5, lineHeight: 1.4, padding: "8px 10px 5px", borderTop: "1px solid var(--line)", marginTop: 4 }}>
             {lang === "ru" ? "Бесплатные модели; платная — резерв при перегрузке." : "Free models; the paid one is a fallback when busy."}
           </div>

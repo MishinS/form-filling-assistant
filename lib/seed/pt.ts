@@ -250,6 +250,10 @@ export const STR: Record<string, { ru: string; en: string }> = {
   reg_tos_label:   { ru: "Принимаю условия использования", en: "I accept the terms of use" },
   reg_tos_text:    { ru: "Сервис предоставляется «как есть», без гарантий. Вы используете его и любые добавленные API-ключи на свой страх и риск; вся ответственность за расходы, данные и соблюдение условий провайдеров LLM лежит на вас.", en: "The service is provided \"as is\", without warranties. You use it and any API keys you add at your own risk; you are solely responsible for costs, data, and compliance with your LLM providers' terms." },
   register_err_consent: { ru: "Подтвердите согласие с условиями", en: "Please accept the terms" },
+  ms_local_group: { ru: "На этом компьютере", en: "On this computer" },
+  ms_local_none: { ru: "LM Studio / Ollama не обнаружен", en: "LM Studio / Ollama not detected" },
+  ms_local_retry: { ru: "Искать снова", en: "Search again" },
+  ms_local_badge: { ru: "локально", en: "local" },
 };
 
 export const STATUS: Record<StatusKey, { key: string; tone: "ok" | "warn" | "info" | "muted" | "bad" }> = {

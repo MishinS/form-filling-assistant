@@ -1,4 +1,4 @@
-export interface PickerRow { id: string; name: string; provider: string; custom?: boolean }
+export interface PickerRow { id: string; name: string; provider: string; custom?: boolean; local?: boolean }
 
 export function customPickerRows(
   dtos: { id: string; label: string; provider: string }[],
