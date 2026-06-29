@@ -13,7 +13,7 @@ pub fn run() {
       }
       Ok(())
     })
-    .invoke_handler(tauri::generate_handler![runtime::detect_local_runtime])
+    .invoke_handler(tauri::generate_handler![runtime::detect_local_runtime, runtime::llm_chat])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

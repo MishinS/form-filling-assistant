@@ -55,6 +55,39 @@ pub async fn detect_local_runtime() -> Option<LocalRuntime> {
     None
 }
 
+pub fn classify_status(status: u16) -> &'static str {
+    match status {
+        401 | 403 => "auth",
+        404 => "model_not_found",
+        429 => "rate_limited",
+        _ => "provider_error",
+    }
+}
+
+#[tauri::command]
+pub async fn llm_chat(base_url: String, model: String, prompt: String) -> Result<String, String> {
+    let endpoint = format!("{}/chat/completions", base_url.trim_end_matches('/'));
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(120))
+        .build().map_err(|_| "provider_error".to_string())?;
+    let payload = serde_json::json!({
+        "model": model,
+        "temperature": 0,
+        "response_format": { "type": "json_object" },
+        "messages": [{ "role": "user", "content": prompt }],
+    });
+    let res = client.post(&endpoint).json(&payload).send().await
+        .map_err(|_| "unreachable".to_string())?;
+    if !res.status().is_success() {
+        return Err(classify_status(res.status().as_u16()).to_string());
+    }
+    let body: serde_json::Value = res.json().await.map_err(|_| "bad_response".to_string())?;
+    body["choices"][0]["message"]["content"].as_str()
+        .map(|s| s.to_string())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "bad_response".to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -81,5 +114,14 @@ mod tests {
     fn bad_json_yields_empty() {
         assert!(parse_ollama_tags("nope").is_empty());
         assert!(parse_openai_models("{}").is_empty());
+    }
+
+    #[test]
+    fn classifies_http_status() {
+        assert_eq!(classify_status(401), "auth");
+        assert_eq!(classify_status(403), "auth");
+        assert_eq!(classify_status(404), "model_not_found");
+        assert_eq!(classify_status(429), "rate_limited");
+        assert_eq!(classify_status(500), "provider_error");
     }
 }
