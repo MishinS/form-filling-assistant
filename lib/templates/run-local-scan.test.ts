@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const invokeLlmChat = vi.hoisted(() => vi.fn());
 const getCachedRuntime = vi.hoisted(() =>
-  vi.fn(() => ({ baseUrl: "http://127.0.0.1:1234/v1", kind: "lmstudio", models: [] })),
+  vi.fn(() => ({ baseUrl: "http://127.0.0.1:1234/v1", kind: "lmstudio", models: [] as string[] }) as { baseUrl: string; kind: string; models: string[] } | null),
 );
 
 vi.mock("@/lib/desktop/tauri", () => ({ invokeLlmChat, getCachedRuntime }));

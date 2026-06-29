@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
@@ -7,6 +7,11 @@ import { useI18n } from "@/lib/i18n";
 import RaceList, { type RaceItem } from "@/components/wizard/RaceList";
 import { Btn, Icon } from "@/components/primitives";
 import { MIME } from "@/lib/parse/types";
+import { ModelContext } from "@/components/shell/AppShell";
+import { isTauri } from "@/lib/desktop/tauri";
+import { runLocalScan } from "@/lib/templates/run-local-scan";
+import { sheetTexts } from "@/lib/templates/xlsx-scan";
+import type { ExtractField } from "@/lib/extract/fields";
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const fieldStyle = { background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: "var(--r-md)", padding: "10px 12px", fontSize: 14, outline: "none", width: "100%" } as const;
@@ -33,6 +38,7 @@ const FAIL_KEY: Record<FailCode, string> = {
 export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   const router = useRouter();
+  const { model } = useContext(ModelContext);
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -90,21 +96,11 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
         });
         url = r.url; blobUrlRef.current = url;
       }
-      setStage(t("tpl_scan_sheets")); setPct(25);
-      const res = await fetch("/api/templates", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), desc: desc.trim(), url }),
-      });
-      if (!res.ok || !res.body) { failWith("server"); return; }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
       const box: { result: { id: string } | null; error: FailCode | null } = { result: null, error: null };
       const handleLine = (line: string) => {
         if (!line) return;
         let ev: StreamEvent;
-        // A malformed line must not mask an already-received terminal event.
         try { ev = JSON.parse(line) as StreamEvent; } catch { return; }
         if (ev.type === "stage" && ev.stage === "sheets") { setStage(t("tpl_scan_sheets")); setPct(25); }
         else if (ev.type === "attempt") {
@@ -118,6 +114,32 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
         else if (ev.type === "result") { box.result = ev; }
         else if (ev.type === "error") { box.error = ev.code; }
       };
+
+      // Desktop + local model: run the field proposal in the webview, then POST the fields.
+      let localFields: ExtractField[] | null = null;
+      if (isTauri() && model.startsWith("local:")) {
+        setStage(t("tpl_scan_sheets")); setPct(25);
+        let texts;
+        try {
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          texts = sheetTexts(bytes);
+        } catch { failWith("xlsx"); return; }
+        const outcome = await runLocalScan(texts, model, (l) => handleLine(l.trim()));
+        if ("error" in outcome) { failWith(outcome.error); return; }
+        localFields = outcome.fields;
+      } else {
+        setStage(t("tpl_scan_sheets")); setPct(25);
+      }
+
+      const res = await fetch("/api/templates", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), desc: desc.trim(), url, ...(localFields ? { fields: localFields } : {}) }),
+      });
+      if (!res.ok || !res.body) { failWith("server"); return; }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
       for (;;) {
         const { value, done } = await reader.read();
         if (done) break;
@@ -128,13 +150,13 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
           buf = buf.slice(nl + 1);
         }
       }
-      buf += decoder.decode(); // flush decoder state
+      buf += decoder.decode();
       handleLine(buf.trim());
 
       if (box.error) { failWith(box.error); return; }
       if (!box.result) { failWith("server"); return; }
       setPct(100);
-      blobUrlRef.current = null; // claimed by the created template — must not be cleaned up
+      blobUrlRef.current = null;
       router.push(`/templates/${box.result.id}`);
       router.refresh();
     } catch {
