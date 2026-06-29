@@ -56,7 +56,10 @@ export async function chatComplete(cfg: CompatConfig, prompt: string, signal?: A
   return txt;
 }
 
-function parseFields(txt: string): LlmFieldResult[] {
+export const JSON_INSTRUCTION =
+  'Ответь СТРОГО валидным JSON вида {"fields":[{"fieldId":"f1","value":"...","confidence":"high|med|low","sourceHint":"..."}]} без markdown и пояснений.';
+
+export function parseFields(txt: string): LlmFieldResult[] {
   const cleaned = txt.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   const parsed = JSON.parse(cleaned) as { fields?: LlmFieldResult[] };
   return parsed.fields ?? [];
@@ -67,10 +70,7 @@ export function openaiCompatModel(cfg: CompatConfig): ExtractionModel {
   return {
     id: cfg.modelSlug,
     async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt): Promise<LlmFieldResult[]> {
-      const prompt = buildExtractionPrompt(
-        fields, text,
-        'Ответь СТРОГО валидным JSON вида {"fields":[{"fieldId":"f1","value":"...","confidence":"high|med|low","sourceHint":"..."}]} без markdown и пояснений.',
-      );
+      const prompt = buildExtractionPrompt(fields, text, JSON_INSTRUCTION);
       onAttempt?.({ phase: "start", model: cfg.modelSlug, total: 1 });
       const txt = await chatComplete(cfg, prompt);
       let out: LlmFieldResult[];
