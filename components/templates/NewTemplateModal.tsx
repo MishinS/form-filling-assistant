@@ -17,7 +17,7 @@ const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const fieldStyle = { background: "var(--surface-2)", border: "1px solid var(--line-2)", borderRadius: "var(--r-md)", padding: "10px 12px", fontSize: 14, outline: "none", width: "100%" } as const;
 
 type Phase = "form" | "busy" | "failed";
-type FailCode = "llm" | "nofields" | "file" | "xlsx" | "server";
+type FailCode = "llm" | "llm_local" | "nofields" | "file" | "xlsx" | "server";
 
 type StreamEvent =
   | { type: "stage"; stage: "sheets" | "save" }
@@ -29,6 +29,7 @@ type StreamEvent =
 
 const FAIL_KEY: Record<FailCode, string> = {
   llm: "tpl_scan_fail_llm",
+  llm_local: "tpl_scan_fail_llm_local",
   nofields: "tpl_scan_fail_nofields",
   file: "tpl_scan_fail_file",
   xlsx: "tpl_scan_fail_file",
@@ -125,7 +126,9 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
           texts = sheetTexts(bytes);
         } catch { failWith("xlsx"); return; }
         const outcome = await runLocalScan(texts, model, (l) => handleLine(l.trim()));
-        if ("error" in outcome) { failWith(outcome.error); return; }
+        // A local-model LLM failure must not borrow the cloud "free models overloaded"
+        // copy; nofields is already honest and shared with the cloud path.
+        if ("error" in outcome) { failWith(outcome.error === "llm" ? "llm_local" : outcome.error); return; }
         localFields = outcome.fields;
       } else {
         setStage(t("tpl_scan_sheets")); setPct(25);

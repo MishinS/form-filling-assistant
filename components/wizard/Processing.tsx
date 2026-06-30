@@ -33,6 +33,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
   const [race, setRace] = useState<RaceItem[]>([]); // модель → статус в текущей гонке
   const [tried, setTried] = useState<string[]>([]); // failed model display names
   const [result, setResult] = useState<ResultEvent | null>(null); // last terminal result (for "continue")
+  const [failedLocal, setFailedLocal] = useState(false); // the model that just failed was a desktop local: one
   const docsRef = useRef<ParsedDoc[]>([]);
   const started = useRef(false);
 
@@ -95,6 +96,8 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       if (!final) throw new Error(t("stream_empty"));
       setResult(final);
       if (final.llmFailed) {
+        // Honest copy: a local model failing is not the cloud "free pool overloaded" case.
+        setFailedLocal(isTauri() && modelId.startsWith("local:"));
         setPhase("llm-failed");
       } else {
         onDone(final.values, docs, final.warnings);
@@ -158,8 +161,10 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       <div className="col gap-16" style={{ maxWidth: 480, margin: "48px auto 0", textAlign: "center" }}>
         <div style={{ width: 56, height: 56, margin: "0 auto", borderRadius: 14, display: "grid", placeItems: "center",
           background: "var(--bad-bg)", color: "var(--bad)" }}><Icon name="alert" size={26} /></div>
-        <div style={{ fontWeight: 600, fontSize: 16 }}>{t("llm_failed_title")}</div>
-        {result?.warnings?.length ? (
+        <div style={{ fontWeight: 600, fontSize: 16 }}>{t(failedLocal ? "llm_failed_local_title" : "llm_failed_title")}</div>
+        {failedLocal ? (
+          <div className="muted" style={{ fontSize: 13 }}>{t("llm_failed_local_d")}</div>
+        ) : result?.warnings?.length ? (
           <div className="muted" style={{ fontSize: 13 }}>{result.warnings.join(" ")}</div>
         ) : null}
         {tried.length > 0 && (
