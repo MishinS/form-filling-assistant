@@ -23,6 +23,7 @@ describe("runLocalExtract", () => {
     const lines: unknown[] = [];
     await runLocalExtract([], "local:llama3.1:8b", [], (l) => lines.push(JSON.parse(l)));
     expect(lines).toEqual([
+      { type: "local-eta", ms: 15000 },
       { type: "attempt", model: "llama3.1:8b", total: 1 },
       { type: "attempt-win", model: "llama3.1:8b" },
       { type: "result", values: [{ fieldId: "f1", value: "ACME" }], warnings: [], llmFailed: false, usedModel: "llama3.1:8b" },
