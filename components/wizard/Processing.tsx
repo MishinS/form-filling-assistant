@@ -55,6 +55,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
     try {
       const failed: string[] = [];
       const finalBox: { value: ResultEvent | null } = { value: null };
+      let receivedEta = false;
       let buf = "";
       const handleLine = (line: string) => {
         if (!line) return;
@@ -74,6 +75,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
           setRace((r) => r.map((x) => (x.model === ev.model ? { ...x, status: "win" } : x)));
         } else if (ev.type === "local-eta") {
           setEtaMs(ev.ms);
+          receivedEta = true;
           const started = Date.now();
           if (etaTimer.current) clearInterval(etaTimer.current);
           etaTimer.current = setInterval(() => {
@@ -113,7 +115,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       if (!final) throw new Error(t("stream_empty"));
       setResult(final);
       if (etaTimer.current) { clearInterval(etaTimer.current); etaTimer.current = null; }
-      if (!final.llmFailed && etaMs !== null) {
+      if (!final.llmFailed && receivedEta) {
         setLocalPct(100);
         setLocalDone(true);
         await new Promise((r) => setTimeout(r, 1000));
@@ -129,7 +131,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       setError((e as Error).message);
       setPhase("error");
     }
-  }, [templateId, fields, onDone, t, etaMs]);
+  }, [templateId, fields, onDone, t]);
 
   // Parse then extract. Parse runs once per mount (ref-guarded).
   const start = useCallback(async () => {
