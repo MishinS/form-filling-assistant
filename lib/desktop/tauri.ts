@@ -35,3 +35,15 @@ export async function invokeLlmChat(args: { baseUrl: string; model: string; prom
     throw new Error(typeof e === "string" ? e : e instanceof Error ? e.message : "provider_error");
   }
 }
+
+export async function pickDirectory(): Promise<string | null> {
+  return (await invoke<string | null>("pick_directory")) ?? null;
+}
+
+export async function saveFile(args: { dir: string; filename: string; bytes: number[] }): Promise<string> {
+  try {
+    return await invoke<string>("save_file", args);
+  } catch (e) {
+    throw new Error(typeof e === "string" ? e : e instanceof Error ? e.message : "write_failed");
+  }
+}

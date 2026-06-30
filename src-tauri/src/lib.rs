@@ -1,4 +1,5 @@
 mod runtime;
+mod files;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,7 +14,12 @@ pub fn run() {
       }
       Ok(())
     })
-    .invoke_handler(tauri::generate_handler![runtime::detect_local_runtime, runtime::llm_chat])
+    .invoke_handler(tauri::generate_handler![
+      runtime::detect_local_runtime,
+      runtime::llm_chat,
+      files::pick_directory,
+      files::save_file
+    ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
