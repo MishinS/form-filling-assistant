@@ -64,18 +64,31 @@ pub fn classify_status(status: u16) -> &'static str {
     }
 }
 
+/// Build the chat-completion request body. No `response_format`: LM Studio's
+/// newer server rejects `{type:"json_object"}` with HTTP 400 (it accepts only
+/// `json_schema` or `text`), and Ollama's /v1 needs no hint either. The prompt
+/// already mandates strict JSON and the webview's parseFields strips envelopes.
+pub fn chat_payload(model: &str, prompt: &str) -> serde_json::Value {
+    serde_json::json!({
+        "model": model,
+        "temperature": 0,
+        "messages": [{ "role": "user", "content": prompt }],
+    })
+}
+
+/// Local inference can be slow on CPU-only backends: a ~7k-token prompt on a 3B
+/// model (no discrete GPU) measured ~250 s end-to-end. 120 s timed out and
+/// surfaced as a spurious `unreachable`/llm-failed. This timeout governs ONLY the
+/// local path (`llm_chat`); the cloud path uses its own fetch timeout untouched.
+const LOCAL_LLM_TIMEOUT_SECS: u64 = 300;
+
 #[tauri::command]
 pub async fn llm_chat(base_url: String, model: String, prompt: String) -> Result<String, String> {
     let endpoint = format!("{}/chat/completions", base_url.trim_end_matches('/'));
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(120))
+        .timeout(std::time::Duration::from_secs(LOCAL_LLM_TIMEOUT_SECS))
         .build().map_err(|_| "provider_error".to_string())?;
-    let payload = serde_json::json!({
-        "model": model,
-        "temperature": 0,
-        "response_format": { "type": "json_object" },
-        "messages": [{ "role": "user", "content": prompt }],
-    });
+    let payload = chat_payload(&model, &prompt);
     let res = client.post(&endpoint).json(&payload).send().await
         .map_err(|_| "unreachable".to_string())?;
     if !res.status().is_success() {
@@ -114,6 +127,19 @@ mod tests {
     fn bad_json_yields_empty() {
         assert!(parse_ollama_tags("nope").is_empty());
         assert!(parse_openai_models("{}").is_empty());
+    }
+
+    #[test]
+    fn chat_payload_omits_json_object_response_format() {
+        // LM Studio (and json_schema-only OpenAI servers) reject
+        // response_format:{type:"json_object"} with HTTP 400. The prompt already
+        // mandates strict JSON, so the local payload must not send it.
+        let p = chat_payload("qwen2.5-7b-instruct", "extract fields");
+        assert_eq!(p["model"], "qwen2.5-7b-instruct");
+        assert_eq!(p["temperature"], 0);
+        assert_eq!(p["messages"][0]["role"], "user");
+        assert_eq!(p["messages"][0]["content"], "extract fields");
+        assert_ne!(p["response_format"]["type"], "json_object");
     }
 
     #[test]
