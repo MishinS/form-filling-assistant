@@ -1,7 +1,7 @@
 // Empirical CPU-only timing for the 3B local model (qwen2.5-3b, GPU Offload=0).
 // Measured: ~1600-tok prompt ≈ 72 s; ~7000-tok prompt ≈ 250 s. Tunable.
 const CHARS_PER_TOKEN = 3;        // Cyrillic-heavy text
-const BASE_SECONDS = 10;          // fixed model load + decode overhead (kept < MIN_MS/1000 so empty text clamps to floor)
+const BASE_SECONDS = 20;          // fixed model load + decode overhead (empirical: 1600-tok→72 s, 7000-tok→251 s)
 const SECONDS_PER_TOKEN = 0.033;  // prefill-dominated
 const MIN_MS = 15_000;
 const MAX_MS = 290_000;
