@@ -53,11 +53,13 @@ export function isOwnCompany(value: string): boolean {
   return false;
 }
 
-// Legal form immediately followed by a quoted or bare company name. The `u`/`g`
-// flags + an explicit alternation (longest forms first) avoid the ASCII-only `\b`
-// problem; names are bounded by quotes or punctuation/newline.
+// Legal form immediately followed by a quoted or bare company name. Explicit
+// alternation (longest forms first) + explicit Cyrillic ranges avoid the
+// ASCII-only `\b` problem; names are bounded by quotes or punctuation/newline.
+// No `u` flag: the project's tsconfig target predates es6, and the BMP Cyrillic
+// classes here behave identically without it.
 const COUNTERPARTY_RE =
-  /(ООО|ПАО|ЗАО|ОАО|АО|ИП)\s*(?:[«"]\s*([^«»"\n]{2,100}?)\s*[»"]|([А-ЯЁA-Z][^\n,.;:]{1,80}))/gu;
+  /(ООО|ПАО|ЗАО|ОАО|АО|ИП)\s*(?:[«"]\s*([^«»"\n]{2,100}?)\s*[»"]|([А-ЯЁA-Z][^\n,.;:]{1,80}))/g;
 
 /** First company in the document that is NOT our own company, in the f1
  *  "<legal form> <name>" shape, with its source locator. `null` if none. */
