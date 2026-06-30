@@ -3,6 +3,8 @@ import { useState, useContext } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Icon, Tag, Btn } from "@/components/primitives";
 import { GuestContext } from "@/components/shell/GuestContext";
+import { isTauri, saveFile } from "@/lib/desktop/tauri";
+import { useToast } from "@/components/shell/Toast";
 import type { ExtractedValue } from "@/lib/types";
 import type { ExtractField } from "@/lib/extract/fields";
 import type { SourceInput } from "@/lib/db/map";
@@ -12,6 +14,7 @@ type Props = { onClose: () => void; templateId: string; values: ExtractedValue[]
 export default function DoneStep({ onClose, templateId, values, fields, sources }: Props) {
   const { t, lang } = useI18n();
   const { guest } = useContext(GuestContext);
+  const { show } = useToast();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -30,14 +33,22 @@ export default function DoneStep({ onClose, templateId, values, fields, sources 
       });
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      if (isTauri()) {
+        const bytes = Array.from(new Uint8Array(await blob.arrayBuffer()));
+        const dir = localStorage.getItem("ffa.downloadDir") ?? "";
+        const path = await saveFile({ dir, filename: fileName, bytes });
+        show(`${t("dl_saved_to")} ${path}`);
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        show(t("dl_saved"));
+      }
       // Best-effort: record this completed fill once. Never blocks or fails the download. Guests are not persisted.
       if (!guest && !saved) {
         setSaved(true);

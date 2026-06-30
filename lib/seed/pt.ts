@@ -134,6 +134,8 @@ export const STR: Record<string, { ru: string; en: string }> = {
   dl_pdf:          { ru: "Скачать PDF",   en: "Download PDF" },
   dl_progress:     { ru: "Готовим файл…", en: "Preparing file…" },
   dl_excel_err:    { ru: "Не удалось сформировать файл", en: "Couldn't generate the file" },
+  dl_saved:        { ru: "Сохранено", en: "Saved" },
+  dl_saved_to:     { ru: "Сохранено в", en: "Saved to" },
   pdf_soon:        { ru: "Скоро", en: "Soon" },
   open_dash:       { ru: "В рабочую область", en: "Back to workspace" },
   tpl_h:           { ru: "Шаблоны", en: "Templates" },
