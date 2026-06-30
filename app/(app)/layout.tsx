@@ -4,6 +4,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
 import { parseThemeMode } from "@/lib/theme-core";
 import AppShell from "@/components/shell/AppShell";
+import { ToastProvider } from "@/components/shell/Toast";
 import { auth } from "@/auth";
 import { getMapping } from "@/lib/db/mappings";
 import { listTemplates, listTemplateNames } from "@/lib/db/templates";
@@ -55,7 +56,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <SessionProvider session={session}>
       <ThemeProvider initialMode={initialMode}>
         <I18nProvider initialLang={initialLang}>
-          <AppShell user={user} initialFields={initialFields} templates={templates} templateNames={templateNames}>{children}</AppShell>
+          <ToastProvider>
+            <AppShell user={user} initialFields={initialFields} templates={templates} templateNames={templateNames}>{children}</AppShell>
+          </ToastProvider>
         </I18nProvider>
       </ThemeProvider>
     </SessionProvider>

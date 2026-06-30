@@ -10,6 +10,7 @@ import { Logo, Btn } from "@/components/primitives";
 import ThemeToggle from "@/components/shell/ThemeToggle";
 import { ModelContext, TemplateMappingContext, TemplatesContext } from "@/components/shell/AppShell";
 import { GuestContext } from "@/components/shell/GuestContext";
+import { ToastProvider } from "@/components/shell/Toast";
 import { WizardModal } from "@/components/wizard/WizardModal";
 import { PT_FIELDS } from "@/lib/extract/fields";
 import { TEMPLATES } from "@/lib/seed/pt";
@@ -75,8 +76,10 @@ export default function GuestShell({ session, initialMode, initialLang }: { sess
     <SessionProvider session={session}>
       <ThemeProvider initialMode={initialMode}>
         <I18nProvider initialLang={initialLang}>
-          <GuestHeader />
-          <GuestWizard />
+          <ToastProvider>
+            <GuestHeader />
+            <GuestWizard />
+          </ToastProvider>
         </I18nProvider>
       </ThemeProvider>
     </SessionProvider>
