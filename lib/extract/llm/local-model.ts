@@ -17,7 +17,7 @@ export function localCompatModel(baseUrl: string, modelSlug: string): Extraction
   return {
     id: modelSlug,
     async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt): Promise<LlmFieldResult[]> {
-      const prompt = buildExtractionPrompt(fields, text, JSON_INSTRUCTION);
+      const prompt = buildExtractionPrompt(fields, text, JSON_INSTRUCTION, true);
       onAttempt?.({ phase: "start", model: modelSlug, total: 1 });
       let txt: string;
       try {

@@ -10,6 +10,7 @@ export function buildExtractionPrompt(
   fields: ExtractField[],
   text: string,
   jsonFormatLine?: string,
+  localGuidance?: boolean,
 ): string {
   const specs = fields
     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` — ${f.hint_ru}` : ""}`)
@@ -24,6 +25,14 @@ export function buildExtractionPrompt(
   ];
   if (jsonFormatLine) lines.push(jsonFormatLine);
   lines.push(`Поля:\n${specs}`);
+  if (localGuidance) {
+    lines.push(
+      "Важно: верни КАЖДОЕ поле из списка по его fieldId. Если значения нет — пустая строка и confidence \"low\". " +
+        "Не пропускай поля.\n" +
+        'Пример формата ответа: {"fields":[{"fieldId":"f1","value":"ООО «Пример»","confidence":"high"}]}\n' +
+        `Наша компания — ${OWN_COMPANY.name} (ИНН ${OWN_COMPANY.inn}); никогда не возвращай её как Контрагент.`,
+    );
+  }
   lines.push(`Текст документа:\n${text.slice(0, 12000)}`);
   return lines.join("\n\n");
 }
