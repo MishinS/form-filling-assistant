@@ -34,6 +34,10 @@ export default function Processing({ sources, model, templateId, fields, onDone,
   const [tried, setTried] = useState<string[]>([]); // failed model display names
   const [result, setResult] = useState<ResultEvent | null>(null); // last terminal result (for "continue")
   const [failedLocal, setFailedLocal] = useState(false); // the model that just failed was a desktop local: one
+  const [etaMs, setEtaMs] = useState<number | null>(null);
+  const [localPct, setLocalPct] = useState(0);
+  const [localDone, setLocalDone] = useState(false);
+  const etaTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const docsRef = useRef<ParsedDoc[]>([]);
   const started = useRef(false);
 
@@ -44,6 +48,10 @@ export default function Processing({ sources, model, templateId, fields, onDone,
     setRace([]);
     setResult(null);
     setError(null);
+    setEtaMs(null);
+    setLocalPct(0);
+    setLocalDone(false);
+    if (etaTimer.current) { clearInterval(etaTimer.current); etaTimer.current = null; }
     try {
       const failed: string[] = [];
       const finalBox: { value: ResultEvent | null } = { value: null };
@@ -54,6 +62,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
           | { type: "attempt"; model: string }
           | { type: "attempt-fail"; model: string; reason?: string }
           | { type: "attempt-win"; model: string }
+          | { type: "local-eta"; ms: number }
           | ({ type: "result" } & ResultEvent);
         if (ev.type === "attempt") {
           setRace((r) => (r.some((x) => x.model === ev.model) ? r : [...r, { model: ev.model, status: "running" }]));
@@ -63,6 +72,14 @@ export default function Processing({ sources, model, templateId, fields, onDone,
           setRace((r) => r.map((x) => (x.model === ev.model ? { ...x, status: "fail" } : x)));
         } else if (ev.type === "attempt-win") {
           setRace((r) => r.map((x) => (x.model === ev.model ? { ...x, status: "win" } : x)));
+        } else if (ev.type === "local-eta") {
+          setEtaMs(ev.ms);
+          const started = Date.now();
+          if (etaTimer.current) clearInterval(etaTimer.current);
+          etaTimer.current = setInterval(() => {
+            const frac = Math.min(0.95, (Date.now() - started) / ev.ms);
+            setLocalPct(Math.round(frac * 100));
+          }, 250);
         } else if (ev.type === "result") {
           finalBox.value = { values: ev.values, warnings: ev.warnings, llmFailed: ev.llmFailed, usedModel: ev.usedModel };
         }
@@ -95,6 +112,12 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       const final = finalBox.value;
       if (!final) throw new Error(t("stream_empty"));
       setResult(final);
+      if (etaTimer.current) { clearInterval(etaTimer.current); etaTimer.current = null; }
+      if (!final.llmFailed && etaMs !== null) {
+        setLocalPct(100);
+        setLocalDone(true);
+        await new Promise((r) => setTimeout(r, 1000));
+      }
       if (final.llmFailed) {
         // Honest copy: a local model failing is not the cloud "free pool overloaded" case.
         setFailedLocal(isTauri() && modelId.startsWith("local:"));
@@ -106,7 +129,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       setError((e as Error).message);
       setPhase("error");
     }
-  }, [templateId, fields, onDone, t]);
+  }, [templateId, fields, onDone, t, etaMs]);
 
   // Parse then extract. Parse runs once per mount (ref-guarded).
   const start = useCallback(async () => {
@@ -139,6 +162,8 @@ export default function Processing({ sources, model, templateId, fields, onDone,
     // Run exactly once on mount (ref-guarded); props captured intentionally.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => () => { if (etaTimer.current) clearInterval(etaTimer.current); }, []);
 
   // --- hard parse/stream error ---
   if (phase === "error") {
@@ -211,7 +236,19 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       <div className="muted" style={{ fontSize: 13 }}>
         {parsing ? t("proc_parse_d") : t("proc_extract_d")}
       </div>
-      {!parsing && <RaceList items={race} />}
+      {!parsing && (etaMs !== null ? (
+        <div className="col gap-10" style={{ width: "100%" }}>
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <span className="muted" style={{ fontSize: 12 }}>{localDone ? t("st_done") : t("proc_racing")}</span>
+            <span className="mono dim" style={{ fontSize: 11.5 }}>{localPct}%</span>
+          </div>
+          <div style={{ height: 6, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden" }}>
+            <div style={{ width: `${localPct}%`, height: "100%", background: localDone ? "var(--ok)" : "var(--accent)", transition: "width .3s var(--ease)" }} />
+          </div>
+        </div>
+      ) : (
+        <RaceList items={race} />
+      ))}
     </div>
   );
 }
