@@ -1,3 +1,7 @@
+import type { ParsedDoc } from "@/lib/parse/types";
+import type { ExtractedValue } from "@/lib/types";
+import { locatorRu } from "./format";
+
 export interface OwnCompany {
   name: string;
   inn: string;
@@ -47,4 +51,30 @@ export function isOwnCompany(value: string): boolean {
   const digits = value.replace(/\D/g, "");
   if (OWN_COMPANY.inn && digits.includes(OWN_COMPANY.inn)) return true;
   return false;
+}
+
+// Legal form immediately followed by a quoted or bare company name. The `u`/`g`
+// flags + an explicit alternation (longest forms first) avoid the ASCII-only `\b`
+// problem; names are bounded by quotes or punctuation/newline.
+const COUNTERPARTY_RE =
+  /(ООО|ПАО|ЗАО|ОАО|АО|ИП)\s*(?:[«"]\s*([^«»"\n]{2,100}?)\s*[»"]|([А-ЯЁA-Z][^\n,.;:]{1,80}))/gu;
+
+/** First company in the document that is NOT our own company, in the f1
+ *  "<legal form> <name>" shape, with its source locator. `null` if none. */
+export function findCounterparty(docs: ParsedDoc[]): { value: string; source: ExtractedValue["source"] } | null {
+  for (const d of docs) {
+    for (const b of d.blocks) {
+      COUNTERPARTY_RE.lastIndex = 0; // reuse across iterations (g flag is stateful)
+      let m: RegExpExecArray | null;
+      while ((m = COUNTERPARTY_RE.exec(b.text)) !== null) {
+        const form = m[1];
+        const name = (m[2] ?? m[3] ?? "").trim();
+        if (!name) continue;
+        const value = m[2] ? `${form} «${name}»` : `${form} ${name}`;
+        if (isOwnCompany(value)) continue;
+        return { value, source: { fileId: d.fileId, locator: locatorRu(b.locator) } };
+      }
+    }
+  }
+  return null;
 }

@@ -6,7 +6,7 @@ import { locatorRu } from "./format";
 import { getModel } from "./llm/registry";
 import { ModelNotConfigured, type OnAttempt, type ExtractionModel } from "./llm/types";
 import { LlmRequestError, type ProbeCode } from "./llm/openai-compat";
-import { isOwnCompany } from "./own-company";
+import { isOwnCompany, findCounterparty } from "./own-company";
 
 // Localized text for a standalone (custom-model) failure — keeps the typed ProbeCode
 // meaningful to the user instead of leaking a raw "HTTP 401". Mirrors the spec taxonomy.
@@ -80,9 +80,15 @@ export async function extractFields(
         const r = results.find((x) => x.fieldId === f.id);
         if (r && r.value) {
           if (f.isCounterparty && isOwnCompany(r.value)) {
-            // Model returned our own company — blank it; user fills in manually.
-            byField.set(f.id, empty(f.id));
-            warnings.push("Контрагент не распознан — укажите вручную.");
+            // Model returned our own company — try the neighbouring counterparty
+            // from the document; only blank + warn if none is found.
+            const alt = findCounterparty(docs);
+            if (alt) {
+              byField.set(f.id, { fieldId: f.id, value: alt.value, confidence: "med", source: alt.source });
+            } else {
+              byField.set(f.id, empty(f.id));
+              warnings.push("Контрагент не распознан — укажите вручную.");
+            }
           } else {
             byField.set(f.id, { fieldId: f.id, value: r.value, confidence: r.confidence ?? "med",
               source: locateValue(docs, r.value) });

@@ -138,4 +138,22 @@ describe("extractFields", () => {
     expect(override.extract).toHaveBeenCalledTimes(1);
     expect(res.values.some((v) => v.value === "Банковский перевод")).toBe(true);
   });
+
+  it("falls back to the neighbouring counterparty when the model returns our own company", async () => {
+    const docs: ParsedDoc[] = [{
+      fileId: "f", name: "n", mime: "m", pages: 1, scannedPages: [], warnings: [],
+      blocks: [
+        { text: "Поставщик: ООО «Ромашка»", locator: { kind: "docx", block: 0 } as const },
+        { text: "Заказчик: АО Семейный доктор", locator: { kind: "docx", block: 1 } as const },
+      ],
+    }];
+    const fields: ExtractField[] = [
+      { id: "f1", group: "req", label_ru: "Контрагент", label_en: "Counterparty", cell: "ПТ!D9", kind: "string", required: true, strategy: "llm", isCounterparty: true },
+    ];
+    const model = { id: "stub", async extract() { return [{ fieldId: "f1", value: "АО Семейный доктор", confidence: "med" as const }]; } };
+    const res = await extractFields(docs, "stub", fields, undefined, { modelOverride: model });
+    const f1 = res.values.find(v => v.fieldId === "f1")!;
+    expect(f1.value).toContain("Ромашка");
+    expect(f1.confidence).toBe("med");
+  });
 });
