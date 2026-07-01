@@ -6,6 +6,7 @@ import { Icon, Tag, Btn } from "@/components/primitives";
 import { PT_FIELDS, isCellLocked, isReservedCell, newManualField, type ExtractField, type Strategy } from "@/lib/extract/fields";
 import { validateCellRef } from "@/lib/templates/cellref";
 import { TemplateMappingContext } from "@/components/shell/AppShell";
+import { useToast } from "@/components/shell/Toast";
 import MiniSheet from "./MiniSheet";
 
 export interface EditorTpl {
@@ -30,11 +31,15 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
   const ru = lang === "ru";
   const isPt = tpl.id === "pt";
   const ctx = useContext(TemplateMappingContext);
-  const saved = isPt ? ctx.fields : (initialFields ?? []);
+  const { show } = useToast();
+  const initial = isPt ? ctx.fields : (initialFields ?? []);
   const templateId = tpl.id;
 
-  const [draft, setDraft] = useState<ExtractField[]>(saved);
-  const [sel, setSel] = useState(saved[0]?.id ?? "");
+  const [draft, setDraft] = useState<ExtractField[]>(initial);
+  // Last-saved snapshot: for custom templates `initialFields` is an immutable prop, so
+  // the dirty check must compare against a state that we advance on save/reset.
+  const [baseline, setBaseline] = useState<ExtractField[]>(initial);
+  const [sel, setSel] = useState(initial[0]?.id ?? "");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [name, setName] = useState(ru ? tpl.name_ru : tpl.name_en);
@@ -43,7 +48,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
   const [deleting, setDeleting] = useState(false);
 
   const rows = draft;
-  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(baseline);
 
   // Per-row cell error (invalid / wrong sheet) keyed by field id.
   const cellErrors = useMemo(() => {
@@ -110,15 +115,17 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ templateId, fields: normalized }),
       });
-      if (!res.ok) setErr(t("mapping_save_err"));
-      else if (tpl.own && (name.trim() !== (ru ? tpl.name_ru : tpl.name_en) || desc.trim() !== (ru ? tpl.desc_ru : tpl.desc_en))) {
+      if (!res.ok) { setErr(t("mapping_save_err")); return; }
+      setBaseline(normalized); // persisted → new saved snapshot (clears the "unsaved" flag)
+      if (tpl.own && (name.trim() !== (ru ? tpl.name_ru : tpl.name_en) || desc.trim() !== (ru ? tpl.desc_ru : tpl.desc_en))) {
         const r2 = await fetch(`/api/templates/${tpl.id}`, {
           method: "PATCH", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: name.trim(), desc: desc.trim() }),
         });
-        if (!r2.ok) setErr(t("tpl_renamed_err"));
-        else router.refresh();
+        if (!r2.ok) { setErr(t("tpl_renamed_err")); return; }
+        router.refresh();
       }
+      show(t("mapping_saved"));
     } catch {
       setErr(t("mapping_save_err"));
     } finally {
@@ -129,6 +136,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
     const target = isPt ? PT_FIELDS : (defaultFields ?? []);
     if (isPt) ctx.resetFields();              // revert the session immediately
     setDraft(target);
+    setBaseline(target);                      // reset baseline so the dirty flag clears
     setSel(target[0]?.id ?? "");
     setErr(null);
     setSaving(true);
