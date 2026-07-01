@@ -49,6 +49,9 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
   const cellErrors = useMemo(() => {
     const errs: Record<string, string> = {};
     for (const f of draft) {
+      // A custom template may carry not-yet-mapped fields (empty cell) — allowed and
+      // non-blocking (fill skips them). ПТ keeps its cells strict.
+      if (!f.cell.trim() && !isPt) continue;
       const r = validateCellRef(f.cell, isPt ? undefined : tpl.sheets);
       if (!r.ok) errs[f.id] = r.reason === "sheet" ? (isPt ? t("cell_sheet_pt") : t("cell_sheet_bad")) : t("cell_invalid");
       else if (isPt && !isCellLocked(f.id) && isReservedCell(r.normalized)) errs[f.id] = t("cell_reserved");
@@ -57,7 +60,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
   }, [draft, isPt, tpl.sheets, t]);
   const dupeCells = useMemo(() => {
     const seen = new Map<string, number>();
-    for (const f of draft) seen.set(f.cell, (seen.get(f.cell) ?? 0) + 1);
+    for (const f of draft) { if (!f.cell.trim()) continue; seen.set(f.cell, (seen.get(f.cell) ?? 0) + 1); } // empty = unmapped, not a dupe
     return new Set([...Array.from(seen)].filter(([, n]) => n > 1).map(([c]) => c));
   }, [draft]);
   const canSave = Object.keys(cellErrors).length === 0 && dupeCells.size === 0;
@@ -278,7 +281,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
                   {locked ? (
                     <Tag tone="mono" style={{ height: 22 }} title={t("cell_locked")}>{f.cell.replace("ПТ!", "")}</Tag>
                   ) : (
-                    <input value={f.cell} onChange={e => editCell(f.id, e.target.value)}
+                    <input value={f.cell} onChange={e => editCell(f.id, e.target.value)} placeholder={t("cell_unmapped")}
                       className="mono" style={{ width: "100%", fontSize: 11, padding: "3px 6px", borderRadius: 5,
                         border: `1px solid ${cellErr ? "var(--bad)" : dupe ? "var(--warn)" : "var(--line-2)"}`, background: "var(--surface-2)", color: "var(--text-2)" }} />
                   )}

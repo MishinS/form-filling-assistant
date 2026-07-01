@@ -31,8 +31,15 @@ export function parseFieldList(input: unknown, allowedSheets?: string[]): Extrac
     if (typeof f.kind !== "string" || !KINDS.includes(f.kind as FieldKind)) return null;
     if (typeof f.strategy !== "string" || !STRATEGIES.includes(f.strategy as Strategy)) return null;
     if (typeof f.group !== "string" || !GROUPS.includes(f.group)) return null;
-    const cell = validateCellRef(typeof f.cell === "string" ? f.cell : "", allowedSheets);
-    if (!cell.ok) return null;
+    // An empty cell means "unmapped" — allowed, kept as "" (fill skips empty-cell
+    // fields). A NON-empty but malformed cell still rejects the whole list.
+    const cellRaw = typeof f.cell === "string" ? f.cell : "";
+    let cellNorm = "";
+    if (cellRaw.trim()) {
+      const cell = validateCellRef(cellRaw, allowedSheets);
+      if (!cell.ok) return null;
+      cellNorm = cell.normalized;
+    }
     // A `rule` (when present) must be a known RuleKey — an unknown key would make
     // RULES[rule] undefined and crash the regex pass in extractFields.
     if (f.rule !== undefined && (typeof f.rule !== "string" || !(f.rule in RULES))) return null;
@@ -50,7 +57,7 @@ export function parseFieldList(input: unknown, allowedSheets?: string[]): Extrac
       group: f.group as ExtractField["group"],
       label_ru: f.label_ru,
       label_en: f.label_en,
-      cell: cell.normalized,
+      cell: cellNorm,
       kind: f.kind as FieldKind,
       required: f.required === true,
       strategy: f.strategy as Strategy,

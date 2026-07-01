@@ -12,9 +12,20 @@ describe("parseFieldList", () => {
   it("rejects a non-array", () => {
     expect(parseFieldList({ id: "f1" })).toBeNull();
   });
-  it("rejects a field with a bad cell", () => {
+  it("rejects a field with a bad (non-empty) cell", () => {
     const bad = [{ ...PT_FIELDS[0], cell: "9D" }];
     expect(parseFieldList(bad)).toBeNull();
+  });
+  it("accepts an unmapped field with an empty cell (kept as '')", () => {
+    // Local-scan templates may have fields the user has not yet mapped to a cell;
+    // the editor must be able to save them (fill skips empty-cell fields).
+    const out = parseFieldList([{ ...PT_FIELDS[0], cell: "" }]);
+    expect(out).not.toBeNull();
+    expect(out?.[0].cell).toBe("");
+  });
+  it("treats a whitespace-only cell as unmapped ('')", () => {
+    const out = parseFieldList([{ ...PT_FIELDS[0], cell: "   " }]);
+    expect(out?.[0].cell).toBe("");
   });
   it("rejects a field missing required keys", () => {
     expect(parseFieldList([{ id: "fx" }])).toBeNull();
