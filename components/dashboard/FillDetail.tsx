@@ -16,7 +16,7 @@ export default function FillDetail({ data }: { data: FillDetail }) {
   const safeLevel = (c: string): "high" | "med" | "low" => (c === "high" || c === "med" || c === "low" ? c : "low");
 
   return (
-    <div className="fade-in" style={{ padding: "44px 48px 64px", maxWidth: 1180, margin: "0 auto" }}>
+    <div className="fade-in" style={{ padding: "44px clamp(16px,4vw,48px) 64px", maxWidth: 1180, margin: "0 auto" }}>
       <Link href="/fills" className="row gap-8" style={{ color: "var(--text-3)", fontSize: 13, marginBottom: 18, width: "fit-content" }}>
         <Icon name="arrowL" size={15} /> {t("detail_back")}
       </Link>
@@ -50,7 +50,7 @@ export default function FillDetail({ data }: { data: FillDetail }) {
         <h2 style={{ fontSize: 15, marginBottom: 14 }}>{t("detail_fields")}</h2>
         <div style={{ border: "1px solid var(--line)", borderRadius: "var(--r-lg)", overflow: "hidden", background: "var(--surface-1)" }}>
           {/* head */}
-          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 2fr 0.8fr", gap: 16, padding: "12px 20px",
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,2fr) minmax(0,0.8fr)", gap: 16, padding: "12px 20px",
             borderBottom: "1px solid var(--line)", color: "var(--text-3)" }}>
             {["field", "value", "confidence"].map((c) => (
               <div key={c} className="mono" style={{ fontSize: 10.5, letterSpacing: ".05em", textTransform: "uppercase",
@@ -63,7 +63,7 @@ export default function FillDetail({ data }: { data: FillDetail }) {
               <div className="mono" style={{ padding: "10px 20px 6px", fontSize: 10.5, letterSpacing: ".06em",
                 textTransform: "uppercase", color: "var(--text-3)", background: "var(--surface-2)" }}>{g.groupLabel}</div>
               {g.rows.map((r) => (
-                <div key={r.fieldId} style={{ display: "grid", gridTemplateColumns: "1.4fr 2fr 0.8fr", gap: 16,
+                <div key={r.fieldId} style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,2fr) minmax(0,0.8fr)", gap: 16,
                   padding: "12px 20px", alignItems: "center", borderBottom: "1px solid var(--line)" }}>
                   <div className="muted" style={{ fontSize: 13 }}>{r.label}</div>
                   <div style={{ fontSize: 13.5 }}>{r.value ? r.value : <span className="dim">—</span>}</div>

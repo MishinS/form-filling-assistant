@@ -18,7 +18,7 @@ export default function MiniSheet({ fields, sel, title }: Props) {
             <span className="display" style={{ fontSize: 13, fontWeight: 600, letterSpacing: ".02em" }}>{l.label}</span>
           </div>
         ) : (
-          <div key={l.id} style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", borderBottom: i === lines.length - 1 ? "none" : "1px solid var(--line)",
+          <div key={l.id} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1.2fr)", borderBottom: i === lines.length - 1 ? "none" : "1px solid var(--line)",
             background: l.id === sel ? "var(--warn-bg)" : "transparent", transition: "background .2s" }}>
             <div style={{ padding: "9px 12px", fontSize: 10.5, color: "var(--text-2)", borderRight: "1px solid var(--line)", lineHeight: 1.3 }}>{l.label}:</div>
             <div className="row" style={{ padding: "9px 12px", justifyContent: "space-between", gap: 8 }}>

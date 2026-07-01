@@ -13,7 +13,7 @@ export default function RecentRow({ r, tplName, dateText, last }: Props) {
   const fileLabel = r.primaryFile ?? "—";
   return (
     <Link href={`/fills/${r.id}`} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      style={{ display: "grid", gridTemplateColumns: "2.4fr 1.3fr 1.6fr 1.1fr 1.1fr 1fr 30px",
+      style={{ display: "grid", gridTemplateColumns: "minmax(0,2.4fr) minmax(0,1.3fr) minmax(0,1.6fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,1fr) 30px",
         gap: 16, padding: "14px 20px", alignItems: "center", textDecoration: "none", color: "inherit",
         borderBottom: last ? "none" : "1px solid var(--line)",
         background: h ? "var(--surface-2)" : "transparent", transition: "background .12s" }}>

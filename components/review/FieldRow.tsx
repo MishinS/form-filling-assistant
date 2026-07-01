@@ -14,7 +14,7 @@ type Props = {
 export default function FieldRow({ f, val, onChange, confLabel, hover, setHover, last }: Props) {
   const { lang } = useI18n();
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1.5fr 2.4fr 1.5fr 92px", gap: 14, padding: "13px 16px", alignItems: "center",
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.5fr) minmax(0,2.4fr) minmax(0,1.5fr) 92px", gap: 14, padding: "13px 16px", alignItems: "center",
       borderBottom: last ? "none" : "1px solid var(--line)", background: f.conf === "low" ? "var(--warn-bg)" : "transparent" }}>
       <div>
         <div style={{ fontSize: 13, fontWeight: 600 }}>{lang === "ru" ? f.label_ru : f.label_en}</div>

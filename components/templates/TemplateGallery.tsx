@@ -12,7 +12,7 @@ export default function TemplateGallery() {
   const { templates } = useContext(TemplatesContext);
   const [creating, setCreating] = useState(false);
   return (
-    <div className="fade-in" style={{ padding: "44px 48px 64px", maxWidth: 1180, margin: "0 auto" }}>
+    <div className="fade-in" style={{ padding: "44px clamp(16px,4vw,48px) 64px", maxWidth: 1180, margin: "0 auto" }}>
       <Eyebrow>{t("nav_templates")}</Eyebrow>
       <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end", gap: 24 }}>
         <div>
@@ -24,7 +24,7 @@ export default function TemplateGallery() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginTop: 40 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 14, marginTop: 40 }}>
         {templates.map(tpl => (
           <Card key={tpl.id} hover pad={20} onClick={() => router.push(`/templates/${tpl.id}`)} style={{ display: "flex", flexDirection: "column" }}>
             <div className="row" style={{ justifyContent: "space-between", marginBottom: 16 }}>

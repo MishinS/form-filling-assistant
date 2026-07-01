@@ -59,7 +59,7 @@ export default function AppShell({ children, user, initialFields, templates, tem
         <Sidebar route={route} user={user} onNavigate={(id) => router.push(`/${id}`)} onNewFill={() => setWizardStart(0)} />
         <div className="col" style={{ flex: 1, minWidth: 0 }}>
           <Topbar />
-          <div style={{ flex: 1, overflowY: "auto" }}>{children}</div>
+          <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", minWidth: 0 }}>{children}</div>
         </div>
         {wizardStart !== null && <WizardModal start={wizardStart} onClose={() => setWizardStart(null)} />}
       </div>

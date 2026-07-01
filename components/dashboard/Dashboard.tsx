@@ -21,7 +21,7 @@ export default function Dashboard({ fills, stats }: { fills: HistoryRowData[]; s
   ];
 
   return (
-    <div className="fade-in" style={{ padding: "44px 48px 64px", maxWidth: 1180, margin: "0 auto" }}>
+    <div className="fade-in" style={{ padding: "44px clamp(16px,4vw,48px) 64px", maxWidth: 1180, margin: "0 auto" }}>
       {/* Hero */}
       <Eyebrow>{t("dash_eyebrow")}</Eyebrow>
 
@@ -35,7 +35,7 @@ export default function Dashboard({ fills, stats }: { fills: HistoryRowData[]; s
       <p className="muted" style={{ maxWidth: 560, marginTop: 18, fontSize: 15.5 }}>{t("dash_sub")}</p>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1, marginTop: 40,
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 1, marginTop: 40,
         background: "var(--line)", border: "1px solid var(--line)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
         {statCards.map(s => (
           <div key={s.k} style={{ background: "var(--surface-1)", padding: "20px 22px" }}>
@@ -56,7 +56,7 @@ export default function Dashboard({ fills, stats }: { fills: HistoryRowData[]; s
 
         <div style={{ border: "1px solid var(--line)", borderRadius: "var(--r-lg)", overflow: "hidden", background: "var(--surface-1)" }}>
           {/* head */}
-          <div style={{ display: "grid", gridTemplateColumns: "2.4fr 1.3fr 1.6fr 1.1fr 1.1fr 1fr 30px",
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0,2.4fr) minmax(0,1.3fr) minmax(0,1.6fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,1fr) 30px",
             gap: 16, padding: "13px 20px", borderBottom: "1px solid var(--line)", color: "var(--text-3)" }}>
             {["col_doc", "col_template", "col_counter", "col_amount", "col_status", "col_date"].map(c => (
               <div key={c} className="mono" style={{ fontSize: 10.5, letterSpacing: ".06em", textTransform: "uppercase" }}>{t(c)}</div>

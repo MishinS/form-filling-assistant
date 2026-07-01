@@ -4,7 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import { FileGlyph } from "@/components/primitives";
 import { formatSourceRow, type SourceRowData } from "@/lib/db/map";
 
-const GRID = "2.2fr 1.6fr 0.9fr 0.7fr 1.1fr 96px";
+const GRID = "minmax(0,2.2fr) minmax(0,1.6fr) minmax(0,0.9fr) minmax(0,0.7fr) minmax(0,1.1fr) 96px";
 
 export default function SourcesArchive({ sources }: { sources: SourceRowData[] }) {
   const { t, lang } = useI18n();

@@ -12,7 +12,7 @@ export default function TemplatePick({ selected, onSelect }: Props) {
   return (
     <div>
       <div className="mono" style={{ fontSize: 11, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: 12 }}>{t("choose_template")}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 12 }}>
         {templates.map(tpl => {
           const on = selected === tpl.id;
           return (

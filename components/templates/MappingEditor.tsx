@@ -157,7 +157,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
   const miniTitle = ru ? (tpl.own ? name : tpl.name_ru) : (tpl.own ? name : tpl.name_en);
 
   return (
-    <div className="fade-in" style={{ padding: "28px 36px 56px", maxWidth: 1280, margin: "0 auto" }}>
+    <div className="fade-in" style={{ padding: "28px clamp(14px,3vw,36px) 56px", maxWidth: 1280, margin: "0 auto" }}>
       <button onClick={() => router.push("/templates")} className="row gap-8 muted" style={{ fontSize: 13, fontWeight: 600, marginBottom: 22 }}>
         <Icon name="arrowL" size={15} />{t("nav_templates")}
       </button>
@@ -167,7 +167,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
           <div className="row gap-10">
             {tpl.own ? (
               <input value={name} onChange={e => setName(e.target.value)} disabled={saving || deleting}
-                style={{ fontSize: 24, fontWeight: 650, background: "transparent", border: "none", borderBottom: "1px dashed var(--line-2)", outline: "none", minWidth: 280 }} />
+                style={{ fontSize: 24, fontWeight: 650, background: "transparent", border: "none", borderBottom: "1px dashed var(--line-2)", outline: "none", width: "100%", maxWidth: 280 }} />
             ) : (
               <h1 style={{ fontSize: 26 }}>{ru ? tpl.name_ru : tpl.name_en}</h1>
             )}
@@ -178,7 +178,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
           {tpl.own && (
             <input value={desc} onChange={e => setDesc(e.target.value)} disabled={saving || deleting}
               placeholder={t("tpl_new_desc")} className="muted"
-              style={{ fontSize: 13, background: "transparent", border: "none", borderBottom: "1px dashed var(--line-2)", outline: "none", width: 420, marginTop: 6 }} />
+              style={{ fontSize: 13, background: "transparent", border: "none", borderBottom: "1px dashed var(--line-2)", outline: "none", width: "100%", maxWidth: 420, marginTop: 6 }} />
           )}
         </div>
         <div className="row gap-10" style={{ alignItems: "center" }}>
@@ -213,9 +213,9 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 18, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.6fr) minmax(0,1fr)", gap: 18, alignItems: "start" }}>
         <div style={{ border: "1px solid var(--line)", borderRadius: "var(--r-lg)", overflow: "hidden", background: "var(--surface-1)" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.15fr 1.7fr 92px 44px 30px", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--line)", color: "var(--text-3)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.15fr) minmax(0,1.7fr) 92px 44px 30px", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--line)", color: "var(--text-3)" }}>
             {[t("field"), t("rule"), t("cell"), t("required"), ""].map((c, i) => (
               <div key={i} className="mono" style={{ fontSize: 10, letterSpacing: ".05em", textTransform: "uppercase" }}>{c}</div>
             ))}
@@ -227,7 +227,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
             const dupe = !cellErr && dupeCells.has(f.cell);
             return (
               <div key={f.id} onClick={() => setSel(f.id)}
-                style={{ display: "grid", gridTemplateColumns: "1.15fr 1.7fr 92px 44px 30px", gap: 10, padding: "12px 16px", alignItems: "center",
+                style={{ display: "grid", gridTemplateColumns: "minmax(0,1.15fr) minmax(0,1.7fr) 92px 44px 30px", gap: 10, padding: "12px 16px", alignItems: "center",
                   cursor: "pointer", borderBottom: i === rows.length - 1 ? "none" : "1px solid var(--line)",
                   background: on ? "var(--surface-3)" : "transparent", transition: "background .12s" }}>
                 {/* field label */}
