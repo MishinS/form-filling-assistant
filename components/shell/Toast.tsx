@@ -1,8 +1,11 @@
 "use client";
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 type ToastCtx = { show: (msg: string) => void };
 const Ctx = createContext<ToastCtx | null>(null);
+
+// Long enough to read a full "Saved to <path>" line before it dismisses.
+const TOAST_MS = 6000;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [msg, setMsg] = useState<string | null>(null);
@@ -10,13 +13,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const show = useCallback((m: string) => {
     if (timer.current) clearTimeout(timer.current);
     setMsg(m);
-    timer.current = setTimeout(() => setMsg(null), 3500);
+    timer.current = setTimeout(() => setMsg(null), TOAST_MS);
   }, []);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   return (
     <Ctx.Provider value={{ show }}>
       {children}
       {msg && (
-        <div role="status" className="fade-in" style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+        <div role="status" className="fade-in" style={{ position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
           zIndex: 200, background: "var(--surface-2)", border: "1px solid var(--line)", borderLeft: "3px solid var(--ok)",
           borderRadius: "var(--r-md)", padding: "12px 18px", fontSize: 13, fontWeight: 600, maxWidth: "min(560px, 92vw)",
           boxShadow: "0 20px 60px rgba(0,0,0,.5)" }}>{msg}</div>
