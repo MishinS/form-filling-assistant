@@ -209,7 +209,7 @@ export default function MappingEditor({ tpl, initialFields, defaultFields }: {
           )}
           <Btn variant="ghost" size="md" onClick={reset} disabled={saving}>{t("tpl_reset")}</Btn>
           <Btn variant="ghost" size="md" icon="plus" onClick={add} disabled={saving}>{t("add_field")}</Btn>
-          <Btn variant="primary" size="md" icon="check" disabled={!canSave || saving} onClick={save}>{saving ? t("mapping_saving") : t("save")}</Btn>
+          <Btn variant="primary" size="md" icon="check" disabled={!dirty || !canSave || saving} onClick={save}>{saving ? t("mapping_saving") : t("save")}</Btn>
         </div>
       </div>
 
