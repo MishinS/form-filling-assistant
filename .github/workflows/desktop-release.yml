@@ -39,9 +39,12 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Generate the keypair once (npx tauri signer generate); add these two as repo secrets.
+          # Add the private key (contents of ~/.tauri/ffa-updater.key) as repo secret TAURI_SIGNING_PRIVATE_KEY.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # The key was generated with an EMPTY password → pass an empty string here.
+          # (GitHub can't store an empty secret, so this is a literal, not a secret reference.)
+          # If you later regenerate the key WITH a password, switch this to ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}.
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         with:
           # src-tauri lives at the repo root (this repo's root is the `web/` dir).
           tagName: ${{ github.ref_name }}
