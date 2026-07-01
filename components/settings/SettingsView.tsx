@@ -5,6 +5,7 @@ import ProfileCard from "./ProfileCard";
 import PasswordCard from "./PasswordCard";
 import PreferencesCard from "./PreferencesCard";
 import ModelCard from "./ModelCard";
+import AboutCard from "./AboutCard";
 
 export default function SettingsView({ user, editable }: { user: SessionUser; editable: boolean }) {
   const { t } = useI18n();
@@ -18,6 +19,7 @@ export default function SettingsView({ user, editable }: { user: SessionUser; ed
       <PasswordCard editable={editable} />
       <PreferencesCard />
       <ModelCard />
+      <AboutCard />
     </div>
   );
 }

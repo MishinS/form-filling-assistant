@@ -5,7 +5,13 @@
   "windows": [
     "main"
   ],
+  "remote": {
+    "urls": [
+      "https://web-three-liart-43.vercel.app"
+    ]
+  },
   "permissions": [
-    "core:default"
+    "core:default",
+    "updater:default"
   ]
 }
