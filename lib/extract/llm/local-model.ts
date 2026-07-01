@@ -1,7 +1,7 @@
 import type { ExtractionModel, LlmFieldResult, OnAttempt } from "./types";
 import type { ExtractField } from "../fields";
 import { buildExtractionPrompt } from "./prompt";
-import { parseFields, JSON_INSTRUCTION, LlmRequestError, type ProbeCode } from "./openai-compat";
+import { parseFieldsLenient, JSON_INSTRUCTION, LlmRequestError, type ProbeCode } from "./openai-compat";
 import { invokeLlmChat } from "@/lib/desktop/tauri";
 
 const CODES: ProbeCode[] = [
@@ -25,9 +25,10 @@ export function localCompatModel(baseUrl: string, modelSlug: string): Extraction
       } catch (e) {
         throw new LlmRequestError(toProbeCode(e instanceof Error ? e.message : String(e)), "Локальная модель недоступна");
       }
-      let out: LlmFieldResult[];
-      try { out = parseFields(txt); }
-      catch { throw new LlmRequestError("bad_response", "Некорректный JSON локальной модели"); }
+      // Tolerant parse: recover partial fields from a small model's near-valid JSON
+      // (a dropped brace hard-fails the strict parser). Genuine garbage → 0 fields → fail.
+      const out = parseFieldsLenient(txt);
+      if (out.length === 0) throw new LlmRequestError("bad_response", "Некорректный JSON локальной модели");
       onAttempt?.({ phase: "win", model: modelSlug });
       return out;
     },

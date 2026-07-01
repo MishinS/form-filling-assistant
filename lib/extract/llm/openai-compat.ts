@@ -65,6 +65,38 @@ export function parseFields(txt: string): LlmFieldResult[] {
   return parsed.fields ?? [];
 }
 
+/**
+ * Tolerant variant for the LOCAL desktop path only. Small local models (e.g. a 3B)
+ * occasionally emit almost-valid JSON with a structural slip BETWEEN field objects —
+ * a dropped `{` (`},"fieldId"`) or a stray quote-brace (`,"{fieldId"`) — which makes a
+ * strict `JSON.parse` throw and hard-fails an otherwise-usable extraction. Try strict
+ * parsing first; on failure, recover each field by keying off its `fieldId` marker and
+ * reading the adjacent `value`/`confidence`, tolerant to damage between entries. The
+ * recovered partial fields then flow to the review step. Cloud output stays strict.
+ */
+export function parseFieldsLenient(txt: string): LlmFieldResult[] {
+  const cleaned = txt.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  try {
+    const parsed = JSON.parse(cleaned) as { fields?: LlmFieldResult[] };
+    if (Array.isArray(parsed.fields)) return parsed.fields;
+  } catch { /* fall through to marker-based recovery */ }
+  // Match `fieldId"` without requiring a leading quote, so `{fieldId"` (a common slip)
+  // is still found. Each field's value/confidence is read from its own segment.
+  const idRe = /fieldId"\s*:\s*"([^"]+)"/g;
+  const marks: { id: string; at: number }[] = [];
+  for (let m = idRe.exec(cleaned); m !== null; m = idRe.exec(cleaned)) marks.push({ id: m[1], at: m.index });
+  const out: LlmFieldResult[] = [];
+  for (let i = 0; i < marks.length; i++) {
+    const seg = cleaned.slice(marks[i].at, i + 1 < marks.length ? marks[i + 1].at : undefined);
+    const vRaw = seg.match(/"value"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    const cRaw = seg.match(/"confidence"\s*:\s*"(high|med|low)"/);
+    let value = "";
+    if (vRaw) { try { value = JSON.parse(`"${vRaw[1]}"`) as string; } catch { value = vRaw[1]; } }
+    out.push({ fieldId: marks[i].id, value, confidence: (cRaw?.[1] as LlmFieldResult["confidence"]) ?? "low" });
+  }
+  return out;
+}
+
 /** Standalone model — the user's key, single call, no race / no fallback. */
 export function openaiCompatModel(cfg: CompatConfig): ExtractionModel {
   return {

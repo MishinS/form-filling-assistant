@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { openaiCompatModel, classifyStatus, LlmRequestError } from "./openai-compat";
+import { openaiCompatModel, classifyStatus, LlmRequestError, parseFieldsLenient } from "./openai-compat";
 import { PT_FIELDS } from "../fields";
 
 const cfg = { baseUrl: "https://api.example.com/v1", apiKey: "sk-test", modelSlug: "gpt-x" };
@@ -82,5 +82,37 @@ describe("openaiCompatModel", () => {
     await openaiCompatModel(cfgWithTrailingSlash).extract(PT_FIELDS, "текст");
     const [url] = spy.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://api.example.com/v1/chat/completions");
+  });
+});
+
+describe("parseFieldsLenient (local-model recovery)", () => {
+  it("parses valid JSON like the strict parser", () => {
+    const txt = JSON.stringify({ fields: [{ fieldId: "f1", value: "x", confidence: "high" }] });
+    expect(parseFieldsLenient(txt)).toEqual([{ fieldId: "f1", value: "x", confidence: "high" }]);
+  });
+
+  it("strips a ```json fence before parsing", () => {
+    const txt = "```json\n" + JSON.stringify({ fields: [{ fieldId: "f1", value: "x", confidence: "low" }] }) + "\n```";
+    expect(parseFieldsLenient(txt).map((f) => f.fieldId)).toEqual(["f1"]);
+  });
+
+  // Verbatim malformed output from an LM Studio qwen2.5-3b run: a `{` dropped before f9.
+  it("recovers all fields when the model drops a brace between objects", () => {
+    const txt = '{"fields":[{"fieldId":"f1","value":""},{"fieldId":"f2","value":"АО Семейный доктор","confidence":"high"},{"fieldId":"f8","value":"НД"},"fieldId":"f9","value":"100% предоплаты","confidence":"high"},{"fieldId":"f10","value":"","confidence":"low"},{"fieldId":"f11","value":""}]}';
+    const out = parseFieldsLenient(txt);
+    expect(out.map((f) => f.fieldId)).toEqual(["f1", "f2", "f8", "f9", "f10", "f11"]);
+    expect(out.find((f) => f.fieldId === "f9")?.value).toBe("100% предоплаты");
+    expect(out.find((f) => f.fieldId === "f2")?.value).toBe("АО Семейный доктор");
+    expect(out.find((f) => f.fieldId === "f11")?.confidence).toBe("low"); // defaulted
+  });
+
+  // Verbatim malformed output: a stray `"{` before f9's fieldId.
+  it("recovers all fields when the model emits a stray quote-brace", () => {
+    const txt = '{"fields":[{"fieldId":"f1","value":""},{"fieldId":"f2","value":"АО Семейный доктор","confidence":"high"},{"fieldId":"f8","value":"НД"},"{fieldId":"f9","value":"","confidence":"low"},{"fieldId":"f10","value":"","confidence":"low"},{"fieldId":"f11","value":"","confidence":"low"}]}';
+    expect(parseFieldsLenient(txt).map((f) => f.fieldId)).toEqual(["f1", "f2", "f8", "f9", "f10", "f11"]);
+  });
+
+  it("returns [] when no field markers are present (genuine garbage)", () => {
+    expect(parseFieldsLenient("the model refused to answer")).toEqual([]);
   });
 });
