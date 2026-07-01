@@ -86,6 +86,7 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
 
   const create = async () => {
     if (!file || !name.trim()) return;
+    const isLocal = isTauri() && model.startsWith("local:"); // single local model, not a cloud race
     setPhase("busy"); setFail(null); setErr(null); setRace([]);
     try {
       let url = blobUrlRef.current;
@@ -105,7 +106,7 @@ export default function NewTemplateModal({ onClose }: { onClose: () => void }) {
         try { ev = JSON.parse(line) as StreamEvent; } catch { return; }
         if (ev.type === "stage" && ev.stage === "sheets") { setStage(t("tpl_scan_sheets")); setPct(25); }
         else if (ev.type === "attempt") {
-          setStage(t("proc_racing")); setPct(60);
+          setStage(isLocal ? t("proc_local") : t("proc_racing")); setPct(60);
           setRace((r) => (r.some((x) => x.model === ev.model) ? r : [...r, { model: ev.model, status: "running" }]));
         } else if (ev.type === "attempt-fail") {
           setRace((r) => r.map((x) => (x.model === ev.model ? { ...x, status: "fail" } : x)));
