@@ -1,5 +1,6 @@
 "use client";
 import { useState, useContext } from "react";
+import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { Icon, Tag, Btn } from "@/components/primitives";
 import { GuestContext } from "@/components/shell/GuestContext";
@@ -13,6 +14,7 @@ type Props = { onClose: () => void; templateId: string; values: ExtractedValue[]
 
 export default function DoneStep({ onClose, templateId, values, fields, sources }: Props) {
   const { t, lang } = useI18n();
+  const router = useRouter();
   const { guest } = useContext(GuestContext);
   const { show } = useToast();
   const [busy, setBusy] = useState(false);
@@ -49,14 +51,16 @@ export default function DoneStep({ onClose, templateId, values, fields, sources 
         URL.revokeObjectURL(url);
         show(t("dl_saved"));
       }
-      // Best-effort: record this completed fill once. Never blocks or fails the download. Guests are not persisted.
+      // Best-effort: record this completed fill once, then revalidate server components
+      // so the fills list shows it without a manual refresh. Never blocks the download.
+      // Guests are not persisted.
       if (!guest && !saved) {
         setSaved(true);
         void fetch("/api/fills", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ templateId, values, sources }),
-        }).catch(() => {});
+        }).then(() => router.refresh()).catch(() => {});
       }
     } catch {
       setErr(t("dl_excel_err"));
