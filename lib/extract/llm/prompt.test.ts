@@ -27,7 +27,7 @@ describe("buildExtractionPrompt", () => {
   });
 });
 
-const FIELDS = [{ id: "f1", label_ru: "Контрагент", kind: "text" }] as any;
+const FIELDS: ExtractField[] = [{ ...base, id: "f1", label_ru: "Контрагент", kind: "text" }];
 
 describe("localGuidance", () => {
   it("omits the local guidance block by default (cloud byte-for-byte)", () => {
