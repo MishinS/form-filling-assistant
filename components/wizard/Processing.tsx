@@ -34,7 +34,6 @@ export default function Processing({ sources, model, templateId, fields, onDone,
   const [tried, setTried] = useState<string[]>([]); // failed model display names
   const [result, setResult] = useState<ResultEvent | null>(null); // last terminal result (for "continue")
   const [failedLocal, setFailedLocal] = useState(false); // the model that just failed was a desktop local: one
-  const [etaMs, setEtaMs] = useState<number | null>(null);
   const [localPct, setLocalPct] = useState(0);
   const [localDone, setLocalDone] = useState(false);
   const etaTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -48,7 +47,6 @@ export default function Processing({ sources, model, templateId, fields, onDone,
     setRace([]);
     setResult(null);
     setError(null);
-    setEtaMs(null);
     setLocalPct(0);
     setLocalDone(false);
     if (etaTimer.current) { clearInterval(etaTimer.current); etaTimer.current = null; }
@@ -74,7 +72,6 @@ export default function Processing({ sources, model, templateId, fields, onDone,
         } else if (ev.type === "attempt-win") {
           setRace((r) => r.map((x) => (x.model === ev.model ? { ...x, status: "win" } : x)));
         } else if (ev.type === "local-eta") {
-          setEtaMs(ev.ms);
           receivedEta = true;
           const started = Date.now();
           if (etaTimer.current) clearInterval(etaTimer.current);
@@ -227,21 +224,25 @@ export default function Processing({ sources, model, templateId, fields, onDone,
 
   // --- parsing / extracting ---
   const parsing = phase === "parsing";
+  // On desktop a `local:` model runs alone (no race) — show local-aware copy and the
+  // model's own name instead of the cloud "trying free models in parallel" wording.
+  const isLocal = isTauri() && model.startsWith("local:");
+  const localName = model.replace(/^local:/, "");
   return (
     <div className="col gap-16" style={{ maxWidth: 460, margin: "80px auto 0", textAlign: "center" }}>
       <div className="spin" style={{ width: 56, height: 56, margin: "0 auto", color: "var(--accent)" }}>
         <Icon name="spin" size={56} stroke={1.5} />
       </div>
       <div style={{ fontWeight: 600, fontSize: 16 }}>
-        {parsing ? t("proc_parse") : t("proc_racing")}
+        {parsing ? t("proc_parse") : isLocal ? t("proc_local") : t("proc_racing")}
       </div>
       <div className="muted" style={{ fontSize: 13 }}>
-        {parsing ? t("proc_parse_d") : t("proc_extract_d")}
+        {parsing ? t("proc_parse_d") : isLocal ? t("proc_local_d") : t("proc_extract_d")}
       </div>
-      {!parsing && (etaMs !== null ? (
+      {!parsing && (isLocal ? (
         <div className="col gap-10" style={{ width: "100%" }}>
           <div className="row" style={{ justifyContent: "space-between" }}>
-            <span className="muted" style={{ fontSize: 12 }}>{localDone ? t("st_done") : t("proc_racing")}</span>
+            <span className="mono" style={{ fontSize: 12, color: localDone ? "var(--ok)" : "var(--text-2)" }}>{localDone ? t("st_done") : localName}</span>
             <span className="mono dim" style={{ fontSize: 11.5 }}>{localPct}%</span>
           </div>
           <div style={{ height: 6, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden" }}>

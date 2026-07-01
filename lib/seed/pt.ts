@@ -107,6 +107,8 @@ export const STR: Record<string, { ru: string; en: string }> = {
   proc_fill:       { ru: "Заполнение шаблона", en: "Filling the template" },
   proc_fill_d:     { ru: "Значения подставляются в ячейки «Платёжного требования»", en: "Values mapped into the Payment Request cells" },
   proc_racing:      { ru: "Пробуем модели параллельно…", en: "Trying models in parallel…" },
+  proc_local:       { ru: "Обработка локальной моделью", en: "Processing with the local model" },
+  proc_local_d:     { ru: "Модель на вашем компьютере извлекает поля — это может занять до нескольких минут", en: "The model on your computer is extracting fields — this may take a few minutes" },
   llm_failed_title: { ru: "Не удалось извлечь поля моделью", en: "Field extraction by model failed" },
   llm_failed_local_title: { ru: "Локальная модель не справилась", en: "The local model couldn't handle it" },
   llm_failed_local_d:     { ru: "Модель не вернула корректный результат — попробуйте более крупную локальную модель или переключитесь на облачную.", en: "The model didn't return a valid result — try a larger local model or switch to a cloud one." },
