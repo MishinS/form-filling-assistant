@@ -1,0 +1,52 @@
+name: Desktop release
+
+# Builds, signs, and publishes the Windows + Linux desktop bundles (and the updater
+# `latest.json`) to a GitHub Release. Triggered by a namespaced tag so it never collides
+# with the web app's Vercel deploys. Tag the version in tauri.conf.json, e.g.:
+#   git tag desktop-v0.1.0 && git push origin desktop-v0.1.0
+on:
+  push:
+    tags:
+      - "desktop-v*"
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-22.04, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux bundle dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install npm dependencies (provides the local @tauri-apps/cli)
+        run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Generate the keypair once (npx tauri signer generate); add these two as repo secrets.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          # src-tauri lives at the repo root (this repo's root is the `web/` dir).
+          tagName: ${{ github.ref_name }}
+          releaseName: "Desktop ${{ github.ref_name }}"
+          releaseBody: "Automated desktop release (Windows + Linux)."
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
