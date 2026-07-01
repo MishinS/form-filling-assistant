@@ -66,7 +66,9 @@ export async function POST(req: Request): Promise<Response> {
         if (clientFields) {
           // Desktop local-model path: fields already produced in the webview.
           // Re-validate against the actual sheets (trust boundary) — no LLM here.
-          defaultFields = coerceFields(clientFields, sheets);
+          // keepUnmapped: a weak local model may omit cells; keep labelled fields so
+          // the template is created and the user assigns cells in the mapping editor.
+          defaultFields = coerceFields(clientFields, sheets, { keepUnmapped: true });
           if (defaultFields.length === 0) { fail("nofields"); return; }
         } else {
           let scan: ScanResult;

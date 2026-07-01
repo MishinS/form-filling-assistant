@@ -52,10 +52,15 @@ function pickLabel(f: Record<string, unknown>): string | null {
 }
 
 /** Coerce raw LLM/`client field objects into validated ExtractFields against the
- *  allowed sheet names. Drops fields with no label or an unresolvable cell ref;
- *  caps at MAX_FIELDS. Shared by parseProposal (server pool) and the desktop
- *  local-scan path / server re-validation of client-supplied fields. */
-export function coerceFields(raw: unknown[], sheetNames: string[]): ExtractField[] {
+ *  allowed sheet names. Drops fields with no label; caps at MAX_FIELDS. By default
+ *  also drops fields with an unresolvable cell ref (strict — cloud pool). With
+ *  `keepUnmapped`, such fields are KEPT with `cell: ""` so a weak local model that
+ *  returns labels-without-cells still yields a template; the user then assigns the
+ *  cells in the mapping editor (fillCustomXlsx skips empty-cell fields). Shared by
+ *  parseProposal (server pool) and the desktop local-scan path. */
+export function coerceFields(
+  raw: unknown[], sheetNames: string[], opts?: { keepUnmapped?: boolean },
+): ExtractField[] {
   const out: ExtractField[] = [];
   for (const item of raw) {
     if (out.length >= MAX_FIELDS) break;
@@ -65,13 +70,13 @@ export function coerceFields(raw: unknown[], sheetNames: string[]): ExtractField
     if (!label) continue;
     const kind = typeof f.kind === "string" && KINDS.includes(f.kind as FieldKind) ? (f.kind as FieldKind) : "string";
     const cell = validateCellRef(typeof f.cell === "string" ? f.cell : "", sheetNames);
-    if (!cell.ok) continue;
+    if (!cell.ok && !opts?.keepUnmapped) continue;
     out.push({
       id: `f${out.length + 1}`,
       group: "req",
       label_ru: label,
       label_en: typeof f.label_en === "string" && f.label_en.trim() ? f.label_en.trim() : label,
-      cell: cell.normalized,
+      cell: cell.ok ? cell.normalized : "",
       kind,
       required: false,
       strategy: "llm",

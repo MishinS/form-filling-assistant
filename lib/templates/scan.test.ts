@@ -165,6 +165,29 @@ describe("coerceFields", () => {
     const many = Array.from({ length: 50 }, (_, i) => ({ label_ru: `L${i}`, cell: `A${i + 1}` }));
     expect(coerceFields(many, sheets)).toHaveLength(40);
   });
+
+  it("keeps labelled fields with a missing/invalid cell as unmapped (cell='') when keepUnmapped", () => {
+    // A weak local model often returns field labels without cell refs; keep them so a
+    // template is still created and the user assigns cells in the mapping editor.
+    const out = coerceFields(
+      [{ label_ru: "Контрагент" }, { label_ru: "Сумма", cell: "not-a-ref", kind: "amount" }],
+      sheets,
+      { keepUnmapped: true },
+    );
+    expect(out).toEqual([
+      { id: "f1", group: "req", label_ru: "Контрагент", label_en: "Контрагент", cell: "", kind: "string", required: false, strategy: "llm" },
+      { id: "f2", group: "req", label_ru: "Сумма", label_en: "Сумма", cell: "", kind: "amount", required: false, strategy: "llm" },
+    ]);
+  });
+
+  it("still drops unlabelled items even with keepUnmapped", () => {
+    expect(coerceFields([{ cell: "B1" }], sheets, { keepUnmapped: true })).toEqual([]);
+  });
+
+  it("normalises a valid cell even when keepUnmapped is set", () => {
+    const out = coerceFields([{ label_ru: "X", cell: "B1" }], sheets, { keepUnmapped: true });
+    expect(out[0].cell).toBe("Лист1!B1");
+  });
 });
 
 describe("buildScanPrompt", () => {

@@ -47,7 +47,9 @@ export async function runLocalScan(
     write({ type: "attempt-fail", model, reason: "bad json" });
     return { error: "llm" };
   }
-  const fields = coerceFields(parsed.fields, sheetNames);
+  // Keep labelled fields even when the local model omits a cell ref — a template is
+  // still created and the user assigns cells in the editor (mirrors the server route).
+  const fields = coerceFields(parsed.fields, sheetNames, { keepUnmapped: true });
   if (fields.length === 0) {
     write({ type: "attempt-fail", model, reason: "no fields" });
     return { error: "nofields" };

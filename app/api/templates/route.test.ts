@@ -143,8 +143,21 @@ describe("POST /api/templates", () => {
     expect(createTemplate).toHaveBeenCalledWith(expect.objectContaining({ defaultFields: expect.arrayContaining([expect.objectContaining({ label_ru: "Поставщик", cell: "Лист1!B1" })]) }));
   });
 
-  it("fields present but all invalid → nofields, template not created", async () => {
+  it("labelled fields with an invalid cell are kept as unmapped → template created", async () => {
+    // Weak local models often omit cell refs; keepUnmapped preserves the field so the
+    // template is created and the user assigns cells in the mapping editor.
     const fields = [{ label_ru: "X", cell: "not-a-ref" }];
+    const res = await POST(post({ name: "T", desc: "", url: OK_URL, fields }));
+    const evs = await events(res);
+    expect(mockPropose).not.toHaveBeenCalled();
+    expect(terminal(evs)).toMatchObject({ type: "result", fields: 1 });
+    expect(createTemplate).toHaveBeenCalledWith(expect.objectContaining({
+      defaultFields: [expect.objectContaining({ label_ru: "X", cell: "" })],
+    }));
+  });
+
+  it("client fields with no usable label → nofields, template not created", async () => {
+    const fields = [{ cell: "not-a-ref" }];
     const res = await POST(post({ name: "T", desc: "", url: OK_URL, fields }));
     const evs = await events(res);
     expect(mockPropose).not.toHaveBeenCalled();
