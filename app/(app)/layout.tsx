@@ -3,6 +3,9 @@ import { SessionProvider } from "next-auth/react";
 import { I18nProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
 import { parseThemeMode } from "@/lib/theme-core";
+import { AccentProvider } from "@/lib/accent";
+import { DEFAULT_ACCENT, type AccentId } from "@/lib/accent-core";
+import { getAccent } from "@/lib/db/accents";
 import AppShell from "@/components/shell/AppShell";
 import { ToastProvider } from "@/components/shell/Toast";
 import { auth } from "@/auth";
@@ -32,6 +35,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
   }
 
+  let initialAccent: AccentId = DEFAULT_ACCENT;
+  if (user.email) {
+    try {
+      initialAccent = (await getAccent(user.email)) ?? DEFAULT_ACCENT;
+    } catch {
+      // DB unreachable → default blue. Never 500 the app.
+    }
+  }
+
   let templates: UiTemplate[] = TEMPLATES;
   const templateNames: Record<string, { ru: string; en: string }> = {
     pt: { ru: TEMPLATES[0].name_ru, en: TEMPLATES[0].name_en },
@@ -55,11 +67,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <SessionProvider session={session}>
       <ThemeProvider initialMode={initialMode}>
-        <I18nProvider initialLang={initialLang}>
-          <ToastProvider>
-            <AppShell user={user} initialFields={initialFields} templates={templates} templateNames={templateNames}>{children}</AppShell>
-          </ToastProvider>
-        </I18nProvider>
+        <AccentProvider initialAccent={initialAccent}>
+          <I18nProvider initialLang={initialLang}>
+            <ToastProvider>
+              <AppShell user={user} initialFields={initialFields} templates={templates} templateNames={templateNames}>{children}</AppShell>
+            </ToastProvider>
+          </I18nProvider>
+        </AccentProvider>
       </ThemeProvider>
     </SessionProvider>
   );
