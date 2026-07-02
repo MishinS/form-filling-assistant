@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { useI18n, type Lang } from "@/lib/i18n";
 import { useTheme, type ThemeMode } from "@/lib/theme";
+import { useAccent } from "@/lib/accent";
+import { ACCENTS } from "@/lib/accent-core";
 import { Card } from "@/components/primitives";
 import { isTauri, pickDirectory } from "@/lib/desktop/tauri";
 
@@ -22,6 +24,7 @@ function Segmented({ options, value, onChange }: { options: { id: string; label:
 export default function PreferencesCard() {
   const { t, lang, setLang } = useI18n();
   const { mode, setMode } = useTheme();
+  const { accent, setAccent } = useAccent();
   const [dlDir, setDlDir] = useState<string | null>(null);
   const [desktop, setDesktop] = useState(false);
   useEffect(() => {
@@ -49,6 +52,29 @@ export default function PreferencesCard() {
         <div className="col gap-6">
           <span className="muted" style={{ fontSize: 12 }}>{t("set_lang")}</span>
           <Segmented options={langOptions} value={lang} onChange={(v) => setLang(v as Lang)} />
+        </div>
+        <div className="col gap-6">
+          <span className="muted" style={{ fontSize: 12 }}>{t("set_accent")}</span>
+          <div className="row" style={{ gap: 8 }}>
+            {ACCENTS.map((a) => {
+              const on = a.id === accent;
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => setAccent(a.id)}
+                  aria-label={t(`accent_${a.id}`)}
+                  title={t(`accent_${a.id}`)}
+                  style={{
+                    width: 26, height: 26, borderRadius: "var(--pill)", background: a.hex,
+                    border: `2px solid ${on ? "var(--text)" : "var(--line-2)"}`,
+                    boxShadow: on ? "0 0 0 2px var(--surface-1)" : "none",
+                    transition: "all .15s", flex: "none",
+                  }}
+                />
+              );
+            })}
+          </div>
         </div>
         {desktop && (
           <div className="col gap-6">
