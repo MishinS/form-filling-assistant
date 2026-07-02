@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Tag, Icon } from "@/components/primitives";
 import { PT_FIELDS, PT_GROUPS, type ExtractField } from "@/lib/extract/fields";
 import { FIELDS as SEED_FIELDS, type PtField } from "@/lib/seed/pt";
 import { buildRows, missingRequired } from "@/lib/review/rows";
+import { attentionOf, nextAttentionIndex, type Attention } from "@/lib/review/attention";
 import type { ExtractedValue } from "@/lib/types";
 import type { ParsedDoc } from "@/lib/parse/types";
 import FieldRow from "./FieldRow";
@@ -16,6 +17,8 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
   const rows: PtField[] = values ? buildRows(fields, values, docs) : SEED_FIELDS;
   const [vals, setVals] = useState<Record<string, string>>(() => Object.fromEntries(rows.map(f => [f.id, f.value])));
   const [hover, setHover] = useState<string | null>(null);
+  const inputRefs = useRef<Map<string, HTMLInputElement | HTMLTextAreaElement>>(new Map());
+
   useEffect(() => {
     onChange?.(rows.map(r => ({
       fieldId: r.id,
@@ -25,8 +28,25 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
     })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vals]);
-  const lowCount = rows.filter(f => f.conf === "low").length;
-  const missingReq = missingRequired(fields, vals); // required-but-empty (live) → non-blocking warning
+
+  // Flat visual order (matches the grouped render below) + per-row attention.
+  const fieldById = new Map(fields.map(f => [f.id, f]));
+  const ordered = PT_GROUPS.flatMap(g => rows.filter(f => f.group === g.id));
+  const attnById = new Map<string, Attention>(
+    ordered.map(f => {
+      const ef = fieldById.get(f.id);
+      return [f.id, attentionOf({ kind: ef?.kind ?? "string", required: ef?.required ?? false, conf: f.conf, value: vals[f.id] ?? "" })];
+    }),
+  );
+  const attentionCount = Array.from(attnById.values()).filter(a => a !== null).length;
+
+  const focusNext = (fromId: string | null) => {
+    const from = fromId === null ? -1 : ordered.findIndex(f => f.id === fromId);
+    const ni = nextAttentionIndex(ordered.map(f => ({ attention: attnById.get(f.id) ?? null })), from);
+    if (ni >= 0) inputRefs.current.get(ordered[ni].id)?.focus();
+  };
+
+  const missingReq = missingRequired(fields, vals);
   const confLabel = (lvl: PtField["conf"]) => t(lvl === "high" ? "conf_high" : lvl === "med" ? "conf_med" : "conf_low");
 
   return (
@@ -36,10 +56,15 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
           <h2 style={{ fontSize: 22 }}>{t("review_h")}</h2>
           <p className="muted" style={{ fontSize: 13.5, marginTop: 8, maxWidth: 560 }}>{t("review_sub")}</p>
         </div>
-        {lowCount > 0 && (
-          <Tag tone="line" style={{ height: 28, color: "var(--warn)", borderColor: "rgba(215,177,105,.4)", flex: "none" }}>
-            <Icon name="alert" size={12} />{lowCount} {t("needs_check")}
-          </Tag>
+        {attentionCount > 0 && (
+          <div className="row gap-8" style={{ flex: "none", alignItems: "center" }}>
+            <Tag tone="line" style={{ height: 28, color: "var(--warn)", borderColor: "rgba(215,177,105,.4)" }}>
+              <Icon name="alert" size={12} />{attentionCount} {t("needs_check")}
+            </Tag>
+            <button type="button" onClick={() => focusNext(null)} className="mono"
+              style={{ height: 28, padding: "0 12px", borderRadius: "var(--pill)", fontSize: 11.5, fontWeight: 600,
+                border: "1px solid var(--line-2)", color: "var(--text-2)" }}>{t("review_next")}</button>
+          </div>
         )}
       </div>
 
@@ -81,7 +106,10 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
               </div>
               {fieldsInGroup.map((f, i) => (
                 <FieldRow key={f.id} f={f} val={vals[f.id]} onChange={v => setVals(s => ({ ...s, [f.id]: v }))}
-                  confLabel={confLabel} hover={hover} setHover={setHover} last={i === fieldsInGroup.length - 1} />
+                  confLabel={confLabel} hover={hover} setHover={setHover} last={i === fieldsInGroup.length - 1}
+                  attention={attnById.get(f.id) ?? null}
+                  onEnter={() => focusNext(f.id)}
+                  registerRef={(el) => { if (el) inputRefs.current.set(f.id, el); else inputRefs.current.delete(f.id); }} />
               ))}
             </div>
           </div>

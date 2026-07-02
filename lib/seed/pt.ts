@@ -148,6 +148,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   conf_med:        { ru: "Средняя", en: "Medium" },
   conf_low:        { ru: "Низкая",  en: "Low" },
   needs_check:     { ru: "Требует проверки", en: "Needs a look" },
+  review_next:     { ru: "К следующему →", en: "Next →" },
   review_warn:     { ru: "Часть данных не извлечена автоматически — заполните эти поля вручную:", en: "Some data wasn't extracted automatically — fill these fields manually:" },
   review_required_h: { ru: "Заполните обязательные поля:", en: "Fill in the required fields:" },
   back:            { ru: "Назад",   en: "Back" },
