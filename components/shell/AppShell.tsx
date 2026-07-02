@@ -4,6 +4,7 @@ import { createContext, useMemo, useState, type ReactNode } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import { WizardModal } from "@/components/wizard/WizardModal";
+import { BatchModal } from "@/components/batch/BatchModal";
 import { DEFAULT_MODEL } from "@/lib/extract/llm/catalog";
 import { PT_FIELDS, type ExtractField } from "@/lib/extract/fields";
 import { TEMPLATES, type UiTemplate } from "@/lib/seed/pt";
@@ -43,6 +44,7 @@ export default function AppShell({ children, user, initialFields, templates, tem
   const router = useRouter();
   const pathname = usePathname();
   const [wizardStart, setWizardStart] = useState<number | null>(null);
+  const [batchOpen, setBatchOpen] = useState(false);
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [fields, setFields] = useState<ExtractField[]>(initialFields ?? PT_FIELDS);
   const route = pathname.split("/")[1] || "fills";
@@ -56,12 +58,13 @@ export default function AppShell({ children, user, initialFields, templates, tem
     <ModelContext.Provider value={{ model, setModel }}>
     <WizardTrigger.Provider value={{ openNew: () => setWizardStart(0), openReview: () => setWizardStart(2) }}>
       <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
-        <Sidebar route={route} user={user} onNavigate={(id) => router.push(`/${id}`)} onNewFill={() => setWizardStart(0)} />
+        <Sidebar route={route} user={user} onNavigate={(id) => router.push(`/${id}`)} onNewFill={() => setWizardStart(0)} onNewBatch={() => setBatchOpen(true)} />
         <div className="col" style={{ flex: 1, minWidth: 0 }}>
           <Topbar />
           <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", minWidth: 0 }}>{children}</div>
         </div>
         {wizardStart !== null && <WizardModal start={wizardStart} onClose={() => setWizardStart(null)} />}
+        {batchOpen && <BatchModal onClose={() => setBatchOpen(false)} />}
       </div>
     </WizardTrigger.Provider>
     </ModelContext.Provider>

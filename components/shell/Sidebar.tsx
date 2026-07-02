@@ -9,9 +9,9 @@ import { signOut } from "next-auth/react";
 import { ACCENT_COOKIE } from "@/lib/accent-core";
 import type { SessionUser } from "./AppShell";
 
-type Props = { route: string; user: SessionUser; onNavigate: (id: string) => void; onNewFill: () => void };
+type Props = { route: string; user: SessionUser; onNavigate: (id: string) => void; onNewFill: () => void; onNewBatch: () => void };
 
-export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
+export default function Sidebar({ route, user, onNavigate, onNewFill, onNewBatch }: Props) {
   const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -44,6 +44,7 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
       </button>
 
       <Btn variant="primary" size="md" icon="plus" full onClick={onNewFill} style={{ marginBottom: 22 }}>{t("new_fill")}</Btn>
+      <Btn variant="quiet" size="md" icon="layers" full onClick={onNewBatch} style={{ marginBottom: 22 }}>{t("batch_new")}</Btn>
 
       <div className="col gap-2">
         {items.map(it => {
