@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]+)/);var t=m?decodeURIComponent(m[1]):'system';if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();",
+              "(function(){try{var d=document.documentElement;var m=document.cookie.match(/(?:^|; )theme=([^;]+)/);var t=m?decodeURIComponent(m[1]):'system';if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}d.dataset.theme=t;var a=document.cookie.match(/(?:^|; )accent=([^;]+)/);if(a){var v=decodeURIComponent(a[1]);if(v==='teal'||v==='indigo'||v==='plum'||v==='rose'){d.dataset.accent=v;}}}catch(e){document.documentElement.dataset.theme='dark';}})();",
           }}
         />
       </head>

@@ -25,6 +25,10 @@
   --bad:#b0452d; --bad-bg:rgba(176,69,45,.12); --info:#3a6ea5;
   --accent:#0b5394; --accent-text:#f6f8f7;
 }
+:root[data-accent="teal"]  { --accent:#0e6b6b; }
+:root[data-accent="indigo"]{ --accent:#4a4fb0; }
+:root[data-accent="plum"]  { --accent:#8f4083; }
+:root[data-accent="rose"]  { --accent:#a2455f; }
 :root[data-theme="light"] ::selection{ background:rgba(11,83,148,.16); }
 :root[data-theme="light"] .doc-stripes{ background-image:repeating-linear-gradient(135deg, rgba(0,0,0,.04) 0 10px, transparent 10px 20px); }
 *{ box-sizing:border-box; }
