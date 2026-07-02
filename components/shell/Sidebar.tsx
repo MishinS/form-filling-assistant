@@ -6,6 +6,7 @@ import ModelSelect from "./ModelSelect";
 import SettingsCog from "./SettingsCog";
 import { LayersIcon, GridIcon, FileIcon } from "./NavIcons";
 import { signOut } from "next-auth/react";
+import { ACCENT_COOKIE } from "@/lib/accent-core";
 import type { SessionUser } from "./AppShell";
 
 type Props = { route: string; user: SessionUser; onNavigate: (id: string) => void; onNewFill: () => void };
@@ -77,7 +78,12 @@ export default function Sidebar({ route, user, onNavigate, onNewFill }: Props) {
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
               <SettingsCog size={15} spin="host" className="muted" aria-hidden /><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{t("nav_settings")}</span>
             </button>
-            <button role="menuitem" onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}
+            <button role="menuitem" onClick={() => {
+              setMenuOpen(false);
+              document.cookie = `${ACCENT_COOKIE}=;path=/;max-age=0;samesite=lax`;
+              delete document.documentElement.dataset.accent;
+              signOut({ callbackUrl: "/" });
+            }}
               className="row gap-10 sign-out-host" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)", background: "transparent", transition: "background .12s" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
