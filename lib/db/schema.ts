@@ -87,6 +87,12 @@ export const userAvatars = pgTable("user_avatars", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const userAccents = pgTable("user_accents", {
+  email: text("email").primaryKey(),          // stored lowercased
+  accent: text("accent").notNull(),           // AccentId (see lib/accent-core.ts)
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const userModels = pgTable("user_models", {
   id: text("id").primaryKey(),                 // uuid; surfaced as custom:<id>
   email: text("email").notNull(),              // owner, lowercased
