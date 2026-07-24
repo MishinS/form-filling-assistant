@@ -23,6 +23,13 @@ export async function POST(req: Request): Promise<Response> {
   if (!Array.isArray(sources)) {
     return NextResponse.json({ error: "Ожидается поле sources: []" }, { status: 400 });
   }
+  // SSRF guard: this route is reachable by an anonymous guest session, so every URL
+  // is untrusted. Legitimate callers always upload to our blob store first, so the
+  // allowlist is exactly that store — validated for the whole array before any fetch,
+  // so a foreign URL cannot ride along with valid ones.
+  if (!sources.every((s) => isOwnBlobUrl(s?.url))) {
+    return NextResponse.json({ error: "Недопустимый адрес источника" }, { status: 400 });
+  }
 
   const docs: ParsedDoc[] = await Promise.all(
     sources.map(async (s) => {
