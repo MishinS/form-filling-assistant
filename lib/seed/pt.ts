@@ -57,6 +57,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   accent_indigo:   { ru: "Индиго", en: "Indigo" },
   accent_plum:     { ru: "Слива", en: "Plum" },
   accent_rose:     { ru: "Розовый", en: "Rose" },
+  accent_save_err: { ru: "Не удалось сохранить акцент. Попробуйте ещё раз.", en: "Couldn't save the accent. Please try again." },
   set_saved:       { ru: "Сохранено", en: "Saved" },
   set_pw_changed:  { ru: "Пароль изменён", en: "Password changed" },
   set_err_name:    { ru: "Введите имя", en: "Enter a name" },

@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { useI18n, type Lang } from "@/lib/i18n";
 import { useTheme, type ThemeMode } from "@/lib/theme";
 import { useAccent } from "@/lib/accent";
-import { ACCENTS } from "@/lib/accent-core";
+import { ACCENTS, type AccentId } from "@/lib/accent-core";
 import { Card } from "@/components/primitives";
+import { useToast } from "@/components/shell/Toast";
 import { isTauri, pickDirectory } from "@/lib/desktop/tauri";
 
 function Segmented({ options, value, onChange }: { options: { id: string; label: string }[]; value: string; onChange: (id: string) => void }) {
@@ -25,6 +26,10 @@ export default function PreferencesCard() {
   const { t, lang, setLang } = useI18n();
   const { mode, setMode } = useTheme();
   const { accent, setAccent } = useAccent();
+  const { show } = useToast();
+  const pickAccent = async (id: AccentId) => {
+    if (!(await setAccent(id))) show(t("accent_save_err"));
+  };
   const [dlDir, setDlDir] = useState<string | null>(null);
   const [desktop, setDesktop] = useState(false);
   useEffect(() => {
@@ -62,7 +67,7 @@ export default function PreferencesCard() {
                 <button
                   key={a.id}
                   type="button"
-                  onClick={() => setAccent(a.id)}
+                  onClick={() => pickAccent(a.id)}
                   aria-label={t(`accent_${a.id}`)}
                   title={t(`accent_${a.id}`)}
                   style={{

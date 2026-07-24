@@ -41,4 +41,18 @@ describe("/api/account/accent", () => {
     expect(await res.json()).toEqual({ ok: true, accent: "rose" });
     expect(asMock(db.setAccent)).toHaveBeenCalledWith("a@b.co", "rose");
   });
+
+  it("400 on a null JSON body (not 500) and saves nothing", async () => {
+    asMock(auth).mockResolvedValue(full);
+    const res = await POST(req(null));
+    expect(res.status).toBe(400);
+    expect(asMock(db.setAccent)).not.toHaveBeenCalled();
+  });
+
+  it("500 when the DB write throws", async () => {
+    asMock(auth).mockResolvedValue(full);
+    asMock(db.setAccent).mockRejectedValue(new Error("db down"));
+    const res = await POST(req({ accent: "teal" }));
+    expect(res.status).toBe(500);
+  });
 });

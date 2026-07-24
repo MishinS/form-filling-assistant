@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!email) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   let body: Record<string, unknown> = {};
-  try { body = (await req.json()) as Record<string, unknown>; } catch { /* bad body → invalid id below */ }
+  try { body = ((await req.json()) as Record<string, unknown> | null) ?? {}; } catch { /* bad body → invalid id below */ }
   if (!isAccentId(body.accent)) return NextResponse.json({ error: "accent" }, { status: 400 });
 
   try {
