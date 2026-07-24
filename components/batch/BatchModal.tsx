@@ -9,14 +9,17 @@ import TemplatePick from "@/components/wizard/TemplatePick";
 import Dropzone from "@/components/wizard/Dropzone";
 import { runBatch, type BatchItem } from "@/lib/batch/run-batch";
 import { makeRunOne } from "@/lib/batch/run-one";
+import { formatBatchError } from "@/lib/batch/errors";
 import { zipOutputs } from "@/lib/batch/zip";
 import { isTauri, saveFile } from "@/lib/desktop/tauri";
+import { useToast } from "@/components/shell/Toast";
 
 let uid = 0;
 const nextId = () => `bup-${Date.now()}-${uid++}`;
 
 export function BatchModal({ onClose }: { onClose: () => void }) {
   const { t, lang } = useI18n();
+  const { show } = useToast();
   const { model } = useContext(ModelContext);
   const { fields: ptFields } = useContext(TemplateMappingContext);
   const { templates } = useContext(TemplatesContext);
@@ -26,6 +29,7 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
   const [rawFiles, setRawFiles] = useState<Record<string, File>>({});
   const [customFields, setCustomFields] = useState<Record<string, ExtractField[]>>({});
   const [fieldsLoading, setFieldsLoading] = useState(false);
+  const [fieldsErr, setFieldsErr] = useState(false);
   const [running, setRunning] = useState(false);
   const [items, setItems] = useState<BatchItem[]>([]);
   const [doneItems, setDoneItems] = useState<BatchItem[] | null>(null);
@@ -33,15 +37,21 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
 
   const fields = tpl === "pt" ? ptFields : customFields[tpl] ?? [];
 
+  // A failed mapping load must stay uncached: `customFields[id]` keeps meaning
+  // "not fetched yet", so re-selecting the template retries instead of leaving
+  // Run permanently disabled with an empty field list.
   const selectTpl = (id: string) => {
     setTpl(id);
+    setFieldsErr(false);
     if (id !== "pt" && customFields[id] === undefined) {
       setFieldsLoading(true);
       fetch(`/api/mappings?templateId=${encodeURIComponent(id)}`)
-        .then((r) => r.json())
-        .then((d: { fields?: ExtractField[] | null }) =>
-          setCustomFields((c) => ({ ...c, [id]: Array.isArray(d.fields) ? d.fields : [] })))
-        .catch(() => setCustomFields((c) => ({ ...c, [id]: [] })))
+        .then(async (r) => {
+          if (!r.ok) throw new Error(String(r.status));
+          const d = (await r.json()) as { fields?: ExtractField[] | null };
+          setCustomFields((c) => ({ ...c, [id]: Array.isArray(d.fields) ? d.fields : [] }));
+        })
+        .catch(() => setFieldsErr(true))
         .finally(() => setFieldsLoading(false));
     }
   };
@@ -56,8 +66,14 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
       }]);
     }
   };
-  const removeFile = (id: string) =>
+  const removeFile = (id: string) => {
     setFiles((fs) => fs.filter((f) => f.fileId !== id));
+    setRawFiles((m) => {
+      const rest = { ...m };
+      delete rest[id];
+      return rest;
+    });
+  };
 
   const canRun = files.length > 0 && !fieldsLoading && fields.length > 0 && !running;
 
@@ -67,27 +83,39 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
     setSaved(false);
     const runOne = makeRunOne({ templateId: tpl, fields, model });
     const picked = files.map((f) => rawFiles[f.fileId]).filter(Boolean);
-    const result = await runBatch(picked, runOne, setItems);
-    setDoneItems(result);
-    setRunning(false);
+    try {
+      const result = await runBatch(picked, runOne, setItems);
+      setDoneItems(result);
+    } finally {
+      // Never leave the modal wedged in `running`, however the batch settles.
+      setRunning(false);
+    }
   };
 
+  // Mirrors DoneStep: report the save outcome, and only count the batch as saved
+  // once the bytes actually landed — otherwise the discard confirmation lies.
   const download = async () => {
     const ok = (doneItems ?? []).filter((i) => i.status === "done" && i.bytes);
     if (ok.length === 0) return;
-    const zip = zipOutputs(ok.map((i) => ({ name: i.name, bytes: i.bytes! })));
     const fname = "batch.zip";
-    if (isTauri()) {
-      const dir = localStorage.getItem("ffa.downloadDir") ?? "";
-      await saveFile({ dir, filename: fname, bytes: Array.from(zip) });
-    } else {
-      const url = URL.createObjectURL(new Blob([new Uint8Array(zip)], { type: "application/zip" }));
-      const a = document.createElement("a");
-      a.href = url; a.download = fname;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
+    try {
+      const zip = zipOutputs(ok.map((i) => ({ name: i.name, bytes: i.bytes! })));
+      if (isTauri()) {
+        const dir = localStorage.getItem("ffa.downloadDir") ?? "";
+        const path = await saveFile({ dir, filename: fname, bytes: Array.from(zip) });
+        show(`${t("dl_saved_to")} ${path}`);
+      } else {
+        const url = URL.createObjectURL(new Blob([new Uint8Array(zip)], { type: "application/zip" }));
+        const a = document.createElement("a");
+        a.href = url; a.download = fname;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+        show(t("dl_saved"));
+      }
+      setSaved(true);
+    } catch {
+      show(t("dl_excel_err"));
     }
-    setSaved(true);
   };
 
   // Protect batch results from accidental loss: never dismiss a running batch,
@@ -117,7 +145,12 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
       <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
         {!running && !doneItems && (
           <div className="col gap-24" style={{ maxWidth: 760, margin: "0 auto" }}>
-            <TemplatePick selected={tpl} onSelect={selectTpl} />
+            <div className="col gap-8">
+              <TemplatePick selected={tpl} onSelect={selectTpl} />
+              {fieldsErr && (
+                <span style={{ fontSize: 12.5, color: "var(--bad)" }}>{t("batch_fields_err")}</span>
+              )}
+            </div>
             <Dropzone files={files} onPick={onPick} onRemove={removeFile} />
           </div>
         )}
@@ -127,7 +160,7 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
               <div key={it.fileId} className="row" style={{ justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderRadius: "var(--r-md)", border: "1px solid var(--line)", background: "var(--surface-2)" }}>
                 <span style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.name}</span>
                 <span className="mono" style={{ fontSize: 11.5, color: it.status === "error" ? "var(--bad)" : it.status === "done" ? "var(--ok)" : "var(--text-2)" }}>
-                  {it.status === "error" ? (it.error ?? t("batch_failed")) : t(`batch_${it.status}`)}
+                  {it.status === "error" ? formatBatchError(it.error, t) : t(`batch_${it.status}`)}
                 </span>
               </div>
             ))}

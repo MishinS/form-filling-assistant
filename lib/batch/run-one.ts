@@ -4,6 +4,7 @@ import { isTauri } from "@/lib/desktop/tauri";
 import type { ExtractField } from "@/lib/extract/fields";
 import type { ParsedDoc } from "@/lib/parse/types";
 import { parseExtractResult } from "./extract-result";
+import { batchError } from "./errors";
 import type { RunOne } from "./run-batch";
 
 /** Build the per-file pipeline used by runBatch: upload → parse → extract → fill → bytes. */
@@ -20,10 +21,10 @@ export function makeRunOne(opts: { templateId: string; fields: ExtractField[]; m
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sources: [{ fileId, url, name: file.name, mime: inferMime(file) }] }),
     });
-    if (!pRes.ok) throw new Error(`Не удалось обработать файл (${pRes.status})`);
+    if (!pRes.ok) throw batchError("parse_failed", pRes.status);
     const { docs } = (await pRes.json()) as { docs: ParsedDoc[] };
     if (docs.length === 0 || docs.every((d) => d.blocks.length === 0)) {
-      throw new Error("Не удалось извлечь текст из файла");
+      throw batchError("parse_empty");
     }
 
     // 3. Extract — same branch the wizard takes (desktop-local vs cloud).
@@ -36,12 +37,12 @@ export function makeRunOne(opts: { templateId: string; fields: ExtractField[]; m
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ templateId, model, docs, fields }),
       });
-      if (!eRes.ok || !eRes.body) throw new Error(`Извлечение не удалось (${eRes.status})`);
+      if (!eRes.ok || !eRes.body) throw batchError("extract_failed", eRes.status);
       ndjson = await eRes.text();
     }
     const result = parseExtractResult(ndjson);
-    if (!result) throw new Error("Пустой ответ извлечения");
-    if (result.llmFailed) throw new Error("Модель не смогла извлечь данные");
+    if (!result) throw batchError("extract_empty");
+    if (result.llmFailed) throw batchError("llm_failed");
 
     // 4. Fill → xlsx bytes. (Ephemeral: no /api/fills call.)
     const fRes = await fetch("/api/fill", {
@@ -49,7 +50,8 @@ export function makeRunOne(opts: { templateId: string; fields: ExtractField[]; m
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ templateId, values: result.values, fields }),
     });
-    if (!fRes.ok) throw new Error(await fRes.text());
+    // Never surface the response body: a proxy error page would land in the batch UI verbatim.
+    if (!fRes.ok) throw batchError("fill_failed", fRes.status);
     return new Uint8Array(await fRes.arrayBuffer());
   };
 }
