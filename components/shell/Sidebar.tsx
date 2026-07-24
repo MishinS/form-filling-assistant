@@ -75,7 +75,7 @@ export default function Sidebar({ route, user, onNavigate, onNewFill, onNewBatch
             padding: 5, boxShadow: "0 18px 50px rgba(0,0,0,.55)" }}>
             <button role="menuitem" onClick={() => { setMenuOpen(false); onNavigate("settings"); }}
               className="row gap-10 settings-cog-host" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)", background: "transparent", transition: "background .12s" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--hover)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
               <SettingsCog size={15} spin="host" className="muted" aria-hidden /><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{t("nav_settings")}</span>
             </button>
@@ -86,7 +86,7 @@ export default function Sidebar({ route, user, onNavigate, onNewFill, onNewBatch
               signOut({ callbackUrl: "/" });
             }}
               className="row gap-10 sign-out-host" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)", background: "transparent", transition: "background .12s" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--hover)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
               <Icon name="arrowR" size={15} className="muted sign-out-ic" /><span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{t("sign_out")}</span>
             </button>

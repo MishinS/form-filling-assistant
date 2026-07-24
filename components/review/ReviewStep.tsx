@@ -58,7 +58,7 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
         </div>
         {attentionCount > 0 && (
           <div className="row gap-8" style={{ flex: "none", alignItems: "center" }}>
-            <Tag tone="line" style={{ height: 28, color: "var(--warn)", borderColor: "rgba(215,177,105,.4)" }}>
+            <Tag tone="line" style={{ height: 28, color: "var(--warn)", borderColor: "var(--warn-border)" }}>
               <Icon name="alert" size={12} />{attentionCount} {t("needs_check")}
             </Tag>
             <button type="button" onClick={() => focusNext(null)} className="mono"
@@ -70,7 +70,7 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
 
       {warnings.length > 0 && (
         <div className="col gap-8" role="alert" style={{ marginTop: 16, padding: "12px 14px", borderRadius: "var(--r-lg)",
-          background: "var(--bad-bg)", border: "1px solid rgba(224,108,108,.35)" }}>
+          background: "var(--bad-bg)", border: "1px solid var(--bad-border)" }}>
           <div className="row gap-8" style={{ color: "var(--bad)", fontSize: 13, fontWeight: 600 }}>
             <Icon name="alert" size={14} />{t("review_warn")}
           </div>
@@ -82,7 +82,7 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
 
       {missingReq.length > 0 && (
         <div className="col gap-8" role="alert" style={{ marginTop: 16, padding: "12px 14px", borderRadius: "var(--r-lg)",
-          background: "var(--surface-2)", border: "1px solid rgba(215,177,105,.4)" }}>
+          background: "var(--surface-2)", border: "1px solid var(--warn-border)" }}>
           <div className="row gap-8" style={{ color: "var(--warn)", fontSize: 13, fontWeight: 600 }}>
             <Icon name="alert" size={14} />{t("review_required_h")}
           </div>

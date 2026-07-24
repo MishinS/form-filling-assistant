@@ -8,6 +8,9 @@
   --text:#f1f3f0; --text-2:#99a19d; --text-3:#646b67; --text-inv:#0b0f0e;
   --ok:#7fb38c; --ok-bg:rgba(127,179,140,.13); --warn:#d7b169; --warn-bg:rgba(215,177,105,.13);
   --bad:#cf8a78; --bad-bg:rgba(207,138,120,.13); --info:#8ea7c4;
+  /* status tints (-bg = fill, -border = edge), pill fills and hover — one per theme block */
+  --ok-border:rgba(127,179,140,.3); --warn-border:rgba(215,177,105,.4); --bad-border:rgba(207,138,120,.35);
+  --info-bg:rgba(142,167,196,.13); --muted-bg:rgba(255,255,255,.05); --hover:rgba(255,255,255,.04);
   /* accent = blue per locked spec; text on accent = light */
   --accent:#0b5394; --accent-text:#f1f3f0;
   --font-display: var(--font-display-next), 'Space Grotesk', system-ui, sans-serif;
@@ -23,6 +26,8 @@
   --text:#16201d; --text-2:#586460; --text-3:#8a938f; --text-inv:#f6f8f7;
   --ok:#2f7d43; --ok-bg:rgba(47,125,67,.12); --warn:#8a6310; --warn-bg:rgba(138,99,16,.12);
   --bad:#b0452d; --bad-bg:rgba(176,69,45,.12); --info:#3a6ea5;
+  --ok-border:rgba(47,125,67,.28); --warn-border:rgba(138,99,16,.32); --bad-border:rgba(176,69,45,.3);
+  --info-bg:rgba(58,110,165,.12); --muted-bg:rgba(16,24,22,.05); --hover:rgba(16,24,22,.05);
   --accent:#0b5394; --accent-text:#f6f8f7;
 }
 :root[data-accent="teal"]  { --accent:#0e6b6b; }

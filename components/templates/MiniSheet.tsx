@@ -22,14 +22,14 @@ export default function MiniSheet({ fields, sel, title }: Props) {
             background: l.id === sel ? "var(--warn-bg)" : "transparent", transition: "background .2s" }}>
             <div style={{ padding: "9px 12px", fontSize: 10.5, color: "var(--text-2)", borderRight: "1px solid var(--line)", lineHeight: 1.3 }}>{l.label}:</div>
             <div className="row" style={{ padding: "9px 12px", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ height: 7, flex: 1, borderRadius: 99, background: l.id === sel ? "rgba(215,177,105,.5)" : "var(--line-2)" }} />
+              <span style={{ height: 7, flex: 1, borderRadius: 99, background: l.id === sel ? "var(--warn-border)" : "var(--line-2)" }} />
               <span className="mono" style={{ fontSize: 9, color: l.id === sel ? "var(--warn)" : "var(--text-3)" }}>{l.cell}</span>
             </div>
           </div>
         ))}
       </div>
       <div className="row gap-8 dim" style={{ justifyContent: "center", marginTop: 12, fontSize: 10.5 }}>
-        <span style={{ width: 9, height: 9, borderRadius: 2, background: "var(--warn-bg)", border: "1px solid rgba(215,177,105,.4)" }} />
+        <span style={{ width: 9, height: 9, borderRadius: 2, background: "var(--warn-bg)", border: "1px solid var(--warn-border)" }} />
         <span className="mono">{lang === "ru" ? "выбранная ячейка" : "selected cell"}</span>
       </div>
     </div>

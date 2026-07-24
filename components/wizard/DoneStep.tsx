@@ -72,7 +72,7 @@ export default function DoneStep({ onClose, templateId, values, fields, sources 
   return (
     <div className="fade-in" style={{ maxWidth: 620, margin: "0 auto", textAlign: "center", padding: "8px 0" }}>
       <div style={{ width: 68, height: 68, margin: "0 auto 22px", borderRadius: 18, display: "grid", placeItems: "center",
-        background: "var(--ok-bg)", color: "var(--ok)", border: "1px solid rgba(127,179,140,.3)" }}>
+        background: "var(--ok-bg)", color: "var(--ok)", border: "1px solid var(--ok-border)" }}>
         <Icon name="check" size={32} stroke={2.2} />
       </div>
       <h2 style={{ fontSize: 28 }}>{t("done_h")}</h2>

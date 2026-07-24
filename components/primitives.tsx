@@ -141,7 +141,7 @@ export function StatusDot({ status }: { status: StatusKey }) {
   const { lang } = useI18n();
   const s = STATUS[status];
   const toneColor = { ok: "var(--ok)", warn: "var(--warn)", info: "var(--info)", bad: "var(--bad)", muted: "var(--text-3)" }[s.tone];
-  const toneBg = { ok: "var(--ok-bg)", warn: "var(--warn-bg)", info: "rgba(142,167,196,.13)", bad: "var(--bad-bg)", muted: "rgba(255,255,255,.05)" }[s.tone];
+  const toneBg = { ok: "var(--ok-bg)", warn: "var(--warn-bg)", info: "var(--info-bg)", bad: "var(--bad-bg)", muted: "var(--muted-bg)" }[s.tone];
   const spinning = status === "processing";
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 25, padding: "0 10px 0 8px",

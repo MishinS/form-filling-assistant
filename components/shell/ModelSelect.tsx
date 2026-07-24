@@ -43,7 +43,7 @@ export default function ModelSelect() {
       <button key={m.id} onClick={() => { setModel(m.id); setOpen(false); }}
         className="row gap-10" style={{ width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: "var(--r-sm)",
           background: on ? "var(--surface-2)" : "transparent", transition: "background .12s" }}
-        onMouseEnter={e => { if (!on) e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
+        onMouseEnter={e => { if (!on) e.currentTarget.style.background = "var(--hover)"; }}
         onMouseLeave={e => { if (!on) e.currentTarget.style.background = "transparent"; }}>
         <Icon name="bolt" size={13} style={{ color: on ? "var(--text)" : "var(--text-3)", marginTop: 2 }} />
         <div className="grow" style={{ minWidth: 0 }}>
