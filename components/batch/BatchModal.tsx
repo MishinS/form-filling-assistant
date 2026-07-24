@@ -170,7 +170,7 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
 
       <div className="row" style={{ justifyContent: "space-between", alignItems: "center", padding: "16px 24px", borderTop: "1px solid var(--line)", background: "var(--surface-1)" }}>
         <span className="muted" style={{ fontSize: 12.5 }}>
-          {doneItems ? `${t("batch_summary")}: ${okCount}/${doneItems.length}` : running ? t("batch_running") : `${files.length} ${t("files_added")}`}
+          {doneItems ? `${t("batch_summary")}: ${okCount}/${doneItems.length}` : running ? t("batch_running") : `${t("files_count")}: ${files.length}`}
         </span>
         {doneItems
           ? <Btn variant="primary" size="md" icon="download" disabled={okCount === 0} onClick={download}>{t("batch_download_all")}</Btn>

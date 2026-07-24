@@ -69,7 +69,7 @@ export default function Dropzone({ files, onPick, onRemove }: Props) {
                 <div className="grow" style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</div>
                   <div className="mono dim" style={{ fontSize: 11 }}>
-                    {f.size}{f.pages ? ` · ${f.pages} стр.` : ""}{f.scanned ? " · скан" : ""}
+                    {f.size}{f.pages ? ` · ${f.pages} ${t("pages_short")}` : ""}{f.scanned ? ` · ${t("scanned_short")}` : ""}
                   </div>
                 </div>
                 {f.status === "uploading" && (
@@ -77,7 +77,7 @@ export default function Dropzone({ files, onPick, onRemove }: Props) {
                 )}
                 {f.status === "ok" && (
                   <div className="row gap-6" style={{ color: "var(--ok)" }}>
-                    <Icon name="checkc" size={15} /><span style={{ fontSize: 11.5, fontWeight: 600 }}>OK</span>
+                    <Icon name="checkc" size={15} /><span style={{ fontSize: 11.5, fontWeight: 600 }}>{t("upload_ok")}</span>
                   </div>
                 )}
                 {f.status === "error" && (

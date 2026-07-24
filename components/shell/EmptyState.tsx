@@ -4,10 +4,10 @@ import { Icon } from "@/components/primitives";
 import SettingsCog from "./SettingsCog";
 
 export default function EmptyState({ kind }: { kind: "sources" | "settings" }) {
-  const { lang } = useI18n();
+  const { t } = useI18n();
   const map = {
-    sources: { icon: "file", h: lang === "ru" ? "Источники" : "Sources", s: lang === "ru" ? "Архив загруженных счетов, договоров и КП." : "Archive of uploaded invoices, contracts and quotes." },
-    settings: { icon: "", h: lang === "ru" ? "Настройки" : "Settings", s: lang === "ru" ? "Профиль, команда, интеграции и модель извлечения." : "Profile, team, integrations and extraction model." },
+    sources: { icon: "file", h: t("nav_sources"), s: t("sources_empty_sub") },
+    settings: { icon: "", h: t("nav_settings"), s: t("settings_subtitle") },
   }[kind];
   return (
     <div className="col" style={{ alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-3)", gap: 16 }}>

@@ -58,7 +58,7 @@ export default function ModelSelect() {
             border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>{t("cm_your_key")}</span>
         ) : isPaidModel(m.id) ? (
           <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--text-2)", background: "var(--surface-hi)",
-            border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>платная</span>
+            border: "1px solid var(--line-2)", borderRadius: 99, padding: "2px 7px", flex: "none" }}>{t("paid_model")}</span>
         ) : (
           <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--ok)", background: "var(--ok-bg)",
             borderRadius: 99, padding: "2px 7px", flex: "none" }}>free</span>

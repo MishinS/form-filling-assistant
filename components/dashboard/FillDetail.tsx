@@ -38,7 +38,7 @@ export default function FillDetail({ data }: { data: FillDetail }) {
               <FileGlyph type={(s.name.split(".").pop() ?? "file")} size={30} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 13.5 }}>{s.name}</div>
-                <div className="mono dim" style={{ fontSize: 11 }}>{s.size} · {s.pages} стр.</div>
+                <div className="mono dim" style={{ fontSize: 11 }}>{s.size} · {s.pages} {t("pages_short")}</div>
               </div>
             </div>
           ))}

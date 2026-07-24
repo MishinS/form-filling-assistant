@@ -2,14 +2,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FileGlyph, StatusDot, Icon } from "@/components/primitives";
+import { useI18n } from "@/lib/i18n";
+import { pluralForm } from "@/lib/plural";
 import type { StatusKey } from "@/lib/seed/pt";
 import type { HistoryRowData } from "@/lib/db/map";
 
 type Props = { r: HistoryRowData; tplName: (id: string) => string; dateText: string; last: boolean };
 
 export default function RecentRow({ r, tplName, dateText, last }: Props) {
+  const { t, lang } = useI18n();
   const [h, setH] = useState(false);
-  const ext = (r.primaryFile ?? "файл").split(".").pop()!;
+  // Unknown extensions fall through to the FILE glyph, so the placeholder is never rendered.
+  const ext = (r.primaryFile ?? "file").split(".").pop()!;
   const fileLabel = r.primaryFile ?? "—";
   return (
     <Link href={`/fills/${r.id}`} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
@@ -21,7 +25,7 @@ export default function RecentRow({ r, tplName, dateText, last }: Props) {
         <FileGlyph type={ext} size={30} />
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 13.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{fileLabel}</div>
-          <div className="mono dim" style={{ fontSize: 11 }}>{r.fileCount} {r.fileCount === 1 ? "файл" : "файла"}</div>
+          <div className="mono dim" style={{ fontSize: 11 }}>{r.fileCount} {t(`files_${pluralForm(r.fileCount, lang)}`)}</div>
         </div>
       </div>
       <div className="muted" style={{ fontSize: 13 }}>{tplName(r.templateId)}</div>
