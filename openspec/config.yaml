@@ -1,0 +1,33 @@
+schema: spec-driven
+
+context: |
+  Form-Filling Assistant — web + desktop app: upload invoices/contracts/quotes,
+  extract fields with LLMs, fill an XLSX/PDF template, export. RU/EN bilingual
+  (all user-facing strings go through lib/i18n.tsx; user-facing errors in Russian).
+
+  Tech stack: Next.js 14 App Router + TypeScript + Tailwind; Drizzle ORM on Neon
+  (serverless HTTP driver); NextAuth v5 beta (credentials, Edge/Node split in
+  auth.config.ts vs auth.ts); Vercel Blob for files; Tauri 2 desktop shell
+  (src-tauri/) that remote-loads the Vercel deployment and bridges local LLMs
+  (Ollama / LM Studio). LLM stack: OpenRouter parallel race + Gemini + BYOK
+  custom models (AES-256-GCM key storage). NDJSON streaming protocol is shared
+  between server extraction and the desktop local-model path.
+
+  Conventions: logic lives in pure lib/ modules with discriminated-union error
+  results; React components stay thin (no React rendering tests — logic is
+  extracted to -core/-view modules and covered by co-located Vitest *.test.ts).
+  Guard-first, self-guarding API routes (middleware excludes /api). "Never 500
+  the app" degradation contract. No console logging in production code.
+  Conventional commits (feat/fix/chore with scope).
+
+  Process: OpenSpec owns the artifact layer (specs = current truth, changes =
+  deltas). Execution discipline (brainstorming, TDD, subagent-driven
+  implementation, code review) follows the Superpowers methodology already used
+  in this repo; historical design docs live in ../docs/superpowers/, codebase
+  maps in .planning/codebase/.
+
+rules:
+  proposal:
+    - Always include a "Non-goals" section
+  tasks:
+    - Each task must name the test that proves it (Vitest file or manual check)

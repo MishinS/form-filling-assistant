@@ -27,6 +27,7 @@
     "unpdf": "^1.6.2"
   },
   "devDependencies": {
+    "@fission-ai/openspec": "^1.6.0",
     "@tauri-apps/cli": "^2.11.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
