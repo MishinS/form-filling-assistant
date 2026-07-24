@@ -29,6 +29,7 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
   const [running, setRunning] = useState(false);
   const [items, setItems] = useState<BatchItem[]>([]);
   const [doneItems, setDoneItems] = useState<BatchItem[] | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const fields = tpl === "pt" ? ptFields : customFields[tpl] ?? [];
 
@@ -63,6 +64,7 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
   const run = async () => {
     setRunning(true);
     setDoneItems(null);
+    setSaved(false);
     const runOne = makeRunOne({ templateId: tpl, fields, model });
     const picked = files.map((f) => rawFiles[f.fileId]).filter(Boolean);
     const result = await runBatch(picked, runOne, setItems);
@@ -85,6 +87,16 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
     }
+    setSaved(true);
+  };
+
+  // Protect batch results from accidental loss: never dismiss a running batch,
+  // and confirm before discarding finished-but-unsaved results.
+  const requestClose = () => {
+    if (running) return;
+    const hasUnsaved = !saved && (doneItems ?? []).some((i) => i.status === "done" && i.bytes);
+    if (hasUnsaved && !window.confirm(t("batch_discard_confirm"))) return;
+    onClose();
   };
 
   const progress = items.length ? items : files.map((f) => ({ fileId: f.fileId, name: f.name, status: "pending" as const }));
@@ -99,7 +111,7 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
           <span style={{ fontWeight: 600 }}>{t("batch_title")}</span>
           <span className="mono dim" style={{ fontSize: 10.5 }}>{curTpl ? (lang === "ru" ? curTpl.name_ru : curTpl.name_en) : ""}</span>
         </div>
-        <button onClick={onClose} className="muted" style={{ width: 34, height: 34, borderRadius: 9, display: "grid", placeItems: "center", border: "1px solid var(--line-2)" }}><Icon name="x" size={15} /></button>
+        <button onClick={requestClose} className="muted" style={{ width: 34, height: 34, borderRadius: 9, display: "grid", placeItems: "center", border: "1px solid var(--line-2)" }}><Icon name="x" size={15} /></button>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
@@ -135,7 +147,7 @@ export function BatchModal({ onClose }: { onClose: () => void }) {
   );
 
   return (
-    <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(6,9,8,.72)", backdropFilter: "blur(8px)", display: "grid", placeItems: "center", padding: 20 }} onClick={onClose}>
+    <div className="fade-in" style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(6,9,8,.72)", backdropFilter: "blur(8px)", display: "grid", placeItems: "center", padding: 20 }} onClick={requestClose}>
       <div onClick={(e) => e.stopPropagation()}>{card}</div>
     </div>
   );

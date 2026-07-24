@@ -11,13 +11,15 @@ function baseName(name: string): string {
  * colliding bases get a ` (n)` suffix so no entry overwrites another.
  */
 export function zipOutputs(entries: { name: string; bytes: Uint8Array }[]): Uint8Array {
-  const used = new Map<string, number>();
+  const used = new Set<string>();
   const files: Record<string, Uint8Array> = {};
   for (const e of entries) {
     const base = baseName(e.name);
-    const seen = used.get(base) ?? 0;
-    used.set(base, seen + 1);
-    const fname = seen === 0 ? `${base}.xlsx` : `${base} (${seen + 1}).xlsx`;
+    // Dedup on the FINAL entry name, not the base: a source named like a
+    // previously generated suffix (e.g. "report (2)") must not overwrite it.
+    let fname = `${base}.xlsx`;
+    for (let n = 2; used.has(fname); n++) fname = `${base} (${n}).xlsx`;
+    used.add(fname);
     files[fname] = e.bytes;
   }
   return zipSync(files);

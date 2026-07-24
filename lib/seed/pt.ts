@@ -78,6 +78,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   batch_failed:       { ru: "Ошибка", en: "Failed" },
   batch_summary:      { ru: "Готово", en: "Completed" },
   batch_download_all: { ru: "Скачать всё (.zip)", en: "Download all (.zip)" },
+  batch_discard_confirm: { ru: "Закрыть без сохранения? Результаты пакета будут потеряны.", en: "Close without saving? The batch results will be lost." },
   home_reload:     { ru: "На главную (обновить)", en: "Home (refresh)" },
   dash_eyebrow:    { ru: "Рабочая область", en: "Workspace" },
   dash_h1a:        { ru: "Заполняйте документы", en: "Fill documents" },
