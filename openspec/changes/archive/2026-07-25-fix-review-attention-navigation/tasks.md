@@ -78,8 +78,9 @@ Added after UAT: a correctly filled «Срок оплаты» stayed red permane
 
 ## 6. Verification
 
-- [ ] 6.1 Manual UAT in the running app (needs a live session with a document
-  whose extraction leaves low-confidence or unreturned fields):
+- [x] 6.1 Manual UAT in the running app — performed 2026-07-25 against a local dev
+  server with real documents whose extraction left low-confidence and unreturned
+  fields. All checks below passed:
   (a) fill a hand-entered field → the tint clears and the counter decreases;
   (b) press Enter on a low-confidence field without editing → same;
   (c) clear a required field afterwards → it is flagged again;
