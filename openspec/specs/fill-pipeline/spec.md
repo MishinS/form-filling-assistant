@@ -110,6 +110,17 @@ already writes an unparseable date value verbatim rather than rejecting it.
 The needs-attention count, the count of empty required fields, and the next-field
 control SHALL remain visible while the field list scrolls.
 
+A row flagged `invalid` SHALL state the cause in text beside the field, in the
+active locale, distinguishing an unparseable amount from an impossible calendar
+date. The cause SHALL be derived from the same evaluation that produces the
+`invalid` flag, so a flagged row always carries a cause and an unflagged row never
+shows one. Rows flagged `required` or `low` SHALL NOT show this text.
+
+Invalidity SHALL NOT be conveyed by colour alone: the control SHALL expose
+`aria-invalid` when flagged, the cause text SHALL be reachable from the control
+through `aria-describedby`, and every review control SHALL be associated with its
+visible label.
+
 #### Scenario: Low-confidence value
 - **WHEN** an extracted value has low confidence or fails advisory validation
 - **THEN** the row is tinted/flagged as needs-attention but the user can still proceed
@@ -133,6 +144,26 @@ control SHALL remain visible while the field list scrolls.
 #### Scenario: Impossible calendar date is still flagged
 - **WHEN** the user enters "31.02.2026" into a `date`-kind field
 - **THEN** the row is flagged `invalid`, and reviewing the row does not clear it
+
+#### Scenario: An invalid amount says why
+- **WHEN** the user enters "12ab" into an `amount`-kind field
+- **THEN** the row shows the amount-specific cause beneath the field, distinct from
+  the date message, and the fill is still allowed to proceed
+
+#### Scenario: An invalid date says why
+- **WHEN** the user enters "31.02.2026" into a `date`-kind field
+- **THEN** the row shows the date-specific cause beneath the field
+
+#### Scenario: A valid value shows no cause
+- **WHEN** a field holds a valid value, an empty value, or a value of a kind that
+  is not validated
+- **THEN** no cause text is shown for that row
+
+#### Scenario: Invalidity is perceivable without colour
+- **WHEN** a row is flagged `invalid`
+- **THEN** its control reports `aria-invalid` and references the cause text through
+  `aria-describedby`, so assistive technology announces both the state and the
+  reason
 
 #### Scenario: Status and navigation stay reachable
 - **WHEN** the user scrolls down a long field list on the Review step
