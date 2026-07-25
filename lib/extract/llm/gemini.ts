@@ -42,9 +42,11 @@ export function geminiModel(modelName: string): ExtractionModel {
         },
       };
 
-      const res = await fetch(`${ENDPOINT}/${modelName}:generateContent?key=${key}`, {
+      // Key goes in the header, never the query string — a URL-borne key leaks
+      // into proxy, CDN, and server access logs.
+      const res = await fetch(`${ENDPOINT}/${modelName}:generateContent`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);

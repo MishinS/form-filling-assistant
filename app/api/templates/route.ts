@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isGuest } from "@/lib/auth/guard";
-import { isOwnBlobUrl } from "@/lib/upload/avatar";
+import { isOwnBlobUrl } from "@/lib/upload/blob-url";
 import { createTemplate } from "@/lib/db/templates";
 import { saveMapping } from "@/lib/db/mappings";
 import { workbookSheets, sheetTexts } from "@/lib/templates/xlsx-scan";

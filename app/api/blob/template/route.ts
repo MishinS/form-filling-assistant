@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { requireFullUser } from "@/lib/auth/guard";
 import { MIME } from "@/lib/parse/types";
 import { del } from "@vercel/blob";
-import { isOwnBlobUrl } from "@/lib/upload/avatar";
+import { isOwnBlobUrl } from "@/lib/upload/blob-url";
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 

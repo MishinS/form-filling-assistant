@@ -16,6 +16,9 @@ import { del } from "@vercel/blob";
 const delMock = del as unknown as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
+  // The origin guard pins the store host to the write credential, so the
+  // fixture URLs below are only "ours" while this token names their store.
+  vi.stubEnv("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_store123_secretpart");
   global.fetch = vi.fn(async () => new Response(new Uint8Array([1, 2, 3]))) as unknown as typeof fetch;
 });
 

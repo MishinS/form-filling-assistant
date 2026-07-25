@@ -36,6 +36,9 @@ const terminal = (evs: Record<string, unknown>[]) => evs[evs.length - 1];
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // The origin guard pins the store host to the write credential; this token
+  // names the store the fixture URLs live on.
+  vi.stubEnv("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_abc_secretpart");
   mockAuth.mockResolvedValue({ user: { email: "u@x.ru" } });
   mockPropose.mockResolvedValue({ fields: [], failure: "llm" });
   vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, arrayBuffer: async () => xlsxBytes().buffer }) as unknown as Response));

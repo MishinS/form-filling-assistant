@@ -21,6 +21,9 @@ const OLD_URL = "https://abc.public.blob.vercel-storage.com/avatar-0.png";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // The origin guard pins the store host to the write credential; this token
+  // names the store the fixture URLs live on.
+  vi.stubEnv("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_abc_secretpart");
   mockAuth.mockResolvedValue({ user: { email: "u@x.ru" } });
   mockGetAvatar.mockResolvedValue(null);
   mockDel.mockResolvedValue(undefined);

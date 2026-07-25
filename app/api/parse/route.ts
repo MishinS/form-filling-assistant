@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isGuest, unauthorized } from "@/lib/auth/guard";
 import { del } from "@vercel/blob";
-import { isOwnBlobUrl } from "@/lib/upload/avatar";
+import { isOwnBlobUrl } from "@/lib/upload/blob-url";
 import { parseDocument } from "@/lib/parse";
 import type { ParsedDoc } from "@/lib/parse/types";
 

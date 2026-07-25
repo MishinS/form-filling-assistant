@@ -3,7 +3,7 @@ import { del } from "@vercel/blob";
 import { auth } from "@/auth";
 import { isGuest } from "@/lib/auth/guard";
 import { getAvatar, setAvatar, deleteAvatar } from "@/lib/db/avatars";
-import { isOwnBlobUrl } from "@/lib/upload/avatar";
+import { isOwnBlobUrl } from "@/lib/upload/blob-url";
 
 export const runtime = "nodejs"; // DB access
 
