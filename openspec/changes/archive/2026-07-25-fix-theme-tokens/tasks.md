@@ -51,6 +51,7 @@
   `--bad`) and `MiniSheet.tsx:25` (`.5` → the `.4` `--warn-border` tint).
   **Test:** diff reviewed against the design table.
 - [x] 4.3 `npx openspec validate --strict fix-theme-tokens` → valid.
-- [ ] 4.4 Manual visual check in the light theme (not performed — needs the running
-  app): review screen warn/bad borders, template MiniSheet marker, DoneStep success
-  ring, StatusDot info/muted pills, and sidebar + model-menu hover.
+- [x] 4.4 Manual visual check in the light theme — performed 2026-07-25 against a
+  local dev server: review screen warn/bad borders, template MiniSheet marker,
+  DoneStep success ring, StatusDot info/muted pills, and sidebar + model-menu
+  hover all inspected by eye in the light theme. No discrepancies found.

@@ -56,7 +56,7 @@
 - [x] 5.2 Confirm no key regressed: `lib/i18n.test.ts` asserts all 11 keys used by
   the touched components resolve in both locales (never returning the key itself).
 - [x] 5.3 `npx openspec validate --strict fix-i18n-leaks` → valid.
-- [ ] 5.4 Manual check in the running app (not performed — needs a live session):
-  switch to English and walk dashboard → wizard → batch → settings looking for
-  Russian; switch to Russian and check the theme toggle's tooltip and the batch
-  footer count.
+- [x] 5.4 Manual check in the running app — performed 2026-07-25 against a local
+  dev server: walked dashboard → wizard → batch → settings in the English locale
+  with no Russian surfacing, then switched back to Russian and confirmed the theme
+  toggle's tooltip and the batch footer count.

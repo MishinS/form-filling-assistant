@@ -65,12 +65,22 @@
   pass; `npx tsc --noEmit` exits 0; `npm run lint` reports 0 errors (2 pre-existing
   `<img>` warnings in `ProfileCard`/`Sidebar`, untouched by this change).
 - [x] 5.3 `npx openspec validate --strict fix-batch-robustness` → valid.
-- [ ] 5.4 Manual UAT in the running app (not performed — needs a live session with
-  templates and source files):
-  (a) force `/api/fill` to fail → the row shows the localized message with the
-  status and no response body; switch language → the message follows;
-  (b) desktop: point the download dir at an unwritable path → error toast, and a
-  subsequent backdrop click still asks for the discard confirmation;
-  (c) make `/api/mappings` fail → the field-load hint appears instead of a silently
-  disabled Run; re-selecting the template after recovery loads fields and enables Run;
-  (d) remove a file before Run → the batch still runs with the remaining files.
+- [x] 5.4 Manual UAT in the running app — performed 2026-07-25 against a local dev
+  server with a real account, real source documents, and a purpose-built custom
+  template:
+  (a) `/api/fill` forced to 503 with an HTML "proxy error page" body → the row showed
+  the localized message with `(503)` and none of the response body. **Passed.**
+  (b) desktop: `npm run tauri dev` with the download dir pointed at a `dr-xr-xr-x`
+  directory → error toast, and the subsequent backdrop click still asked for the
+  discard confirmation. **Passed.**
+  (c) `GET /api/mappings` forced to 500 → the field-load hint appeared under the
+  template picker instead of a silently disabled Run; after restoring the route,
+  re-selecting the template loaded fields and enabled Run. **Passed.** Note: this
+  path is only reachable with a *custom* template — for `id === "pt"` the modal
+  never calls `/api/mappings` (fields arrive from `AppShell` as `initialFields`),
+  so a test template was created for the run.
+  (d) file removed before Run → the batch ran with the remaining files. **Passed.**
+
+  Not separately confirmed, and deliberately not claimed: that the (a) and (c)
+  messages follow a language switch. The underlying keys are covered by
+  `lib/i18n.test.ts`, but no one watched them re-render mid-UAT.

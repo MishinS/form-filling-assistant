@@ -42,6 +42,14 @@
   `lib/batch/run-one.ts` passes the same value. `uploadToBlob` returns the
   `@vercel/blob` upload result URL, which is a store URL. **Test:** call sites read.
 - [x] 4.3 `npx openspec validate --strict fix-parse-ssrf` → valid.
-- [ ] 4.4 Manual check against a deployment (not performed — no deployment in this
-  session): a request with a foreign URL returns `400`, and the normal wizard +
-  batch flows still parse.
+- [x] 4.4 Manual check — performed 2026-07-25 against a local dev server rather
+  than a deployment, which exercises the same route code. Negative half: nine
+  hostile URL shapes were driven through a real guest session — cloud-metadata
+  endpoint, internal https host, `file:`, `http:` on the blob host, the lookalike
+  registrable domain `…vercel-storage.com.evil.tld`, the bare apex without a store
+  subdomain, credentials in the authority (`…@evil.tld`), a missing `url`, and a
+  mixed array pairing a valid store URL with a foreign one — all rejected `400`;
+  an empty array still returned `200`. Additionally a listener on
+  `127.0.0.1:9911` received **no connection** for a request naming that URL,
+  proving the guard rejects before any fetch. Positive half: the normal wizard and
+  batch flows parsed real documents throughout the wider UAT session.
