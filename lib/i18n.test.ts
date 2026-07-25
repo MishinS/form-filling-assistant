@@ -20,6 +20,18 @@ describe("translate", () => {
     expect(translate("settings_subtitle", "ru")).not.toMatch(/команд|интеграц/);
   });
 
+  it("has an invalid-value message per reason (ru + en)", () => {
+    // FieldRow composes `review_invalid_${reason}` from the InvalidReason union in
+    // lib/review/validate.ts. Every member needs a key in both locales, or the row
+    // would render the key itself as its explanation.
+    for (const reason of ["amount", "date"] as const) {
+      for (const lang of ["ru", "en"] as const) {
+        const key = `review_invalid_${reason}`;
+        expect(translate(key, lang), `${key}/${lang} unresolved`).not.toBe(key);
+      }
+    }
+  });
+
   it("has guest wizard presentation keys (ru + en)", () => {
     expect(translate("guest_hero_h", "ru")).toBe("Заполните документ за минуту");
     expect(translate("guest_hero_h", "en")).toBe("Fill a document in a minute");

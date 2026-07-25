@@ -173,6 +173,10 @@ export const STR: Record<string, { ru: string; en: string }> = {
   review_warn:     { ru: "Часть данных не извлечена автоматически — заполните эти поля вручную:", en: "Some data wasn't extracted automatically — fill these fields manually:" },
   review_required_h: { ru: "Заполните обязательные поля:", en: "Fill in the required fields:" },
   review_required_n: { ru: "Не заполнено", en: "Missing" },
+  // Keyed `review_invalid_<reason>` — FieldRow composes the key from the InvalidReason
+  // token returned by lib/review/validate.ts. Renaming a reason means renaming a key.
+  review_invalid_amount: { ru: "Не похоже на сумму — введите число, например 1 200,50", en: "Doesn't look like an amount — enter a number, e.g. 1,200.50" },
+  review_invalid_date:   { ru: "Такой даты не существует — проверьте день и месяц", en: "No such date — check the day and month" },
   back:            { ru: "Назад",   en: "Back" },
   confirm_fill:    { ru: "Подтвердить и заполнить", en: "Confirm & fill" },
   done_h:          { ru: "Документ готов", en: "Your document is ready" },

@@ -1,8 +1,19 @@
-/** Is `value` acceptable for a field of this kind? Advisory only. Empty is always valid
- *  (the required check owns emptiness); only `amount` and `date` are validated. */
-export function isValidValue(kind: string, value: string): boolean {
+/** Which rule a value fails. One reason per validated kind — the Review step turns it
+ *  into the message shown beneath the field (`review_invalid_<reason>`). */
+export type InvalidReason = "amount" | "date";
+
+/**
+ * Why `value` is unacceptable for a field of this kind, or null when it is fine.
+ * Advisory only — nothing blocks on it. Empty is always acceptable (the required
+ * check owns emptiness); only `amount` and `date` are validated.
+ *
+ * This is the single source of truth: `isValidValue` is derived from it, so the
+ * Review step cannot flag a row it has no reason for, or hold a reason for a row it
+ * did not flag.
+ */
+export function invalidReason(kind: string, value: string): InvalidReason | null {
   const v = value.trim();
-  if (v === "") return true;
+  if (v === "") return null;
 
   if (kind === "amount") {
     // Drop spaces (incl. NBSP) and a single currency symbol/word; treat comma as a decimal sep.
@@ -11,7 +22,7 @@ export function isValidValue(kind: string, value: string): boolean {
       .replace(/[₽$€]/g, "")
       .replace(/руб\.?/gi, "")
       .replace(/,/g, ".");
-    return /^-?\d+(\.\d+)?$/.test(cleaned);
+    return /^-?\d+(\.\d+)?$/.test(cleaned) ? null : "amount";
   }
 
   // Judge only values that are *attempting* a numeric calendar date, so a typo like
@@ -19,9 +30,14 @@ export function isValidValue(kind: string, value: string): boolean {
   // дней", "по факту поставки") — legitimate content for «Срок оплаты», and the fill
   // layer already writes unparseable date values verbatim (lib/fill/values.ts), so
   // flagging it here would contradict what the app actually does with the value.
-  if (kind === "date") return looksLikeCalendarDate(v) ? isRealDate(v) : true;
+  if (kind === "date") return looksLikeCalendarDate(v) && !isRealDate(v) ? "date" : null;
 
-  return true;
+  return null;
+}
+
+/** Is `value` acceptable for a field of this kind? Derived — see `invalidReason`. */
+export function isValidValue(kind: string, value: string): boolean {
+  return invalidReason(kind, value) === null;
 }
 
 /** Does this look like an attempt at a numeric date, whether or not it is a real one? */

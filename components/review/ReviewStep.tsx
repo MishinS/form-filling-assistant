@@ -6,6 +6,7 @@ import { PT_FIELDS, PT_GROUPS, type ExtractField } from "@/lib/extract/fields";
 import { FIELDS as SEED_FIELDS, type PtField } from "@/lib/seed/pt";
 import { buildRows, missingRequired } from "@/lib/review/rows";
 import { attentionOf, nextAttentionIndex, type Attention } from "@/lib/review/attention";
+import { invalidReason, type InvalidReason } from "@/lib/review/validate";
 import type { ExtractedValue } from "@/lib/types";
 import type { ParsedDoc } from "@/lib/parse/types";
 import FieldRow from "./FieldRow";
@@ -46,6 +47,13 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
       const ef = fieldById.get(f.id);
       return [f.id, attentionOf({ kind: ef?.kind ?? "string", required: ef?.required ?? false, conf: f.conf, value: vals[f.id] ?? "", reviewed: reviewed.has(f.id) })];
     }),
+  );
+  // Why a row is invalid, recorded in the same walk. This is the only place holding
+  // both the field kind and the live value — `PtField` carries no kind, so the row
+  // cannot work it out itself. Same source as the flag (`isValidValue` derives from
+  // `invalidReason`), so a flag without a reason is not representable.
+  const reasonById = new Map<string, InvalidReason | null>(
+    ordered.map(f => [f.id, invalidReason(fieldById.get(f.id)?.kind ?? "string", vals[f.id] ?? "")]),
   );
   const attentionCount = Array.from(attnById.values()).filter(a => a !== null).length;
 
@@ -135,6 +143,7 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
                 <FieldRow key={f.id} f={f} val={vals[f.id]} onChange={v => { markReviewed(f.id); setVals(s => ({ ...s, [f.id]: v })); }}
                   confLabel={confLabel} hover={hover} setHover={setHover} last={i === fieldsInGroup.length - 1}
                   attention={attnById.get(f.id) ?? null}
+                  reason={reasonById.get(f.id) ?? null}
                   onEnter={() => { markReviewed(f.id); focusNext(f.id); }}
                   onFocusField={() => { cursorId.current = f.id; }}
                   registerRef={(el) => { if (el) inputRefs.current.set(f.id, el); else inputRefs.current.delete(f.id); }} />

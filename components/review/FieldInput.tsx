@@ -5,12 +5,14 @@ import type { PtField } from "@/lib/seed/pt";
 type Props = {
   f: PtField; val: string; onChange: (v: string) => void;
   invalid?: boolean;
+  id?: string;
+  describedBy?: string;
   onEnter?: () => void;
   onFocusField?: () => void;
   inputRef?: (el: HTMLInputElement | HTMLTextAreaElement | null) => void;
 };
 
-export default function FieldInput({ f, val, onChange, invalid = false, onEnter, onFocusField, inputRef }: Props) {
+export default function FieldInput({ f, val, onChange, invalid = false, id, describedBy, onEnter, onFocusField, inputRef }: Props) {
   const [focus, setFocus] = useState(false);
   const border = invalid ? "var(--bad)" : focus ? "var(--line-strong)" : "transparent";
   const style: CSSProperties = {
@@ -20,10 +22,15 @@ export default function FieldInput({ f, val, onChange, invalid = false, onEnter,
     fontFamily: f.unit ? "var(--font-mono)" : "var(--font-sans)",
   };
   const common = {
+    id,
     value: val,
     onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(e.target.value),
     onFocus: () => { setFocus(true); onFocusField?.(); },
     onBlur: () => setFocus(false),
+    // The red border alone cannot carry the state — announce it, and point at the
+    // message explaining why (rendered by FieldRow) when there is one.
+    "aria-invalid": invalid || undefined,
+    "aria-describedby": describedBy,
   };
   return (
     <div className="row gap-8" style={{ alignItems: "flex-start" }}>
