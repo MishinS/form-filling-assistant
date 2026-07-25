@@ -14,9 +14,19 @@ export function isValidValue(kind: string, value: string): boolean {
     return /^-?\d+(\.\d+)?$/.test(cleaned);
   }
 
-  if (kind === "date") return isRealDate(v);
+  // Judge only values that are *attempting* a numeric calendar date, so a typo like
+  // 31.02.2026 is still caught. Anything else is free-form term text ("14 календарных
+  // дней", "по факту поставки") — legitimate content for «Срок оплаты», and the fill
+  // layer already writes unparseable date values verbatim (lib/fill/values.ts), so
+  // flagging it here would contradict what the app actually does with the value.
+  if (kind === "date") return looksLikeCalendarDate(v) ? isRealDate(v) : true;
 
   return true;
+}
+
+/** Does this look like an attempt at a numeric date, whether or not it is a real one? */
+function looksLikeCalendarDate(v: string): boolean {
+  return /^\d{1,4}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,4}$/.test(v);
 }
 
 /** Accept dd.mm.yyyy, dd/mm/yyyy, or yyyy-mm-dd and verify it is a real calendar date. */

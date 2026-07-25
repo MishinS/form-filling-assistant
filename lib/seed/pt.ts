@@ -172,6 +172,7 @@ export const STR: Record<string, { ru: string; en: string }> = {
   review_next:     { ru: "К следующему →", en: "Next →" },
   review_warn:     { ru: "Часть данных не извлечена автоматически — заполните эти поля вручную:", en: "Some data wasn't extracted automatically — fill these fields manually:" },
   review_required_h: { ru: "Заполните обязательные поля:", en: "Fill in the required fields:" },
+  review_required_n: { ru: "Не заполнено", en: "Missing" },
   back:            { ru: "Назад",   en: "Back" },
   confirm_fill:    { ru: "Подтвердить и заполнить", en: "Confirm & fill" },
   done_h:          { ru: "Документ готов", en: "Your document is ready" },

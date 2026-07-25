@@ -18,6 +18,15 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
   const [vals, setVals] = useState<Record<string, string>>(() => Object.fromEntries(rows.map(f => [f.id, f.value])));
   const [hover, setHover] = useState<string | null>(null);
   const inputRefs = useRef<Map<string, HTMLInputElement | HTMLTextAreaElement>>(new Map());
+  // Rows the user has dealt with — edited, or confirmed with Enter. Suppresses the
+  // `low` flag only (see attentionOf); ephemeral, never leaves this step.
+  const [reviewed, setReviewed] = useState<ReadonlySet<string>>(() => new Set());
+  const markReviewed = (id: string) => setReviewed(s => s.has(id) ? s : new Set(s).add(id));
+  // Where the user last was. Updated by every focus — click, Tab, and our own
+  // .focus() below — so navigation continues from there instead of restarting at
+  // the first flagged row. Survives focus moving to the button, which is why this
+  // is a ref and not a read of document.activeElement at click time.
+  const cursorId = useRef<string | null>(null);
 
   useEffect(() => {
     onChange?.(rows.map(r => ({
@@ -35,13 +44,15 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
   const attnById = new Map<string, Attention>(
     ordered.map(f => {
       const ef = fieldById.get(f.id);
-      return [f.id, attentionOf({ kind: ef?.kind ?? "string", required: ef?.required ?? false, conf: f.conf, value: vals[f.id] ?? "" })];
+      return [f.id, attentionOf({ kind: ef?.kind ?? "string", required: ef?.required ?? false, conf: f.conf, value: vals[f.id] ?? "", reviewed: reviewed.has(f.id) })];
     }),
   );
   const attentionCount = Array.from(attnById.values()).filter(a => a !== null).length;
 
-  const focusNext = (fromId: string | null) => {
-    const from = fromId === null ? -1 : ordered.findIndex(f => f.id === fromId);
+  // No argument means "step from the cursor"; an explicit id steps from that row.
+  const focusNext = (fromId: string | null = null) => {
+    const id = fromId ?? cursorId.current;
+    const from = id === null ? -1 : ordered.findIndex(f => f.id === id);
     const ni = nextAttentionIndex(ordered.map(f => ({ attention: attnById.get(f.id) ?? null })), from);
     if (ni >= 0) inputRefs.current.get(ordered[ni].id)?.focus();
   };
@@ -51,22 +62,38 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
 
   return (
     <div className="fade-in" style={{ maxWidth: 920, margin: "0 auto" }}>
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start", gap: 20, marginBottom: 6 }}>
-        <div>
-          <h2 style={{ fontSize: 22 }}>{t("review_h")}</h2>
-          <p className="muted" style={{ fontSize: 13.5, marginTop: 8, maxWidth: 560 }}>{t("review_sub")}</p>
-        </div>
-        {attentionCount > 0 && (
-          <div className="row gap-8" style={{ flex: "none", alignItems: "center" }}>
-            <Tag tone="line" style={{ height: 28, color: "var(--warn)", borderColor: "var(--warn-border)" }}>
-              <Icon name="alert" size={12} />{attentionCount} {t("needs_check")}
-            </Tag>
-            <button type="button" onClick={() => focusNext(null)} className="mono"
-              style={{ height: 28, padding: "0 12px", borderRadius: "var(--pill)", fontSize: 11.5, fontWeight: 600,
-                border: "1px solid var(--line-2)", color: "var(--text-2)" }}>{t("review_next")}</button>
-          </div>
-        )}
+      <div style={{ marginBottom: 6 }}>
+        <h2 style={{ fontSize: 22 }}>{t("review_h")}</h2>
+        <p className="muted" style={{ fontSize: 13.5, marginTop: 8, maxWidth: 560 }}>{t("review_sub")}</p>
       </div>
+
+      {/* Status + navigation pin to the top of the wizard's scroll container, so the
+          counts stay readable and the next-field button stays reachable without
+          scrolling back up. The heading above scrolls away under it; the detailed
+          warning lists below stay in flow so a long list cannot eat the viewport. */}
+      {(attentionCount > 0 || missingReq.length > 0) && (
+        <div className="row" style={{ position: "sticky", top: 0, zIndex: 2, background: "var(--bg)",
+          justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap",
+          marginTop: 12, padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
+          <div className="row gap-8" style={{ alignItems: "center", flexWrap: "wrap" }}>
+            {attentionCount > 0 && (
+              <Tag tone="line" style={{ height: 28, color: "var(--warn)", borderColor: "var(--warn-border)" }}>
+                <Icon name="alert" size={12} />{attentionCount} {t("needs_check")}
+              </Tag>
+            )}
+            {missingReq.length > 0 && (
+              <Tag tone="line" style={{ height: 28, color: "var(--warn)", borderColor: "var(--warn-border)" }}>
+                {t("review_required_n")}: {missingReq.length}
+              </Tag>
+            )}
+          </div>
+          {attentionCount > 0 && (
+            <button type="button" onClick={() => focusNext()} className="mono"
+              style={{ height: 28, padding: "0 12px", borderRadius: "var(--pill)", fontSize: 11.5, fontWeight: 600,
+                border: "1px solid var(--line-2)", color: "var(--text-2)", flex: "none" }}>{t("review_next")}</button>
+          )}
+        </div>
+      )}
 
       {warnings.length > 0 && (
         <div className="col gap-8" role="alert" style={{ marginTop: 16, padding: "12px 14px", borderRadius: "var(--r-lg)",
@@ -105,10 +132,11 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
                 ))}
               </div>
               {fieldsInGroup.map((f, i) => (
-                <FieldRow key={f.id} f={f} val={vals[f.id]} onChange={v => setVals(s => ({ ...s, [f.id]: v }))}
+                <FieldRow key={f.id} f={f} val={vals[f.id]} onChange={v => { markReviewed(f.id); setVals(s => ({ ...s, [f.id]: v })); }}
                   confLabel={confLabel} hover={hover} setHover={setHover} last={i === fieldsInGroup.length - 1}
                   attention={attnById.get(f.id) ?? null}
-                  onEnter={() => focusNext(f.id)}
+                  onEnter={() => { markReviewed(f.id); focusNext(f.id); }}
+                  onFocusField={() => { cursorId.current = f.id; }}
                   registerRef={(el) => { if (el) inputRefs.current.set(f.id, el); else inputRefs.current.delete(f.id); }} />
               ))}
             </div>

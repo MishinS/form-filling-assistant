@@ -6,10 +6,11 @@ type Props = {
   f: PtField; val: string; onChange: (v: string) => void;
   invalid?: boolean;
   onEnter?: () => void;
+  onFocusField?: () => void;
   inputRef?: (el: HTMLInputElement | HTMLTextAreaElement | null) => void;
 };
 
-export default function FieldInput({ f, val, onChange, invalid = false, onEnter, inputRef }: Props) {
+export default function FieldInput({ f, val, onChange, invalid = false, onEnter, onFocusField, inputRef }: Props) {
   const [focus, setFocus] = useState(false);
   const border = invalid ? "var(--bad)" : focus ? "var(--line-strong)" : "transparent";
   const style: CSSProperties = {
@@ -21,7 +22,7 @@ export default function FieldInput({ f, val, onChange, invalid = false, onEnter,
   const common = {
     value: val,
     onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(e.target.value),
-    onFocus: () => setFocus(true),
+    onFocus: () => { setFocus(true); onFocusField?.(); },
     onBlur: () => setFocus(false),
   };
   return (
