@@ -1,0 +1,19 @@
+$ sha256sum lib/fill/templates/pt.xlsx
+e166942470f527888dd78b9679ee55429137c44596924d572edeacb4ab74834a  lib/fill/templates/pt.xlsx
+
+$ grep -n 'Content-Type\|NextResponse.json\|new Response' app/api/fill/route.ts
+17:  new Response(Buffer.from(bytes), {
+20:      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+33:    return new Response("Bad JSON", { status: 400 });
+36:    return new Response("Bad request", { status: 400 });
+39:    return new Response("Forbidden", { status: 403 });
+49:      if (!fields) return new Response("Bad fields", { status: 400 });
+56:      return new Response(`Fill failed: ${(e as Error).message}`, { status: 500 });
+67:    return new Response("Fill failed: db", { status: 500 });
+72:    return new Response("Bad request", { status: 400 });
+75:  if (!fields) return new Response("Bad fields", { status: 400 });
+83:    return new Response(`Fill failed: ${(e as Error).message}`, { status: 500 });
+
+$ ls app/api/fill/
+route.test.ts
+route.ts

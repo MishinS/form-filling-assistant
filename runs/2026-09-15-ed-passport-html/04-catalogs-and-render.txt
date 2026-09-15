@@ -1,0 +1,10 @@
+$ grep -n 'export const .*_FIELDS' lib/extract/fields.ts
+39:export const PT_FIELDS: ExtractField[] = [
+61:export const SCHEDULE_LOCKED_FIELDS = ["f4", "f7"] as const;
+
+$ ls lib/render
+ls: cannot access 'lib/render': No such file or directory
+
+$ grep -rn 'Платёжного требования' lib --include='*.ts'
+lib/seed/pt.ts:151:  proc_fill_d:     { ru: "Значения подставляются в ячейки «Платёжного требования»", en: "Values mapped into the Payment Request cells" },
+lib/extract/llm/prompt.ts:19:    "Извлеки значения полей для российского «Платёжного требования» из текста документа ниже.",

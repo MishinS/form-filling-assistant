@@ -1,0 +1,25 @@
+
+ RUN  v4.1.7 /home/sergei/Work/dev/form-filling-assistant/web
+
+ ❯ lib/render/html.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/render/html.test.ts [ lib/render/html.test.ts ]
+Error: Cannot find module './html' imported from /home/sergei/Work/dev/form-filling-assistant/web/lib/render/html.test.ts
+ ❯ lib/render/html.test.ts:2:1
+      1| import { describe, it, expect } from "vitest";
+      2| import { renderHtml, type RenderFieldSpec } from "./html";
+       | ^
+      3|
+      4| const f = (id: string, extra: Partial<RenderFieldSpec> = {}): RenderFi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  11:12:28
+   Duration  477ms (transform 63ms, setup 0ms, import 0ms, tests 0ms, environment 0ms)
+
+exit=1
