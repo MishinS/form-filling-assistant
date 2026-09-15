@@ -59,7 +59,7 @@ export async function POST(req: Request): Promise<Response> {
     }
     allowedSheets = tpl!.sheets;
   }
-  const fields = parseFieldList(body.fields, allowedSheets);
+  const fields = parseFieldList(body.fields, { allowedSheets });
   if (!fields) {
     return NextResponse.json({ error: "Некорректная карта полей" }, { status: 400 });
   }

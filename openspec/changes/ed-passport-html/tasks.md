@@ -79,17 +79,21 @@
 
 ## 4. Boundary validation
 
-- [ ] 4.1 Add `lib/templates/slotref.ts` + `slotref.test.ts` validating a slot
+- [x] 4.1 Add `lib/templates/slotref.ts` + `slotref.test.ts` validating a slot
   name against a skeleton's declared slots. Proven by:
-  `lib/templates/slotref.test.ts` green.
-- [ ] 4.2 Make `parseFieldList()` pick its address validator from the template
+  `lib/templates/slotref.test.ts` green. Файл прогона: `24-slotref.txt` — 7 passed.
+- [x] 4.2 Make `parseFieldList()` pick its address validator from the template
   format and enforce a choice field's option set. Proven by:
   `lib/templates/validate.test.ts` cases — a cell reference on an HTML template
   is rejected, a slot name on an XLSX template is rejected, an undeclared slot is
-  rejected, and a choice value outside its options is rejected.
-- [ ] 4.3 Bound the run note's length and reject a non-string note at the API
-  boundary. Proven by: `lib/templates/validate.test.ts` case — an oversized note
-  is rejected rather than truncated.
+  rejected, and a choice value outside its options is rejected (`validateChoiceValues`).
+  Сверх плана: `paragraphHtml` и `listSeparator` из тела запроса не переносятся
+  вовсе — они уходят в вывод сырой разметкой, поэтому их задаёт только каталог
+  в репозитории. Файл прогона: `25-boundary.txt` — 85 passed.
+- [x] 4.3 Bound the run note's length and reject a non-string note at the API
+  boundary (`parseUserNote`, предел 2000 символов). Proven by:
+  `lib/templates/validate.test.ts` — переросшая заметка отвергается, а не
+  обрезается. Файл прогона: `25-boundary.txt`.
 
 ## 5. Persistence
 

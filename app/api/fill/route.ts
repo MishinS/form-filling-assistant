@@ -71,7 +71,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!tpl || tpl.deletedAt || tpl.userId !== email || !tpl.fileKey) {
     return new Response("Bad request", { status: 400 });
   }
-  const fields = parseFieldList(body.fields, tpl.sheets);
+  const fields = parseFieldList(body.fields, { allowedSheets: tpl.sheets });
   if (!fields) return new Response("Bad fields", { status: 400 });
 
   let bytes: Uint8Array;
