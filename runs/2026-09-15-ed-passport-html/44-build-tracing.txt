@@ -1,0 +1,10 @@
+$ grep -o 'ed.html\|pt.xlsx' .next/server/app/api/fill/route.js.nft.json | sort | uniq -c
+      1 ed.html
+      1 pt.xlsx
+
+$ node:path в клиентских чанках
+
+$ предупреждения сборки
+94:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+100:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+135:6  Warning: React Hook useCallback has a missing dependency: 'note'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps

@@ -132,7 +132,7 @@ export default function Processing({ sources, model, templateId, fields, note, o
       setError((e as Error).message);
       setPhase("error");
     }
-  }, [templateId, fields, onDone, t]);
+  }, [templateId, fields, note, onDone, t]);
 
   // Parse then extract. Parse runs once per mount (ref-guarded).
   const start = useCallback(async () => {
