@@ -10,6 +10,8 @@ export interface UiTemplate {
 export interface UiSourceFile { id: string; name: string; type: string; size: string; pages: number; }
 export interface PtField {
   id: string; group: string; label_ru: string; label_en: string;
+  /** Закрытый список вариантов: поле выбирается, а не вводится. */
+  options?: { value: string; label_ru: string; label_en: string }[];
   value: string; cell: string; conf: ConfLevel; unit?: string; area?: boolean;
   src: { file: string; loc: string };
 }
@@ -181,6 +183,16 @@ export const STR: Record<string, { ru: string; en: string }> = {
   confirm_fill:    { ru: "Подтвердить и заполнить", en: "Confirm & fill" },
   done_h:          { ru: "Документ готов", en: "Your document is ready" },
   done_sub:        { ru: "«Платёжное требование» заполнено и проверено. Скачайте в нужном формате.", en: "The Payment Request is filled and checked. Download in your preferred format." },
+  done_sub_html:   { ru: "Паспорт собран. Скопируйте разметку и вставьте её в электронный документ в navi.", en: "The passport is assembled. Copy the markup and paste it into the electronic document in navi." },
+  done_copy:       { ru: "Скопировать HTML", en: "Copy HTML" },
+  done_copied:     { ru: "HTML скопирован", en: "HTML copied" },
+  done_copy_err:   { ru: "Буфер обмена недоступен — выделите разметку ниже и скопируйте вручную", en: "Clipboard unavailable — select the markup below and copy it by hand" },
+  done_html_err:   { ru: "Не удалось собрать документ", en: "Couldn't assemble the document" },
+  done_preview:    { ru: "Предпросмотр", en: "Preview" },
+  note_h:          { ru: "Контекст прогона", en: "Run context" },
+  note_hint:       { ru: "То, чего нет в документах поставщика: проект, класс расхода, договорённости", en: "What the supplier's documents do not say: the project, the expense class, the arrangements" },
+  note_over:       { ru: "Слишком длинно", en: "Too long" },
+  fld_awaiting:    { ru: "ждёт вас", en: "awaiting you" },
   dl_excel:        { ru: "Скачать Excel", en: "Download Excel" },
   dl_pdf:          { ru: "Скачать PDF",   en: "Download PDF" },
   dl_progress:     { ru: "Готовим файл…", en: "Preparing file…" },

@@ -6,6 +6,7 @@ import type { FieldKind } from "@/lib/types";
 import { RULES } from "@/lib/extract/rules";
 import { validateCellRef } from "./cellref";
 import { validateSlotRef } from "./slotref";
+export { MAX_NOTE_LENGTH, parseUserNote } from "./note";
 import type { ExtractedValue } from "@/lib/types";
 
 const KINDS: FieldKind[] = ["string", "amount", "date", "text"];
@@ -20,17 +21,6 @@ export interface FieldListOptions {
   allowedSlots?: string[];
   /** Группы полей этого шаблона; по умолчанию — группы ПТ. */
   allowedGroups?: string[];
-}
-
-export const MAX_NOTE_LENGTH = 2000;
-
-/** Заметка пользователя к прогону. Отказ, а не обрезка: молча укоротить чужой
- *  текст — значит отправить модели не то, что человек написал. */
-export function parseUserNote(v: unknown): { ok: true; note: string } | { ok: false } {
-  if (v === undefined || v === null) return { ok: true, note: "" };
-  if (typeof v !== "string") return { ok: false };
-  if (v.length > MAX_NOTE_LENGTH) return { ok: false };
-  return { ok: true, note: v.trim() };
 }
 
 /** Поле-выбор принимает только значение из своего списка. Пустое допустимо —

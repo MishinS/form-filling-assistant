@@ -8,7 +8,8 @@ import { parseFieldList, validateChoiceValues } from "@/lib/templates/validate";
 import { getTemplate } from "@/lib/db/templates";
 import { PT_FIELDS } from "@/lib/extract/fields";
 import { renderHtml } from "@/lib/render/html";
-import { ED_FIELDS, ED_SKELETON_PATH } from "@/lib/render/ed";
+import { ED_FIELDS } from "@/lib/render/ed";
+import { ED_SKELETON_PATH } from "@/lib/render/ed-skeleton";
 
 /** Встроенные шаблоны: лежат в репозитории, доступны всем, включая гостей. */
 const BUILTIN_IDS = ["pt", "ed"];

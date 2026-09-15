@@ -2,10 +2,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Tag, Icon } from "@/components/primitives";
-import { PT_FIELDS, PT_GROUPS, type ExtractField } from "@/lib/extract/fields";
+import { PT_FIELDS, type ExtractField } from "@/lib/extract/fields";
 import { FIELDS as SEED_FIELDS, type PtField } from "@/lib/seed/pt";
 import { buildRows, missingRequired } from "@/lib/review/rows";
 import { attentionOf, nextAttentionIndex, type Attention } from "@/lib/review/attention";
+import { groupsOf } from "@/lib/review/groups";
 import { invalidReason, type InvalidReason } from "@/lib/review/validate";
 import type { ExtractedValue } from "@/lib/types";
 import type { ParsedDoc } from "@/lib/parse/types";
@@ -41,7 +42,7 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
 
   // Flat visual order (matches the grouped render below) + per-row attention.
   const fieldById = new Map(fields.map(f => [f.id, f]));
-  const ordered = PT_GROUPS.flatMap(g => rows.filter(f => f.group === g.id));
+  const ordered = groupsOf(fields).flatMap(g => rows.filter(f => f.group === g.id));
   const attnById = new Map<string, Attention>(
     ordered.map(f => {
       const ef = fieldById.get(f.id);
@@ -127,7 +128,7 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
         </div>
       )}
 
-      {PT_GROUPS.map(g => {
+      {groupsOf(fields).map(g => {
         const fieldsInGroup = rows.filter(f => f.group === g.id);
         return (
           <div key={g.id} style={{ marginTop: 24 }}>

@@ -1,0 +1,355 @@
+
+> web@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+request to https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggqxSvfedN62Zw.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggSxSvfedN62Zw.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggixSvfedN62Zw.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggmxSvfedN62Zw.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggexSvfedN4.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb54C_k3HqUtEw.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb94C_k3HqUtEw.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F63fjptAgt5VM-kVkqdyU8n1iIq131nj-otFQ.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F63fjptAgt5VM-kVkqdyU8n1isq131nj-otFQ.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F63fjptAgt5VM-kVkqdyU8n1iAq131nj-otFQ.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F63fjptAgt5VM-kVkqdyU8n1iEq131nj-otFQ.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F63fjptAgt5VM-kVkqdyU8n1i8q131nj-o.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwl1FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwlRFgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwl9FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwl5FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwlBFgsAXHNk.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl1FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwlRFgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl9FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl5FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwlBFgsAXHNk.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggqxSvfedN62Zw.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F63fjptAgt5VM-kVkqdyU8n1isq131nj-otFQ.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F63fjptAgt5VM-kVkqdyU8n1iAq131nj-otFQ.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwl9FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl1FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl9FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl5FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb94C_k3HqUtEw.woff2 failed, reason: Client network socket disconnected before secure TLS connection was established
+
+Retrying 2/3...
+ ⚠ Compiled with warnings
+
+./node_modules/jose/dist/webapi/lib/deflate.js
+A Node.js API is used (CompressionStream at line: 10) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/jose/dist/webapi/lib/deflate.js
+./node_modules/jose/dist/webapi/jwe/flattened/decrypt.js
+./node_modules/jose/dist/webapi/index.js
+./node_modules/@auth/core/jwt.js
+./node_modules/@auth/core/lib/init.js
+./node_modules/@auth/core/lib/index.js
+./node_modules/@auth/core/index.js
+./node_modules/next-auth/index.js
+
+./node_modules/jose/dist/webapi/lib/deflate.js
+A Node.js API is used (DecompressionStream at line: 26) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/jose/dist/webapi/lib/deflate.js
+./node_modules/jose/dist/webapi/jwe/flattened/decrypt.js
+./node_modules/jose/dist/webapi/index.js
+./node_modules/@auth/core/jwt.js
+./node_modules/@auth/core/lib/init.js
+./node_modules/@auth/core/lib/index.js
+./node_modules/@auth/core/index.js
+./node_modules/next-auth/index.js
+
+request to https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb54C_k3HqUtEw.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb94C_k3HqUtEw.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2 failed, reason: 
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb54C_k3HqUtEw.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb94C_k3HqUtEw.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb54C_k3HqUtEw.woff2 failed, reason: 
+
+Retrying 3/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb94C_k3HqUtEw.woff2 failed, reason: 
+
+Retrying 3/3...
+request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2 failed, reason: 
+
+Retrying 3/3...
+FetchError: request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb54C_k3HqUtEw.woff2 failed, reason: 
+    at ClientRequest.<anonymous> (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/node-fetch/index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:575:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at runNextTicks (node:internal/process/task_queues:68:3)
+    at listOnTimeout (node:internal/timers:547:9) {
+  type: 'system',
+  errno: 'ETIMEDOUT',
+  code: 'ETIMEDOUT'
+}
+FetchError: request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPb94C_k3HqUtEw.woff2 failed, reason: 
+    at ClientRequest.<anonymous> (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/node-fetch/index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:575:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  type: 'system',
+  errno: 'ETIMEDOUT',
+  code: 'ETIMEDOUT'
+}
+FetchError: request to https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2 failed, reason: 
+    at ClientRequest.<anonymous> (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/node-fetch/index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:575:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  type: 'system',
+  errno: 'ETIMEDOUT',
+  code: 'ETIMEDOUT'
+}
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwl5FgsAXHNlYzg.woff2 failed, reason: Client network socket disconnected before secure TLS connection was established
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl5FgsAXHNlYzg.woff2 failed, reason: Client network socket disconnected before secure TLS connection was established
+
+Retrying 1/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl5FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 2/3...
+request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl5FgsAXHNlYzg.woff2 failed, reason: 
+
+Retrying 3/3...
+FetchError: request to https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl5FgsAXHNlYzg.woff2 failed, reason: 
+    at ClientRequest.<anonymous> (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/node-fetch/index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:575:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  type: 'system',
+  errno: 'ETIMEDOUT',
+  code: 'ETIMEDOUT'
+}
+Failed to compile.
+
+app/layout.tsx
+`next/font` error:
+Failed to fetch `IBM Plex Mono` from Google Fonts.
+
+app/layout.tsx
+`next/font` error:
+Failed to fetch `Space Grotesk` from Google Fonts.
+
+app/layout.tsx
+An error occurred in `next/font`.
+
+NextFontError: Failed to fetch `IBM Plex Mono` from Google Fonts.
+    at nextFontError (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/next-font-error.js:8:17)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/google/loader.js:110:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Promise.all (index 13)
+    at async nextFontGoogleFontLoader (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/google/loader.js:94:33)
+    at async Span.traceAsyncFn (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/trace/trace.js:154:20)
+    at async /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js:76:87
+    at async Span.traceAsyncFn (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/trace/trace.js:154:20)
+    at tryRunOrWebpackError (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:312989)
+    at __webpack_require_module__ (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:131165)
+    at __nested_webpack_require_153728__ (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:130607)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:131454
+    at symbolIterator (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:14444)
+    at done (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:14824)
+    at Hook.eval [as callAsync] (eval at create (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:13:28858), <anonymous>:15:1)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:130328
+    at symbolIterator (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:14402)
+    at timesSync (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:5027)
+-- inner error --
+NextFontError: Failed to fetch `IBM Plex Mono` from Google Fonts.
+    at nextFontError (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/next-font-error.js:8:17)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/google/loader.js:110:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Promise.all (index 13)
+    at async nextFontGoogleFontLoader (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/google/loader.js:94:33)
+    at async Span.traceAsyncFn (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/trace/trace.js:154:20)
+    at async /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js:76:87
+    at async Span.traceAsyncFn (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/trace/trace.js:154:20)
+    at Object.<anonymous> (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[2].use[1]!/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js??ruleSet[1].rules[14].oneOf[2].use[2]!/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/font/google/target.css?{"path":"app/layout.tsx","import":"IBM_Plex_Mono","arguments":[{"subsets":["latin","cyrillic"],"variable":"--font-mono-next","weight":["400","500","600"]}],"variableName":"mono"}:1:7)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:922493
+    at Hook.eval [as call] (eval at create (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:13:28636), <anonymous>:7:1)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:131198
+    at tryRunOrWebpackError (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:312943)
+    at __webpack_require_module__ (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:131165)
+    at __nested_webpack_require_153728__ (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:130607)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:131454
+    at symbolIterator (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:14444)
+    at done (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:14824)
+
+Generated code for /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[2].use[1]!/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js??ruleSet[1].rules[14].oneOf[2].use[2]!/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/font/google/target.css?{"path":"app/layout.tsx","import":"IBM_Plex_Mono","arguments":[{"subsets":["latin","cyrillic"],"variable":"--font-mono-next","weight":["400","500","600"]}],"variableName":"mono"}
+
+app/layout.tsx
+An error occurred in `next/font`.
+
+NextFontError: Failed to fetch `Space Grotesk` from Google Fonts.
+    at nextFontError (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/next-font-error.js:8:17)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/google/loader.js:110:53
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runNextTicks (node:internal/process/task_queues:68:3)
+    at listOnTimeout (node:internal/timers:547:9)
+    at process.processTimers (node:internal/timers:521:7)
+    at async Promise.all (index 0)
+    at async nextFontGoogleFontLoader (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/google/loader.js:94:33)
+    at async Span.traceAsyncFn (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/trace/trace.js:154:20)
+    at async /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js:76:87
+    at tryRunOrWebpackError (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:312989)
+    at __webpack_require_module__ (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:131165)
+    at __nested_webpack_require_153728__ (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:130607)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:131454
+    at symbolIterator (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:14444)
+    at done (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:14824)
+    at Hook.eval [as callAsync] (eval at create (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:13:28858), <anonymous>:15:1)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:130328
+    at symbolIterator (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:14402)
+    at timesSync (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:5027)
+-- inner error --
+NextFontError: Failed to fetch `Space Grotesk` from Google Fonts.
+    at nextFontError (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/next-font-error.js:8:17)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/google/loader.js:110:53
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runNextTicks (node:internal/process/task_queues:68:3)
+    at listOnTimeout (node:internal/timers:547:9)
+    at process.processTimers (node:internal/timers:521:7)
+    at async Promise.all (index 0)
+    at async nextFontGoogleFontLoader (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/@next/font/dist/google/loader.js:94:33)
+    at async Span.traceAsyncFn (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/trace/trace.js:154:20)
+    at async /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js:76:87
+    at Object.<anonymous> (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[2].use[1]!/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js??ruleSet[1].rules[14].oneOf[2].use[2]!/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/font/google/target.css?{"path":"app/layout.tsx","import":"Space_Grotesk","arguments":[{"subsets":["latin"],"variable":"--font-display-next","weight":["500","600","700"]}],"variableName":"display"}:1:7)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:922493
+    at Hook.eval [as call] (eval at create (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:13:28636), <anonymous>:7:1)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:131198
+    at tryRunOrWebpackError (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:312943)
+    at __webpack_require_module__ (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:131165)
+    at __nested_webpack_require_153728__ (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:130607)
+    at /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/webpack/bundle5.js:28:131454
+    at symbolIterator (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:14444)
+    at done (/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/compiled/neo-async/async.js:1:14824)
+
+Generated code for /home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[2].use[1]!/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js??ruleSet[1].rules[14].oneOf[2].use[2]!/home/sergei/Work/dev/form-filling-assistant/web/node_modules/next/font/google/target.css?{"path":"app/layout.tsx","import":"Space_Grotesk","arguments":[{"subsets":["latin"],"variable":"--font-display-next","weight":["500","600","700"]}],"variableName":"display"}
+
+
+> Build failed because of webpack errors
+exit=1

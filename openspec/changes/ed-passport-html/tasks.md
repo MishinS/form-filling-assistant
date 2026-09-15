@@ -121,16 +121,24 @@
 
 ## 7. Wizard
 
-- [ ] 7.1 Add the run-note box to the upload step. Proven by:
-  `components/wizard/<note>-core.test.ts` covering the bounded-length and
-  empty-note logic (React rendering untested, per repo convention).
-- [ ] 7.2 Show note-sourced and choice fields in review as awaiting input rather
+- [x] 7.1 Add the run-note box to the upload step (`components/wizard/NoteBox.tsx`),
+  carried through `Processing` to both the API and the local path. Proven by:
+  `components/wizard/done-core.test.ts` (в нём же `noteState`) — файл прогона
+  `32-review-groups.txt`, 43 passed.
+- [x] 7.2 Show note-sourced and choice fields in review as awaiting input rather
   than as low-confidence extractions, with a choice control for the option set.
-  Proven by: `lib/review/*.test.ts` case on the field-state logic.
-- [ ] 7.3 Replace the done step's download with a preview and a copy action for
+  Proven by: `lib/review/attention.test.ts` — состояние `awaiting`.
+  Сверх плана — найденная по ходу ошибка: шаг проверки рисовал группы полей из
+  каталога ПТ, поэтому поля «Паспорта» не отрисовались бы вовсе. Группы теперь
+  берутся из полей самого шаблона (`lib/review/groups.ts` + тест).
+  Файл прогона: `32-review-groups.txt`.
+- [x] 7.3 Replace the done step's download with a preview and a copy action for
   an HTML template, falling back to a selectable text area when the clipboard is
-  refused. Proven by: `components/wizard/<done>-core.test.ts` on the branch
-  logic; manual check of the preview.
+  refused. Предпросмотр — iframe с `sandbox=""`: скрипты не выполняются, стили
+  документа не текут в приложение. Proven by:
+  `components/wizard/done-core.test.ts` (`outputKindOf`, `workbookName`);
+  предпросмотр глазами — за владельцем. Файл прогона: `33-tests-group7.txt` —
+  664 passed.
 
 ## 8. Verification against reality
 

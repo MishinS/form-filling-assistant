@@ -10,9 +10,12 @@ import type { ExtractField } from "@/lib/extract/fields";
 import Stepper from "./Stepper";
 import TemplatePick from "./TemplatePick";
 import Dropzone from "./Dropzone";
+import NoteBox from "./NoteBox";
 import Processing from "./Processing";
 import DoneStep from "./DoneStep";
 import ReviewStep from "@/components/review/ReviewStep";
+import { ED_FIELDS, ED_TEMPLATE_ID } from "@/lib/render/ed";
+import { noteState } from "./note-core";
 
 let uid = 0;
 const nextId = () => `up-${Date.now()}-${uid++}`;
@@ -25,13 +28,16 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
   const [docs, setDocs] = useState<ParsedDoc[]>([]);
   const [values, setValues] = useState<ExtractedValue[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [note, setNote] = useState("");
   const [reviewValues, setReviewValues] = useState<ExtractedValue[]>([]);
   const { model: MODEL } = useContext(ModelContext);
   const { fields: ptFields } = useContext(TemplateMappingContext);
   const { templates } = useContext(TemplatesContext);
   const [customFields, setCustomFields] = useState<Record<string, ExtractField[]>>({});
   const [fieldsLoading, setFieldsLoading] = useState(false);
-  const fields = tpl === "pt" ? ptFields : customFields[tpl] ?? [];
+  // Каталог встроенного шаблона берётся из репозитория — так же, как на сервере.
+  const fields = tpl === "pt" ? ptFields : tpl === ED_TEMPLATE_ID ? ED_FIELDS : customFields[tpl] ?? [];
+  const noteS = noteState(note);
 
   const selectTpl = (id: string) => {
     setTpl(id);
@@ -109,9 +115,10 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
               <div className="col gap-24" style={{ maxWidth: 760, margin: "0 auto" }}>
                 <TemplatePick selected={tpl} onSelect={selectTpl} />
                 <Dropzone files={files} onPick={onPick} onRemove={removeFile} />
+                <NoteBox value={note} onChange={setNote} state={noteS} />
               </div>
             )}
-            {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} fields={fields} onDone={onExtracted} onBack={() => setStep(0)} />}
+            {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} fields={fields} note={noteS.value} onDone={onExtracted} onBack={() => setStep(0)} />}
             {step === 2 && <ReviewStep values={values} docs={docs} fields={fields} warnings={warnings} onChange={setReviewValues} />}
             {step === 3 && (
               <DoneStep
@@ -131,7 +138,7 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
             {embedded && step === 0
               ? <span aria-hidden />
               : <Btn variant="quiet" size="md" icon="arrowL" onClick={() => step === 0 ? onClose() : setStep(step - 1)}>{t("back")}</Btn>}
-            {step === 0 && <Btn variant="primary" size="md" iconRight="arrowR" disabled={!canStart} onClick={startParse}>{t("start_process")}</Btn>}
+            {step === 0 && <Btn variant="primary" size="md" iconRight="arrowR" disabled={!canStart || noteS.tooLong} onClick={startParse}>{t("start_process")}</Btn>}
             {step === 2 && <Btn variant="primary" size="md" icon="check" onClick={() => setStep(3)}>{t("confirm_fill")}</Btn>}
           </div>
         )}

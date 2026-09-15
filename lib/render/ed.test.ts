@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { renderHtml } from "./html";
 import { checkSubset, NAVI_SUBSET } from "./subset";
-import { ED_FIELDS, ED_SKELETON_PATH } from "./ed";
+import { ED_FIELDS } from "./ed";
+import { ED_SKELETON_PATH } from "./ed-skeleton";
 
 const skeleton = readFileSync(ED_SKELETON_PATH, "utf8");
 const slotsIn = (s: string) => Array.from(s.matchAll(/<!--slot:([A-Za-z0-9_-]+)-->/g), (m) => m[1]);

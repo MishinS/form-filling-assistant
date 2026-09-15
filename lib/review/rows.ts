@@ -28,7 +28,7 @@ export function buildRows(
     return {
       id: f.id, group: f.group, label_ru: f.label_ru, label_en: f.label_en,
       value: v?.value ?? "", cell: f.cell, conf: v?.confidence ?? "low",
-      unit: f.unit, area: f.area, src: { file, loc },
+      unit: f.unit, area: f.area, options: f.options, src: { file, loc },
     };
   });
 }

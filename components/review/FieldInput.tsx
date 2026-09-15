@@ -32,6 +32,26 @@ export default function FieldInput({ f, val, onChange, invalid = false, id, desc
     "aria-invalid": invalid || undefined,
     "aria-describedby": describedBy,
   };
+  if (f.options?.length) {
+    return (
+      <select
+        id={id}
+        value={val}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => { setFocus(true); onFocusField?.(); }}
+        onBlur={() => setFocus(false)}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        style={{ ...style, resize: undefined }}
+      >
+        <option value="">—</option>
+        {f.options.map((o) => (
+          <option key={o.value} value={o.value}>{o.value} — {o.label_ru}</option>
+        ))}
+      </select>
+    );
+  }
+
   return (
     <div className="row gap-8" style={{ alignItems: "flex-start" }}>
       {f.area
