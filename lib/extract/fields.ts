@@ -76,6 +76,11 @@ export const PT_FIELDS: ExtractField[] = [
   { id: "f12", group: "terms", label_ru: "Дата получения документов",    label_en: "Documents received",           cell: "ПТ!D21", kind: "date",   required: false, strategy: "manual" },
 ];
 
+/** Правила шаблона ПТ. Жили в общем сборщике промта и применялись ко всем
+ *  шаблонам подряд, включая пользовательские, которым не подходили. */
+export const PT_INSTRUCTION =
+  "Извлеки значения полей для российского «Платёжного требования» из текста документа ниже.";
+
 export const PT_GROUPS = [
   { id: "req",   ru: "Реквизиты", en: "Details" },
   { id: "pay",   ru: "Платёж",    en: "Payment" },

@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.7 /home/sergei/Work/dev/form-filling-assistant/web
+
+
+ Test Files  81 passed (81)
+      Tests  617 passed (617)
+   Start at  11:28:10
+   Duration  9.19s (transform 3.72s, setup 0ms, import 17.12s, tests 4.65s, environment 30ms)
+
+exit=0

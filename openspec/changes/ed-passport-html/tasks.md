@@ -44,30 +44,38 @@
   в общий файл уехал только тип `ExtractField`. Файл прогона:
   `14-ed-green.txt`; типы — `15-tsc-mid.txt`, весь набор — `16-tests-mid.txt`
   (601 passed).
-- [ ] 2.3 Add the ED instruction text (the stripped header from 2.1, minus the
+- [x] 2.3 Add the ED instruction text (the stripped header from 2.1, minus the
   colour rules that belong to the skeleton) as the template's own instruction.
   Proven by: `lib/extract/llm/prompt.test.ts` case asserting the rendered prompt
-  contains the mandatory-section list.
+  contains the mandatory-section list. Файл прогона: `18-prompt-green.txt`.
 
 ## 3. Template-owned prompts
 
-- [ ] 3.1 Write the red cases in `lib/extract/llm/prompt.test.ts`: a template's
+- [x] 3.1 Write the red cases in `lib/extract/llm/prompt.test.ts`: a template's
   instruction appears under its own heading; a run note appears under a separate
   heading marked as the user's context; no note means no such section; a
   template with no instruction yields mechanics only; a note-sourced field's
-  hint appears on its field line. Proven by: those cases red.
-- [ ] 3.2 Move PT's opening sentence and own-company counterparty rule out of
+  hint appears on its field line. Proven by: those cases red. Файл прогона:
+  `17-prompt-red.txt` — 14 failed.
+- [x] 3.2 Move PT's opening sentence and own-company counterparty rule out of
   `buildExtractionPrompt()` into PT's own instruction, leaving only mechanics in
   shared code, and thread `instruction` + `userNote` through. Proven by:
-  `lib/extract/llm/prompt.test.ts` green, including a case asserting the PT
-  prompt still matches the string recorded in `baseline.md`.
-- [ ] 3.3 Thread the note through every model path — hosted, OpenRouter race,
+  `lib/extract/llm/prompt.test.ts` green, включая сверку промта ПТ с записанным в
+  `baseline.md` текстом. Файл прогона: `18-prompt-green.txt` — 14 passed.
+  Отступление: в инструкцию шаблона уехала только фраза про «Платёжное
+  требование». Правила про нашу компанию остались в общей механике — они
+  называют нашу организацию, а не вид документа, и нужны обоим шаблонам; так
+  промт ПТ остался побайтово прежним.
+- [x] 3.3 Thread the note through every model path — hosted, OpenRouter race,
   BYOK, and `run-local-extract.ts`. Proven by:
-  `lib/extract/llm/run-local-extract.test.ts` case asserting the local prompt
-  carries the instruction and the note.
-- [ ] 3.4 Exclude note-sourced and choice fields from the empty-value warning.
-  Proven by: `lib/extract/extract.test.ts` case — a run whose only empty fields
-  are of those kinds raises no warning.
+  проверено на уровне адаптера — `lib/extract/llm/local-model.test.ts`, куда
+  доходит собранный промт; `runLocalExtract` только пробрасывает контекст.
+  Файл прогона: `22-local-prompt.txt` — 5 passed.
+- [x] 3.4 Exclude note-sourced and choice fields from the empty-value warning.
+  Отступление: `extractFields` пустые поля предупреждениями не помечает вовсе —
+  классификация живёт в `lib/review/attention.ts`. Добавлено состояние
+  `awaiting`: пустое поле из заметки или из списка читается как «ждёт человека»,
+  а не как низкая уверенность. Файл прогона: `20-attention-green.txt` — 12 passed.
 
 ## 4. Boundary validation
 

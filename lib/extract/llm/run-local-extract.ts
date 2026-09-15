@@ -1,6 +1,6 @@
 import type { ParsedDoc } from "@/lib/parse/types";
 import type { ExtractField } from "../fields";
-import type { OnAttempt } from "./types";
+import type { OnAttempt, PromptContext } from "./types";
 import { extractFields } from "@/lib/extract/extract";
 import { localCompatModel } from "./local-model";
 import { getCachedRuntime } from "@/lib/desktop/tauri";
@@ -13,6 +13,7 @@ export async function runLocalExtract(
   modelId: string,
   fields: ExtractField[],
   emit: (line: string) => void,
+  prompt?: PromptContext,
 ): Promise<void> {
   const write = (obj: unknown) => emit(JSON.stringify(obj));
   const rt = getCachedRuntime();
@@ -29,6 +30,6 @@ export async function runLocalExtract(
     else write({ type: "attempt-fail", model: ev.model, reason: ev.reason });
   };
   const { values, warnings, llmFailed, usedModel } =
-    await extractFields(docs, modelId, fields, onAttempt, { modelOverride: localCompatModel(rt.baseUrl, slug) });
+    await extractFields(docs, modelId, fields, onAttempt, { modelOverride: localCompatModel(rt.baseUrl, slug), prompt });
   write({ type: "result", values, warnings, llmFailed, usedModel });
 }

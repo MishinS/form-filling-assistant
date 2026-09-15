@@ -4,7 +4,7 @@ import { PT_FIELDS, type ExtractField } from "./fields";
 import { RULES } from "./rules";
 import { locatorRu } from "./format";
 import { getModel } from "./llm/registry";
-import { ModelNotConfigured, type OnAttempt, type ExtractionModel } from "./llm/types";
+import { ModelNotConfigured, type OnAttempt, type ExtractionModel, type PromptContext } from "./llm/types";
 import { LlmRequestError, type ProbeCode } from "./llm/openai-compat";
 import { isOwnCompany, findCounterparty } from "./own-company";
 
@@ -36,7 +36,7 @@ export async function extractFields(
   modelId: string,
   fields: ExtractField[] = PT_FIELDS,
   onAttempt?: OnAttempt,
-  opts?: { freeOnly?: boolean; modelOverride?: ExtractionModel },
+  opts?: { freeOnly?: boolean; modelOverride?: ExtractionModel; prompt?: PromptContext },
 ): Promise<ExtractResult> {
   const warnings: string[] = [];
   const byField = new Map<string, ExtractedValue>();
@@ -74,7 +74,7 @@ export async function extractFields(
     };
     try {
       const model = opts?.modelOverride ?? getModel(modelId, opts);
-      const results = await model.extract(llmFields, text, wrapped);
+      const results = await model.extract(llmFields, text, wrapped, opts?.prompt);
       usedModel = winner;
       for (const f of llmFields) {
         const r = results.find((x) => x.fieldId === f.id);

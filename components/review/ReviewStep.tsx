@@ -45,7 +45,7 @@ export default function ReviewStep({ values, docs = [], fields = PT_FIELDS, warn
   const attnById = new Map<string, Attention>(
     ordered.map(f => {
       const ef = fieldById.get(f.id);
-      return [f.id, attentionOf({ kind: ef?.kind ?? "string", required: ef?.required ?? false, conf: f.conf, value: vals[f.id] ?? "", reviewed: reviewed.has(f.id) })];
+      return [f.id, attentionOf({ kind: ef?.kind ?? "string", required: ef?.required ?? false, conf: f.conf, value: vals[f.id] ?? "", reviewed: reviewed.has(f.id), awaiting: Boolean(ef?.fromNote || ef?.options?.length) })];
     }),
   );
   // Why a row is invalid, recorded in the same walk. This is the only place holding

@@ -1,0 +1,210 @@
+
+ RUN  v4.1.7 /home/sergei/Work/dev/form-filling-assistant/web
+
+ ❯ lib/extract/llm/prompt.test.ts (14 tests | 14 failed) 22ms
+     × includes the brevity and legal-form instructions 8ms
+     × renders a field hint after the kind 1ms
+     × renders a field without a hint as a plain line 1ms
+     × omits the local guidance block by default (cloud byte-for-byte) 1ms
+     × appends the local guidance block when localGuidance is true 1ms
+     × opens with the template's instruction 1ms
+     × names no document kind when the template carries no instruction 1ms
+     × sends one template's instruction and not another's 1ms
+     × appears under its own heading, marked as the user's context 1ms
+     × adds no section when there is no note 1ms
+     × adds no section for a blank note 1ms
+     × marks a note-sourced field on its own line 1ms
+     × keeps a note-sourced field's own hint alongside the marker 1ms
+     × still matches the text recorded in baseline.md 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > buildExtractionPrompt > includes the brevity and legal-form instructions
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:16:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > buildExtractionPrompt > renders a field hint after the kind
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:22:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > buildExtractionPrompt > renders a field without a hint as a plain line
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:27:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > localGuidance > omits the local guidance block by default (cloud byte-for-byte)
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:37:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > localGuidance > appends the local guidance block when localGuidance is true
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:42:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > the template owns its instruction > opens with the template's instruction
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:53:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > the template owns its instruction > names no document kind when the template carries no instruction
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:58:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > the template owns its instruction > sends one template's instruction and not another's
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:64:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > the run note > appears under its own heading, marked as the user's context
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:75:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > the run note > adds no section when there is no note
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:85:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > the run note > adds no section for a blank note
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:90:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > the run note > marks a note-sourced field on its own line
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:96:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > the run note > keeps a note-sourced field's own hint alongside the marker
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:104:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/14]⎯
+
+ FAIL  lib/extract/llm/prompt.test.ts > the PT prompt does not drift > still matches the text recorded in baseline.md
+TypeError: fields.map is not a function
+ ❯ buildExtractionPrompt lib/extract/llm/prompt.ts:16:6
+     14| ): string {
+     15|   const specs = fields
+     16|     .map((f) => `- ${f.id}: ${f.label_ru} (${f.kind})${f.hint_ru ? ` —…
+       |      ^
+     17|     .join("\n");
+     18|   const lines = [
+ ❯ lib/extract/llm/prompt.test.ts:113:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/14]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  14 failed (14)
+   Start at  11:23:34
+   Duration  550ms (transform 100ms, setup 0ms, import 139ms, tests 22ms, environment 0ms)
+
+exit=1

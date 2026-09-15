@@ -109,11 +109,11 @@ inputs sit above them — the template's `instruction` and the run's optional
 `userNote`, each under its own heading so the model can tell house rules from
 one person's context for one run.
 
-PT's current opening sentence and its own-company counterparty rule move
-verbatim into PT's own `instruction`. This keeps today's PT prompt
-byte-comparable while removing the last template-specific text from shared code;
-the baseline snapshot records the PT prompt so any drift shows up at
-verification. A template with no instruction (every user-scanned one) sends
+PT's opening sentence moves verbatim into PT's own `instruction`. The
+own-company counterparty rules stay in the mechanics: they name our own
+organization rather than a kind of document, and the order passport needs them
+just as much as the payment request does. This keeps today's PT prompt
+byte-identical; the baseline snapshot records it, and a test compares the two. A template with no instruction (every user-scanned one) sends
 mechanics only, which is what it effectively does today minus the PT sentences
 that never applied to it.
 
