@@ -4,9 +4,14 @@ import { auth } from "@/auth";
 import { isGuest, unauthorized } from "@/lib/auth/guard";
 import type { ExtractedValue } from "@/lib/types";
 import { fillPtXlsx, fillCustomXlsx } from "@/lib/fill/xlsx";
-import { parseFieldList } from "@/lib/templates/validate";
+import { parseFieldList, validateChoiceValues } from "@/lib/templates/validate";
 import { getTemplate } from "@/lib/db/templates";
 import { PT_FIELDS } from "@/lib/extract/fields";
+import { renderHtml } from "@/lib/render/html";
+import { ED_FIELDS, ED_SKELETON_PATH } from "@/lib/render/ed";
+
+/** Встроенные шаблоны: лежат в репозитории, доступны всем, включая гостей. */
+const BUILTIN_IDS = ["pt", "ed"];
 
 export const runtime = "nodejs";
 
@@ -35,8 +40,28 @@ export async function POST(req: Request): Promise<Response> {
   if (typeof body.templateId !== "string" || !Array.isArray(body.values)) {
     return new Response("Bad request", { status: 400 });
   }
-  if (guest && body.templateId !== "pt") {
+  if (guest && !BUILTIN_IDS.includes(body.templateId)) {
     return new Response("Forbidden", { status: 403 });
+  }
+
+  // Встроенный «Паспорт Заказа и договора»: разметка и каталог полей берутся из
+  // репозитория, а не из тела запроса. Клиент присылает только значения — режимы
+  // рендера задаёт каталог, поэтому чужая разметка в документ попасть не может.
+  if (body.templateId === "ed") {
+    if (!validateChoiceValues(ED_FIELDS, body.values)) {
+      return new Response("Bad values", { status: 400 });
+    }
+    let skeleton: string;
+    try {
+      skeleton = await readFile(ED_SKELETON_PATH, "utf8");
+    } catch (e) {
+      return new Response(`Fill failed: ${(e as Error).message}`, { status: 500 });
+    }
+    const rendered = renderHtml(skeleton, ED_FIELDS, body.values);
+    if (!rendered.ok) {
+      return new Response(`Fill failed: ${rendered.error.code}`, { status: 500 });
+    }
+    return Response.json({ html: rendered.html });
   }
 
   // Built-in ПТ: repo file + schedule logic (unchanged).

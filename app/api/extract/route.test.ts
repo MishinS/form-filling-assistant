@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { extractFields } from "@/lib/extract/extract";
 
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
 vi.mock("@/lib/extract/extract", () => ({
@@ -69,7 +70,7 @@ describe("POST /api/extract", () => {
     const call = (extractFields as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
     expect(call[1]).toBe(DEFAULT_MODEL);
     expect(call[2]).toBe(PT_FIELDS);
-    expect(call[4]).toEqual({ freeOnly: true });
+    expect(call[4]).toEqual(expect.objectContaining({ freeOnly: true }));
   });
 });
 
@@ -130,5 +131,40 @@ describe("/api/extract field validation", () => {
   it("200s when fields is omitted (defaults to PT)", async () => {
     const res = await call({ model: "m", docs: [] });
     expect(res.status).toBe(200);
+  });
+});
+
+describe("the template's rules and the run note reach extraction", () => {
+  const call = (body: unknown) =>
+    POST(new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) }));
+
+  it("sends the order passport's own instruction and catalog", async () => {
+    await call({ templateId: "ed", model: "m", docs: [], note: "проект 1905" });
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    expect(last[4]?.prompt?.instruction).toContain("Паспорт Заказа и договора");
+    expect(last[4]?.prompt?.userNote).toBe("проект 1905");
+    expect((last[2] as Array<{ id: string }>).map((f) => f.id)).toContain("e11");
+  });
+
+  it("sends the payment request's instruction for pt", async () => {
+    await call({ templateId: "pt", model: "m", docs: [] });
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    expect(last[4]?.prompt?.instruction).toContain("Платёжного требования");
+    expect(last[4]?.prompt?.userNote).toBeUndefined();
+  });
+
+  it("400s on an oversized note rather than truncating it", async () => {
+    const res = await call({ templateId: "ed", model: "m", docs: [], note: "x".repeat(2001) });
+    expect(res.status).toBe(400);
+  });
+
+  it("ignores a client field list for a built-in template", async () => {
+    const hostile = [{
+      id: "e2", group: "order", label_ru: "П", label_en: "S", kind: "text",
+      required: true, strategy: "llm", cell: "subject",
+    }];
+    await call({ templateId: "ed", model: "m", docs: [], fields: hostile });
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    expect((last[2] as Array<{ id: string }>).length).toBe(11);
   });
 });

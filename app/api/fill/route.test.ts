@@ -125,3 +125,58 @@ describe("POST /api/fill — custom template", () => {
     expect((await POST(postFill(customBody({ fields: undefined })))).status).toBe(400);
   });
 });
+
+describe("/api/fill with an HTML template", () => {
+  const call = (body: unknown) =>
+    POST(new Request("http://t/api/fill", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }));
+
+  it("returns the rendered document as JSON, not a download", async () => {
+    const res = await call({ templateId: "ed", values: [ev("e2", "Стоматологическая мебель")] });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toContain("application/json");
+    expect(res.headers.get("Content-Disposition")).toBeNull();
+    const body = (await res.json()) as { html: string };
+    expect(body.html).toContain("Паспорт Заказа и договора");
+    expect(body.html).toContain("Стоматологическая мебель");
+    expect(body.html).not.toContain("<!--slot:");
+  });
+
+  it("writes the mandated constant without being asked", async () => {
+    const res = await call({ templateId: "ed", values: [] });
+    const body = (await res.json()) as { html: string };
+    expect(body.html).toContain("Мишин С. С.");
+  });
+
+  it("escapes a hostile value from a supplier document", async () => {
+    const res = await call({ templateId: "ed", values: [ev("e2", '<img src=x onerror="steal()">')] });
+    const body = (await res.json()) as { html: string };
+    expect(body.html).not.toContain("onerror=\"");
+    expect(body.html).toContain("&lt;img");
+  });
+
+  it("400s on a choice value outside its list", async () => {
+    const res = await call({ templateId: "ed", values: [ev("e11", "Иванов")] });
+    expect(res.status).toBe(400);
+  });
+
+  it("accepts a choice value from its list", async () => {
+    const res = await call({ templateId: "ed", values: [ev("e11", "Вознесенская")] });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { html: string };
+    expect(body.html).toContain("Вознесенская");
+  });
+
+  it("ignores a field list sent by the client — the catalog comes from the repo", async () => {
+    const hostile = [{
+      id: "e2", group: "order", label_ru: "Предмет", label_en: "Subject", kind: "text",
+      required: true, strategy: "llm", cell: "subject", slotMode: "paragraphs",
+      paragraphHtml: '<p onclick="steal()">{}</p>',
+    }];
+    const res = await call({ templateId: "ed", values: [ev("e2", "мебель")], fields: hostile });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { html: string };
+    expect(body.html).not.toContain("onclick");
+  });
+});

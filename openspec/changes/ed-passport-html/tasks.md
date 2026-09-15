@@ -97,23 +97,27 @@
 
 ## 5. Persistence
 
-- [ ] 5.1 Add `html` to the `template_format` enum in `lib/db/schema.ts` and
-  generate the Drizzle migration; widen `TemplateRow["format"]`. Proven by:
-  `npx tsc --noEmit` clean and the generated SQL containing only
-  `ALTER TYPE … ADD VALUE`.
-- [ ] 5.2 Add the idempotent ED seed row (`id: 'ed'`, `userId: null`,
-  `fileKey: null`, `format: 'html'`). Proven by: manual check — running the seed
-  twice leaves one row.
+- [x] 5.1 Add `html` to the `template_format` enum in `lib/db/schema.ts` and
+  widen `TemplateRow["format"]` (теперь выводится из самого enum). Отступление:
+  файлов миграций в репозитории нет — схема раскатывается `drizzle-kit push`,
+  поэтому генерировать было нечего; изменение аддитивное. Proven by:
+  `npx tsc --noEmit` clean — `30-tsc-group6.txt`.
+- [x] 5.2 Add the idempotent ED seed row (`id: 'ed'`, `userId: null`,
+  `fileKey: null`, `format: 'html'`) в `scripts/db-seed.mjs` через
+  `ON CONFLICT (id) DO NOTHING`. Проверка владельца: прогнать сид дважды и
+  убедиться, что строка одна — записано в `verification.md`.
 
 ## 6. Pipeline and API
 
-- [ ] 6.1 Branch `app/api/fill/route.ts` on the template's stored format:
+- [x] 6.1 Branch `app/api/fill/route.ts` on the template's stored format:
   workbook bytes for `xlsx`, JSON `{ html }` for `html`, one guard and one
-  history write for both. Proven by: `app/api/fill/route.test.ts` cases — an
-  HTML template returns JSON and writes no file; an XLSX template is unchanged.
-- [ ] 6.2 Accept the run note on the extraction request and pass it to
-  `extractFields`. Proven by: `app/api/extract/route.test.ts` case asserting the
-  note reaches the prompt.
+  history write for both. Сверх плана: для встроенного шаблона каталог полей
+  берётся из репозитория, список из тела запроса игнорируется — иначе клиент
+  подсунул бы свою разметку. Proven by: `app/api/fill/route.test.ts` —
+  `28-fill-route.txt`, 18 passed.
+- [x] 6.2 Accept the run note on the extraction request and pass it to
+  `extractFields` вместе с инструкцией шаблона. Proven by:
+  `app/api/extract/route.test.ts` — `29-extract-route.txt`, 15 passed.
 
 ## 7. Wizard
 

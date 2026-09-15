@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isGuest, unauthorized } from "@/lib/auth/guard";
 import { extractFields } from "@/lib/extract/extract";
-import { parseFieldList } from "@/lib/templates/validate";
-import { PT_FIELDS } from "@/lib/extract/fields";
+import { parseFieldList, parseUserNote } from "@/lib/templates/validate";
+import { PT_FIELDS, PT_INSTRUCTION } from "@/lib/extract/fields";
+import { ED_FIELDS, ED_INSTRUCTION } from "@/lib/render/ed";
 import { DEFAULT_MODEL } from "@/lib/extract/llm/catalog";
 import type { OnAttempt, ExtractionModel } from "@/lib/extract/llm/types";
 import type { ParsedDoc } from "@/lib/parse/types";
@@ -16,7 +17,14 @@ import { assertSafeBaseUrl } from "@/lib/extract/llm/providers";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-type Body = { templateId?: string; model: string; docs: ParsedDoc[]; fields?: unknown };
+type Body = { templateId?: string; model: string; docs: ParsedDoc[]; fields?: unknown; note?: unknown };
+
+/** Правила и каталог встроенного шаблона берутся из репозитория, а не из тела
+ *  запроса: чужой шаблон не может подменить ни промт, ни режимы рендера. */
+const BUILTINS: Record<string, { instruction: string; fields: ExtractField[] }> = {
+  pt: { instruction: PT_INSTRUCTION, fields: PT_FIELDS },
+  ed: { instruction: ED_INSTRUCTION, fields: ED_FIELDS },
+};
 
 export async function POST(req: Request): Promise<Response> {
   const session = await auth();
@@ -31,13 +39,21 @@ export async function POST(req: Request): Promise<Response> {
   if (!body || typeof body.model !== "string" || !Array.isArray(body.docs)) {
     return NextResponse.json({ error: "Ожидаются поля model: string и docs: []" }, { status: 400 });
   }
+  const builtin = typeof body.templateId === "string" ? BUILTINS[body.templateId] : undefined;
+
+  // Для встроенного шаблона список полей из тела не разбирается вовсе: каталог
+  // берётся из репозитория, так что прислать свой незачем и нельзя.
   let fields: ExtractField[] | null | undefined;
-  if (body.fields !== undefined) {
+  if (!builtin && body.fields !== undefined) {
     fields = parseFieldList(body.fields);
     if (!fields) return NextResponse.json({ error: "Некорректный список полей" }, { status: 400 });
   }
+  const note = parseUserNote(body.note);
+  if (!note.ok) return NextResponse.json({ error: "Слишком длинная заметка" }, { status: 400 });
+
   const effModel = guest ? DEFAULT_MODEL : body.model;
-  const effFields = guest ? PT_FIELDS : (fields ?? undefined);
+  const effFields = guest ? PT_FIELDS : (builtin?.fields ?? fields ?? undefined);
+  const prompt = { instruction: builtin?.instruction, userNote: note.note || undefined };
 
   let modelOverride: ExtractionModel | undefined;
   if (!guest && body.model.startsWith("custom:")) {
@@ -67,7 +83,7 @@ export async function POST(req: Request): Promise<Response> {
       };
       try {
         const { values, warnings, llmFailed, usedModel } =
-          await extractFields(body.docs, effModel, effFields, onAttempt, { freeOnly: guest, modelOverride });
+          await extractFields(body.docs, effModel, effFields, onAttempt, { freeOnly: guest, modelOverride, prompt });
         write({ type: "result", values, warnings, llmFailed, usedModel });
       } catch (e) {
         // extractFields degrades internally and shouldn't throw for LLM failure, but guard the stream.

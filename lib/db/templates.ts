@@ -1,6 +1,8 @@
 import { and, eq, isNull, or } from "drizzle-orm";
 import { getDb } from "./client";
-import { templates } from "./schema";
+import { templates, templateFormat } from "./schema";
+
+export type TemplateFormat = (typeof templateFormat.enumValues)[number];
 import type { ExtractField } from "@/lib/extract/fields";
 
 export interface TemplateRow {
@@ -10,7 +12,7 @@ export interface TemplateRow {
   nameEn: string;
   descRu: string;
   descEn: string;
-  format: "xlsx" | "docx";
+  format: TemplateFormat;
   fileKey: string | null;
   sheets: string[];
   userId: string | null;

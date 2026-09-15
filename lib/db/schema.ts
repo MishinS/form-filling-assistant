@@ -1,7 +1,7 @@
 import { pgTable, text, integer, boolean, jsonb, timestamp, pgEnum, primaryKey } from "drizzle-orm/pg-core";
 import type { ExtractField } from "../extract/fields";
 
-export const templateFormat = pgEnum("template_format", ["xlsx", "docx"]);
+export const templateFormat = pgEnum("template_format", ["xlsx", "docx", "html"]);
 export const fieldKind = pgEnum("field_kind", ["string", "amount", "date", "text"]);
 export const fieldSource = pgEnum("field_source", ["rule", "llm", "manual"]);
 export const fillStatus = pgEnum("fill_status", ["uploading", "processing", "review", "done", "error"]);
