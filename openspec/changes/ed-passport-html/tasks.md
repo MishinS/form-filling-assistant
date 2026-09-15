@@ -144,11 +144,16 @@
 
 - [ ] 8.1 Run the ED template against the owner's own documents from
   `~/Downloads` — at minimum the «Договор №07_26 + Счёт №7 + Смета» triple and
-  two single-invoice cases — and record per-field accuracy. Proven by: the run
-  output file named in `verification.md`.
+  two single-invoice cases — and record per-field accuracy. НЕ ВЫПОЛНЕНО: из
+  этой среды Node не достаёт до OpenRouter (`connect ETIMEDOUT` на 104.18.3.115:443,
+  `ENETUNREACH` по IPv6), при том что `curl` к тому же адресу отвечает 200.
+  Разбор документов и рендер на них прошли (`35-accuracy.txt`); измерить осталось
+  только качество ответов модели. Вынесено владельцу в `verification.md`.
 - [ ] 8.2 Paste one rendered document into navi's editor and compare it with the
-  owner's original. Proven by: manual check by the owner — this cannot be
-  automated from this repo and is named in `verification.md` as his.
-- [ ] 8.3 Confirm the PT path is untouched: the PT prompt still matches the
+  owner's original. За владельцем: документ для вставки собран —
+  `36-passport-example.html`, предпросмотр — `36-passport-example-preview.html`.
+- [x] 8.3 Confirm the PT path is untouched: the PT prompt still matches the
   baseline string and a PT fill still downloads a workbook. Proven by:
-  `npm test` green plus the PT fill re-run recorded in `verification.md`.
+  `37-tests-final.txt` — 664 passed, включая сверку промта ПТ с `baseline.md` и
+  выдачу книги в `app/api/fill/route.test.ts`; `38-tsc-final.txt` — код 0;
+  sha256 `pt.xlsx` не изменился (`39-after-values.txt`).
