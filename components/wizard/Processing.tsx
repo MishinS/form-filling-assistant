@@ -11,6 +11,7 @@ import type { ExtractField } from "@/lib/extract/fields";
 import RaceList, { type RaceItem } from "@/components/wizard/RaceList";
 import { isTauri } from "@/lib/desktop/tauri";
 import { runLocalExtract } from "@/lib/extract/llm/run-local-extract";
+import { builtinInstruction } from "@/lib/templates/builtins";
 
 type Props = {
   sources: UploadFile[];
@@ -87,7 +88,8 @@ export default function Processing({ sources, model, templateId, fields, note, o
       };
       if (isTauri() && modelId.startsWith("local:")) {
         // Desktop local model: run extraction in the webview; feed the same consumer.
-        await runLocalExtract(docs, modelId, fields, (line) => handleLine(line.trim()), note ? { userNote: note } : undefined);
+        await runLocalExtract(docs, modelId, fields, (line) => handleLine(line.trim()),
+          { instruction: builtinInstruction(templateId), userNote: note || undefined });
       } else {
         const res = await fetch("/api/extract", {
           method: "POST",

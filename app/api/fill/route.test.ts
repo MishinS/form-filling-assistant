@@ -180,3 +180,25 @@ describe("/api/fill with an HTML template", () => {
     expect(body.html).not.toContain("onclick");
   });
 });
+
+describe("/api/fill rejects a malformed value list", () => {
+  const call = (body: unknown) =>
+    POST(new Request("http://t/api/fill", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }));
+
+  it("400s on a non-string value instead of 500ing on trim()", async () => {
+    const res = await call({ templateId: "ed", values: [{ fieldId: "e2", value: 5 }] });
+    expect(res.status).toBe(400);
+  });
+
+  it("400s on a null entry", async () => {
+    const res = await call({ templateId: "ed", values: [null] });
+    expect(res.status).toBe(400);
+  });
+
+  it("400s on a malformed value list for the workbook template too", async () => {
+    const res = await call({ templateId: "pt", values: [{ fieldId: "f1" }] });
+    expect(res.status).toBe(400);
+  });
+});

@@ -23,6 +23,22 @@ export interface FieldListOptions {
   allowedGroups?: string[];
 }
 
+export const MAX_VALUE_LENGTH = 20_000;
+
+/** Проверяет форму значений, пришедших в теле запроса. Роут раньше убеждался
+ *  только в том, что это массив, а дальше по ним звали `.trim()` — число или
+ *  `null` внутри давало необработанный TypeError и 500 вместо 400. */
+export function isValueList(input: unknown): input is Array<Pick<ExtractedValue, "fieldId" | "value">> {
+  if (!Array.isArray(input)) return false;
+  for (const raw of input) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return false;
+    const v = raw as Record<string, unknown>;
+    if (typeof v.fieldId !== "string" || !v.fieldId || v.fieldId.length > 200) return false;
+    if (typeof v.value !== "string" || v.value.length > MAX_VALUE_LENGTH) return false;
+  }
+  return true;
+}
+
 /** Поле-выбор принимает только значение из своего списка. Пустое допустимо —
  *  человек ещё не выбрал. */
 export function validateChoiceValues(

@@ -104,7 +104,7 @@ describe("parseFieldList with allowedSheets", () => {
   });
 });
 
-import { validateChoiceValues, parseUserNote, MAX_NOTE_LENGTH } from "./validate";
+import { validateChoiceValues, parseUserNote, MAX_NOTE_LENGTH, isValueList, MAX_VALUE_LENGTH } from "./validate";
 import { ED_FIELDS } from "@/lib/render/ed";
 
 const EDSLOTS = ED_FIELDS.map((f) => f.cell);
@@ -188,5 +188,30 @@ describe("the run note", () => {
   it("accepts a note exactly at the bound", () => {
     const note = "x".repeat(MAX_NOTE_LENGTH);
     expect(parseUserNote(note)).toEqual({ ok: true, note });
+  });
+});
+
+describe("value shape", () => {
+  it("accepts a normal value list", () => {
+    expect(isValueList([{ fieldId: "e2", value: "мебель" }])).toBe(true);
+  });
+  it("accepts an empty list", () => {
+    expect(isValueList([])).toBe(true);
+  });
+  it("rejects a non-string value — trim() on a number is a 500, not a 400", () => {
+    expect(isValueList([{ fieldId: "e2", value: 5 }])).toBe(false);
+  });
+  it("rejects a null entry", () => {
+    expect(isValueList([null])).toBe(false);
+  });
+  it("rejects a missing fieldId", () => {
+    expect(isValueList([{ value: "x" }])).toBe(false);
+  });
+  it("rejects anything that is not an array", () => {
+    expect(isValueList({ fieldId: "e2", value: "x" })).toBe(false);
+    expect(isValueList(undefined)).toBe(false);
+  });
+  it("rejects an oversized value", () => {
+    expect(isValueList([{ fieldId: "e2", value: "x".repeat(MAX_VALUE_LENGTH + 1) }])).toBe(false);
   });
 });

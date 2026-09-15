@@ -1,5 +1,6 @@
 import { uploadToBlob, inferMime } from "@/lib/upload/client";
 import { runLocalExtract } from "@/lib/extract/llm/run-local-extract";
+import { builtinInstruction } from "@/lib/templates/builtins";
 import { isTauri } from "@/lib/desktop/tauri";
 import type { ExtractField } from "@/lib/extract/fields";
 import type { ParsedDoc } from "@/lib/parse/types";
@@ -30,7 +31,8 @@ export function makeRunOne(opts: { templateId: string; fields: ExtractField[]; m
     // 3. Extract — same branch the wizard takes (desktop-local vs cloud).
     let ndjson = "";
     if (isTauri() && model.startsWith("local:")) {
-      await runLocalExtract(docs, model, fields, (line) => { ndjson += line + "\n"; });
+      await runLocalExtract(docs, model, fields, (line) => { ndjson += line + "\n"; },
+        { instruction: builtinInstruction(templateId) });
     } else {
       const eRes = await fetch("/api/extract", {
         method: "POST",

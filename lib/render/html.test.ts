@@ -152,6 +152,15 @@ describe("renderHtml — value modes", () => {
     expect(out).toBe(`<td><p><strong>раз</strong></p><p><strong>два</strong></p></td>`);
   });
 
+  it("treats a dollar sign in a value as text, not as a replacement pattern", () => {
+    const fields = [f("a", { slotMode: "paragraphs", paragraphHtml: "<p><b>{}</b></p>" })];
+    const out = html(`<td><!--slot:a--></td>`, fields, [v("a", "$& $$ 100")]);
+    // `$&` and `$$` are replacement patterns to String.replace — with a string
+    // replacement they would drag the wrapper's own text into the document.
+    expect(out).toBe("<td><p><b>$&amp; $$ 100</b></p></td>");
+    expect(out).not.toContain("{}");
+  });
+
   it("renders an empty paragraphs value as nothing", () => {
     const fields = [f("a", { slotMode: "paragraphs" })];
     expect(html(`<td><!--slot:a--></td>`, fields, [v("a", "")])).toBe(`<td></td>`);

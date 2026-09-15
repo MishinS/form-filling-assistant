@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { isGuest, unauthorized } from "@/lib/auth/guard";
 import type { ExtractedValue } from "@/lib/types";
 import { fillPtXlsx, fillCustomXlsx } from "@/lib/fill/xlsx";
-import { parseFieldList, validateChoiceValues } from "@/lib/templates/validate";
+import { parseFieldList, validateChoiceValues, isValueList } from "@/lib/templates/validate";
 import { getTemplate } from "@/lib/db/templates";
 import { PT_FIELDS } from "@/lib/extract/fields";
 import { renderHtml } from "@/lib/render/html";
@@ -38,7 +38,7 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return new Response("Bad JSON", { status: 400 });
   }
-  if (typeof body.templateId !== "string" || !Array.isArray(body.values)) {
+  if (typeof body.templateId !== "string" || !isValueList(body.values)) {
     return new Response("Bad request", { status: 400 });
   }
   if (guest && !BUILTIN_IDS.includes(body.templateId)) {

@@ -101,7 +101,9 @@ function renderValue(field: RenderFieldSpec, value: string): string {
     case "paragraphs": {
       const wrap = field.paragraphHtml ?? DEFAULT_PARAGRAPH;
       return lines(value)
-        .map((l) => wrap.replace("{}", escapeHtml(l)))
+        // Функция-заменитель, а не строка: иначе `$&` или `$\x27` в значении
+        // трактовались бы как шаблон подстановки и вытащили бы в документ обёртку.
+        .map((l) => wrap.replace("{}", () => escapeHtml(l)))
         .join("");
     }
     case "list": {

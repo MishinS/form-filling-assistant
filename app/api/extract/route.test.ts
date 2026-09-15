@@ -168,3 +168,32 @@ describe("the template's rules and the run note reach extraction", () => {
     expect((last[2] as Array<{ id: string }>).length).toBe(11);
   });
 });
+
+describe("a user's own field mapping still reaches extraction", () => {
+  const call = (body: unknown) =>
+    POST(new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) }));
+
+  it("honours a mapping sent for the payment request", async () => {
+    const mapped = [{
+      id: "f1", group: "req", label_ru: "Контрагент", label_en: "Counterparty", kind: "string",
+      required: true, strategy: "llm", cell: "ПТ!D9", hint_ru: "моя подсказка",
+    }];
+    await call({ templateId: "pt", model: "m", docs: [], fields: mapped });
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    const fields = last[2] as Array<{ id: string; hint_ru?: string }>;
+    expect(fields).toHaveLength(1);
+    expect(fields[0].hint_ru).toBe("моя подсказка");
+    // …and the template's own rules still come from the repo.
+    expect(last[4]?.prompt?.instruction).toContain("Платёжного требования");
+  });
+
+  it("still refuses a malformed mapping for the payment request", async () => {
+    const res = await call({ templateId: "pt", model: "m", docs: [], fields: [{ id: "f1", cell: "9D" }] });
+    expect(res.status).toBe(400);
+  });
+
+  it("does not let an inherited property name pass as a built-in", async () => {
+    const res = await call({ templateId: "constructor", model: "m", docs: [], fields: [{ id: "f1", cell: "9D" }] });
+    expect(res.status).toBe(400);
+  });
+});

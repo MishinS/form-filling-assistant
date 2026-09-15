@@ -27,7 +27,7 @@ export const ED_FIELDS: ExtractField[] = [
   {
     id: "e1", group: "order", cell: "d0",
     label_ru: "Документы заказа", label_en: "Order documents",
-    kind: "text", required: true, strategy: "llm",
+    kind: "text", required: true, strategy: "llm", area: true,
     slotMode: "list", listSeparator: DOC_SEPARATOR,
     hint_ru: "названия загруженных документов, каждое с новой строки, например: Договор №07_26 от 11.08.26",
   },
@@ -79,7 +79,7 @@ export const ED_FIELDS: ExtractField[] = [
     id: "e8", group: "terms", cell: "warranty",
     label_ru: "Гарантии и другие существенные условия по договору",
     label_en: "Warranty and other material terms",
-    kind: "text", required: false, strategy: "llm",
+    kind: "text", required: false, strategy: "llm", area: true,
     slotMode: "breaks",
     hint_ru: "срок гарантии, кто везёт и монтирует",
   },

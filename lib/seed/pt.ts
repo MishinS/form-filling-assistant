@@ -342,6 +342,12 @@ export const TEMPLATES: UiTemplate[] = [
     desc_ru: "Внутренняя заявка на оплату по счёту / договору", desc_en: "Internal request to pay against an invoice / contract",
     format: "XLSX", sheets: ["ПТ", "Счёт", "График оплат"], fields: 18, updated: "20.05.2026", primary: true,
   },
+  {
+    id: "ed", code: "ЭД-ПЗД", name_ru: "Паспорт Заказа и договора", name_en: "Order & Contract Passport",
+    desc_ru: "Электронный документ: HTML для вставки в редактор navi",
+    desc_en: "Electronic document: HTML to paste into the navi editor",
+    format: "HTML", sheets: [], fields: 11, updated: "15.09.2026", primary: false,
+  },
 ];
 
 export const SOURCE_FILES: UiSourceFile[] = [

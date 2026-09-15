@@ -36,6 +36,9 @@ export default function FieldInput({ f, val, onChange, invalid = false, id, desc
     return (
       <select
         id={id}
+        // Регистрируется наравне с остальными: иначе «к следующему» упирается в
+        // незаполненное поле-выбор и перестаёт двигать фокус.
+        ref={inputRef as ((el: HTMLSelectElement | null) => void) | undefined}
         value={val}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => { setFocus(true); onFocusField?.(); }}

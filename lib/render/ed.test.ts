@@ -29,6 +29,14 @@ describe("ED_FIELDS catalog", () => {
     expect(ED_FIELDS.map((f) => f.cell).sort()).toEqual(slots.slice().sort());
   });
 
+  it("gives every multi-line field a text area so review does not eat line breaks", () => {
+    for (const f of ED_FIELDS) {
+      if (f.slotMode === "list" || f.slotMode === "breaks" || f.slotMode === "paragraphs") {
+        expect(f.area, `${f.label_ru} принимает несколько строк`).toBe(true);
+      }
+    }
+  });
+
   it("has unique ids", () => {
     expect(new Set(ED_FIELDS.map((f) => f.id)).size).toBe(ED_FIELDS.length);
   });
