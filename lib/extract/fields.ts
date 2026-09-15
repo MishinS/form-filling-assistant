@@ -1,5 +1,6 @@
 import type { FieldKind } from "@/lib/types";
 import type { RuleKey } from "./rules";
+import type { SlotMode } from "@/lib/render/html";
 
 export type Strategy = "rule" | "llm" | "manual";
 
@@ -14,7 +15,9 @@ export interface DateRule {
 
 export interface ExtractField {
   id: string;
-  group: "req" | "pay" | "terms";
+  /** Идентификатор группы полей шаблона: у каждого шаблона свой набор
+   *  (PT_GROUPS, ED_GROUPS). Проверяется на границе против групп шаблона. */
+  group: string;
   label_ru: string;
   label_en: string;
   cell: string;
@@ -34,6 +37,28 @@ export interface ExtractField {
   constantValue?: string;
   /** Правило вычисления даты от момента формирования файла при fillMode === "date". */
   dateRule?: DateRule;
+
+  // --- HTML-шаблоны -------------------------------------------------------
+  /** Как значение превращается в разметку. Только для шаблонов формата html. */
+  slotMode?: SlotMode;
+  /** slotMode "paragraphs": обёртка каждой строки, `{}` — место экранированного текста. */
+  paragraphHtml?: string;
+  /** slotMode "list": разделитель между элементами и один после последнего. */
+  listSeparator?: string;
+  /** Значение, которым заполняется раздел, если извлечь нечего. */
+  defaultValue?: string;
+
+  // --- поля, на которые документы контрагента не отвечают ------------------
+  /** Ответ берётся из заметки пользователя к прогону, а не из документов. */
+  fromNote?: boolean;
+  /** Закрытый набор вариантов: значение выбирает человек на шаге проверки. */
+  options?: FieldOption[];
+}
+
+export interface FieldOption {
+  value: string;
+  label_ru: string;
+  label_en: string;
 }
 
 export const PT_FIELDS: ExtractField[] = [

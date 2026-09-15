@@ -44,6 +44,18 @@ describe("renderHtml — slots", () => {
     expect(r).toEqual({ ok: true, html: `<td>Мишин С. С.</td>` });
   });
 
+  it("falls back to the field's default when the documents said nothing", () => {
+    const fields = [f("a", { defaultValue: "стандартные условия" })];
+    const r = renderHtml(`<td>Штрафы: <!--slot:a--></td>`, fields, [v("a", "")]);
+    expect(r).toEqual({ ok: true, html: `<td>Штрафы: стандартные условия</td>` });
+  });
+
+  it("prefers an extracted value over the default", () => {
+    const fields = [f("a", { defaultValue: "стандартные условия" })];
+    const r = renderHtml(`<td><!--slot:a--></td>`, fields, [v("a", "пеня 0,1% в день")]);
+    expect(r).toEqual({ ok: true, html: `<td>пеня 0,1% в день</td>` });
+  });
+
   it("refuses a field addressing a slot the skeleton lacks, with no partial document", () => {
     const r = renderHtml(`<p><!--slot:a--></p>`, [f("a"), f("b")], [v("a", "раз")]);
     expect(r).toEqual({ ok: false, error: { code: "unknown_slot", fieldId: "b" } });
@@ -165,6 +177,20 @@ describe("renderHtml — value modes", () => {
   it("escapes list items", () => {
     const fields = [f("a", { slotMode: "list", listSeparator: "|" })];
     expect(html(`<p><!--slot:a--></p>`, fields, [v("a", "<b>")])).toBe(`<p>&lt;b&gt;|</p>`);
+  });
+
+  it("joins lines with <br> inside a paragraph", () => {
+    const fields = [f("a", { slotMode: "breaks" })];
+    const out = html(`<p>Контрагент: <!--slot:a--></p>`, fields, [
+      v("a", 'ООО "Валидус-ДМ", своё производство\nПоставили мебель для Ф08.'),
+    ]);
+    expect(out).toBe(
+      `<p>Контрагент: ООО &quot;Валидус-ДМ&quot;, своё производство<br>Поставили мебель для Ф08.</p>`,
+    );
+  });
+
+  it("renders an empty breaks value as nothing", () => {
+    expect(html(`<p><!--slot:a--></p>`, [f("a", { slotMode: "breaks" })], [v("a", "")])).toBe(`<p></p>`);
   });
 
   it("leaves a text value as one escaped run", () => {

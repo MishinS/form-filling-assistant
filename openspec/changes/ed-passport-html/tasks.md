@@ -27,19 +27,23 @@
 
 ## 2. The «Паспорт Заказа и договора» template
 
-- [ ] 2.1 Convert `~/Downloads/Шаблон ЭД.txt` from CP1251 to UTF-8, strip the
+- [x] 2.1 Convert `~/Downloads/Шаблон ЭД.txt` from CP1251 to UTF-8, strip the
   instruction header and every `id` attribute, and save the remainder as
   `lib/render/templates/ed.html` with `<!--slot:ID-->` markers in place of the
   example's values. Proven by: manual check — the file opens in a browser and
-  renders the owner's layout; `lib/render/subset.test.ts` green on it.
-- [ ] 2.2 Add `ED_FIELDS` to `lib/extract/fields.ts`: the documents row (`list`),
+  renders the owner's layout; `lib/render/ed.test.ts` green on it. Файл прогона: `14-ed-green.txt` — 56 passed.
+- [x] 2.2 Add `ED_FIELDS` to `lib/extract/fields.ts`: the documents row (`list`),
   the sections in form order with their slot addresses and render modes,
   «Класс расхода» as note-sourced, and the signature row as one line of three —
   «Запустил» constant «Мишин С. С.», «Инициатор» a blank label with no field,
   «ЦФО» a choice among Суровцев / Вознесенская / Субханкулова labelled by
   department. Proven by: `lib/extract/fields.test.ts` case asserting every
   `ED_FIELDS` address resolves to a slot present in `ed.html`, and that the
-  signature slots appear in that order.
+  signature slots appear in that order. Отступление от плана: каталог лежит в
+  `lib/render/ed.ts` рядом со своей разметкой, а не в `lib/extract/fields.ts` —
+  в общий файл уехал только тип `ExtractField`. Файл прогона:
+  `14-ed-green.txt`; типы — `15-tsc-mid.txt`, весь набор — `16-tests-mid.txt`
+  (601 passed).
 - [ ] 2.3 Add the ED instruction text (the stripped header from 2.1, minus the
   colour rules that belong to the skeleton) as the template's own instruction.
   Proven by: `lib/extract/llm/prompt.test.ts` case asserting the rendered prompt

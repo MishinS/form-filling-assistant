@@ -5,7 +5,7 @@
 
 /** How a field's value turns into markup. Closed set: a value never chooses its
  *  own rendering, so the amount of HTML it can produce is bounded by the template. */
-export type SlotMode = "text" | "paragraphs" | "contact" | "list";
+export type SlotMode = "text" | "breaks" | "paragraphs" | "contact" | "list";
 
 export interface RenderFieldSpec {
   id: string;
@@ -18,6 +18,9 @@ export interface RenderFieldSpec {
   listSeparator?: string;
   fillMode?: "auto" | "constant" | "date";
   constantValue?: string;
+  /** Used when the resolved value is empty — the form requires a section to read
+   *  as something rather than trail off after its label. */
+  defaultValue?: string;
 }
 
 export type RenderError =
@@ -93,6 +96,8 @@ function renderContact(value: string): string {
 
 function renderValue(field: RenderFieldSpec, value: string): string {
   switch (field.slotMode ?? "text") {
+    case "breaks":
+      return lines(value).map(escapeHtml).join("<br>");
     case "paragraphs": {
       const wrap = field.paragraphHtml ?? DEFAULT_PARAGRAPH;
       return lines(value)
@@ -149,8 +154,9 @@ export function renderHtml(
   let out = parsed.chunks[0];
   parsed.slots.forEach((slot, i) => {
     const field = bySlot.get(slot)!;
-    const value =
+    const extracted =
       field.fillMode === "constant" ? (field.constantValue ?? "") : (byField.get(field.id) ?? "");
+    const value = extracted.trim() === "" ? (field.defaultValue ?? extracted) : extracted;
     out += renderValue(field, value) + parsed.chunks[i + 1];
   });
   return { ok: true, html: out };

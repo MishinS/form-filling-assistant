@@ -13,7 +13,7 @@ describe("PT_FIELDS catalog", () => {
     expect(by("manual")).toBe(2);
   });
   it("every rule field names a rule, every group exists", () => {
-    const groups = new Set(PT_GROUPS.map(g => g.id));
+    const groups = new Set<string>(PT_GROUPS.map(g => g.id));
     for (const f of PT_FIELDS) {
       expect(groups.has(f.group)).toBe(true);
       if (f.strategy === "rule") expect(f.rule).toBeTruthy();

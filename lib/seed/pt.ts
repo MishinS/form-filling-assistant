@@ -9,7 +9,7 @@ export interface UiTemplate {
 }
 export interface UiSourceFile { id: string; name: string; type: string; size: string; pages: number; }
 export interface PtField {
-  id: string; group: "req" | "pay" | "terms"; label_ru: string; label_en: string;
+  id: string; group: string; label_ru: string; label_en: string;
   value: string; cell: string; conf: ConfLevel; unit?: string; area?: boolean;
   src: { file: string; loc: string };
 }
