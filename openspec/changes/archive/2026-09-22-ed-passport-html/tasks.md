@@ -142,14 +142,14 @@
 
 ## 8. Verification against reality
 
-- [ ] 8.1 Run the ED template against the owner's own documents from
+- [ ] 8.1 СНЯТО владельцем 2026-09-22 (выполняться не будет). Run the ED template against the owner's own documents from
   `~/Downloads` — at minimum the «Договор №07_26 + Счёт №7 + Смета» triple and
   two single-invoice cases — and record per-field accuracy. НЕ ВЫПОЛНЕНО: из
   этой среды Node не достаёт до OpenRouter (`connect ETIMEDOUT` на 104.18.3.115:443,
   `ENETUNREACH` по IPv6), при том что `curl` к тому же адресу отвечает 200.
   Разбор документов и рендер на них прошли (`35-accuracy.txt`); измерить осталось
   только качество ответов модели. Вынесено владельцу в `verification.md`.
-- [ ] 8.2 Paste one rendered document into navi's editor and compare it with the
+- [ ] 8.2 СНЯТО владельцем 2026-09-22 (выполняться не будет). Paste one rendered document into navi's editor and compare it with the
   owner's original. За владельцем: документ для вставки собран —
   `36-passport-example.html`, предпросмотр — `36-passport-example-preview.html`.
 - [x] 8.3 Confirm the PT path is untouched: the PT prompt still matches the
