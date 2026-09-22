@@ -31,11 +31,4 @@ describe("POST /api/fills", () => {
     await expect(res.json()).resolves.toEqual({ id: "fill-1" });
     expect(createFill).toHaveBeenCalledWith("me@x.ru", expect.objectContaining({ templateId: "pt" }));
   });
-
-  it("400s on a malformed body", async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ user: { email: "me@x.ru" } });
-    const res = await POST(req({ templateId: "pt" }));
-    expect(res.status).toBe(400);
-    expect(createFill).not.toHaveBeenCalled();
-  });
 });

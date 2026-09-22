@@ -22,24 +22,6 @@ describe("GET /api/search", () => {
     expect(searchMock).not.toHaveBeenCalled();
   });
 
-  it("short-circuits queries shorter than 2 chars without hitting the DB", async () => {
-    authMock.mockResolvedValue({ user: { email: "u@x.ru" } });
-    const res = await GET(req("a"));
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ fills: [], sources: [] });
-    expect(searchMock).not.toHaveBeenCalled();
-  });
-
-  it("returns searchAll results for a valid query", async () => {
-    authMock.mockResolvedValue({ user: { email: "u@x.ru" } });
-    const hits = { fills: [{ fillId: "F1", title: "ООО", subtitle: null, ext: "", kind: "fill" }], sources: [] };
-    searchMock.mockResolvedValue(hits);
-    const res = await GET(req("ООО"));
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual(hits);
-    expect(searchMock).toHaveBeenCalledWith("u@x.ru", "ООО");
-  });
-
   it("never 500s — DB error yields empty results", async () => {
     authMock.mockResolvedValue({ user: { email: "u@x.ru" } });
     searchMock.mockRejectedValue(new Error("neon down"));

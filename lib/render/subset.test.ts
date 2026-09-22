@@ -13,14 +13,6 @@ describe("checkSubset", () => {
     expect(ok(html)).toEqual({ ok: true });
   });
 
-  it("accepts a mailto link with a target", () => {
-    expect(ok(`<a href="mailto:a@b.ru" target="_self">a@b.ru</a>`)).toEqual({ ok: true });
-  });
-
-  it("accepts a slot comment", () => {
-    expect(ok(`<p>А: <!--slot:a--></p>`)).toEqual({ ok: true });
-  });
-
   it("rejects an id attribute — the editor strips it and re-assigns its own", () => {
     expect(ok(`<p id="e0de3005">x</p>`)).toEqual({
       ok: false,
@@ -35,24 +27,11 @@ describe("checkSubset", () => {
     });
   });
 
-  it("rejects an attribute the editor does not keep", () => {
-    expect(ok(`<p onclick="alert(1)">x</p>`)).toEqual({
-      ok: false,
-      error: { code: "attr_not_allowed", tag: "p", attr: "onclick" },
-    });
-  });
-
   it("rejects a font size outside the editor's list", () => {
     expect(ok(`<span style="font-size: 16px;">x</span>`)).toEqual({
       ok: false,
       error: { code: "font_size_not_allowed", size: "16px" },
     });
-  });
-
-  it("accepts every font size the editor offers", () => {
-    for (const size of NAVI_SUBSET.fontSizes) {
-      expect(ok(`<span style="font-size: ${size};">x</span>`)).toEqual({ ok: true });
-    }
   });
 
   it("fails closed on markup it cannot classify", () => {

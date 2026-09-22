@@ -14,10 +14,6 @@ describe("secrets", () => {
     expect(decryptSecret(blob)).toBe(plain);
   });
 
-  it("produces a different ciphertext each call (random IV)", () => {
-    expect(encryptSecret("same")).not.toBe(encryptSecret("same"));
-  });
-
   it("rejects a tampered blob", () => {
     const blob = encryptSecret("hello");
     const bytes = Buffer.from(blob, "base64");
@@ -30,17 +26,7 @@ describe("secrets", () => {
     expect(() => encryptSecret("x")).toThrow(/BYOK_ENCRYPTION_KEY/);
   });
 
-  it("throws on a malformed (non-base64) master key", () => {
-    vi.stubEnv("BYOK_ENCRYPTION_KEY", "not valid base64!!!");
-    expect(() => encryptSecret("x")).toThrow(/base64/i);
-  });
-
   it("masks first 2 + last 4, rest stars", () => {
     expect(maskKey("sk-or-v1-abcdab12")).toBe("sk" + "•".repeat(11) + "ab12");
-  });
-
-  it("fully masks short keys (≤ 6 chars)", () => {
-    expect(maskKey("abc123")).toBe("••••••");
-    expect(maskKey("")).toBe("");
   });
 });

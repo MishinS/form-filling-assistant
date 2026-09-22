@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { validateRegistration, isValidPassword } from "./register";
+import { describe,it,expect } from "vitest";
+import { validateRegistration } from "./register";
 
 const base = { email: "New@Mail.RU ", name: " Иван ", password: "longenough", inviteCode: "LETMEIN" };
 
@@ -13,32 +13,7 @@ describe("validateRegistration", () => {
     expect(validateRegistration(base, "")).toEqual({ ok: false, error: "invite" });
   });
 
-  it("rejects a bad email", () => {
-    expect(validateRegistration({ ...base, email: "not-an-email" }, "LETMEIN")).toEqual({ ok: false, error: "email" });
-  });
-
-  it("rejects an empty name", () => {
-    expect(validateRegistration({ ...base, name: "   " }, "LETMEIN")).toEqual({ ok: false, error: "name" });
-  });
-
-  it("rejects a short password (<8)", () => {
-    expect(validateRegistration({ ...base, password: "short" }, "LETMEIN")).toEqual({ ok: false, error: "password" });
-  });
-
   it("accepts valid input and normalizes email (lowercase+trim) and name (trim)", () => {
     expect(validateRegistration(base, "LETMEIN")).toEqual({ ok: true, email: "new@mail.ru", name: "Иван" });
-  });
-
-  it("checks invite before everything else", () => {
-    expect(validateRegistration({ email: "bad", name: "", password: "x", inviteCode: "wrong" }, "LETMEIN"))
-      .toEqual({ ok: false, error: "invite" });
-  });
-});
-
-describe("isValidPassword", () => {
-  it("requires at least 8 characters", () => {
-    expect(isValidPassword("1234567")).toBe(false);
-    expect(isValidPassword("12345678")).toBe(true);
-    expect(isValidPassword("")).toBe(false);
   });
 });

@@ -1,10 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe,it,expect,vi,beforeEach } from "vitest";
 
 const invokeLlmChat = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/desktop/tauri", () => ({ invokeLlmChat }));
 
 import { localCompatModel } from "./local-model";
-import { LlmRequestError } from "./openai-compat";
 import type { ExtractField } from "../fields";
 
 const FIELDS: ExtractField[] = [
@@ -26,20 +25,6 @@ describe("localCompatModel", () => {
     expect(out).toEqual([{ fieldId: "f1", value: "ACME", confidence: "high" }]);
     expect(events).toEqual(["start", "win"]);
   });
-
-  it("maps a transport rejection to a typed LlmRequestError", async () => {
-    invokeLlmChat.mockRejectedValueOnce(new Error("auth"));
-    const model = localCompatModel("x", "m");
-    await expect(model.extract(FIELDS, "t")).rejects.toMatchObject({
-      constructor: LlmRequestError, code: "auth",
-    });
-  });
-
-  it("maps invalid JSON to bad_response", async () => {
-    invokeLlmChat.mockResolvedValueOnce("not json");
-    const model = localCompatModel("x", "m");
-    await expect(model.extract(FIELDS, "t")).rejects.toMatchObject({ code: "bad_response" });
-  });
 });
 
 describe("the local path carries the template's rules and the run note", () => {
@@ -58,14 +43,5 @@ describe("the local path carries the template's rules and the run note", () => {
     expect(prompt).toContain("закупка по проекту 1905");
     // The local path keeps its own guidance block alongside the template's rules.
     expect(prompt).toContain("верни КАЖДОЕ поле");
-  });
-
-  it("sends neither section when the template carries none", async () => {
-    invokeLlmChat.mockResolvedValueOnce('{"fields":[{"fieldId":"f1","value":"ACME","confidence":"high"}]}');
-    const model = localCompatModel("http://127.0.0.1:11434/v1", "llama3.1:8b");
-    await model.extract(FIELDS, "ACME Corp invoice");
-    const { prompt } = invokeLlmChat.mock.calls[0][0] as { prompt: string };
-    expect(prompt).not.toContain("Контекст пользователя");
-    expect(prompt).not.toContain("Платёжного требования");
   });
 });

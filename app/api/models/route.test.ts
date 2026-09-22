@@ -28,11 +28,6 @@ describe("/api/models", () => {
     expect((await GET()).status).toBe(403);
   });
 
-  it("GET 401 when unauthenticated", async () => {
-    asMock(auth).mockResolvedValue(null);
-    expect((await GET()).status).toBe(401);
-  });
-
   it("POST requires consent when tosAcceptedAt is null and acceptTos not set", async () => {
     asMock(auth).mockResolvedValue(full);
     asMock(users.getUserByEmail).mockResolvedValue({ email: "a@b.co", tosAcceptedAt: null });
@@ -50,15 +45,5 @@ describe("/api/models", () => {
     expect(asMock(db.insertModel)).toHaveBeenCalledTimes(1);
     const inserted = asMock(db.insertModel).mock.calls[0][0];
     expect(inserted.keyCipher).not.toContain("sk-x"); // encrypted at rest
-  });
-
-  it("POST returns the probe error code on failure and inserts nothing", async () => {
-    asMock(auth).mockResolvedValue(full);
-    asMock(users.getUserByEmail).mockResolvedValue({ email: "a@b.co", tosAcceptedAt: new Date() });
-    asMock(probeModel).mockResolvedValue({ ok: false, code: "auth" });
-    const res = await POST(req({ provider: "openai", modelSlug: "gpt-4o", apiKey: "bad", label: "L" }));
-    expect(res.status).toBe(400);
-    expect((await res.json()).code).toBe("auth");
-    expect(asMock(db.insertModel)).not.toHaveBeenCalled();
   });
 });

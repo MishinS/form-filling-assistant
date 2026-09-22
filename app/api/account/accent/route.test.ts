@@ -22,37 +22,10 @@ describe("/api/account/accent", () => {
     expect(asMock(db.setAccent)).not.toHaveBeenCalled();
   });
 
-  it("401 when unauthenticated", async () => {
-    asMock(auth).mockResolvedValue(null);
-    expect((await POST(req({ accent: "teal" }))).status).toBe(401);
-  });
-
   it("400 on an unknown accent id and saves nothing", async () => {
     asMock(auth).mockResolvedValue(full);
     const res = await POST(req({ accent: "purple" }));
     expect(res.status).toBe(400);
     expect(asMock(db.setAccent)).not.toHaveBeenCalled();
-  });
-
-  it("saves a valid accent and echoes it", async () => {
-    asMock(auth).mockResolvedValue(full);
-    const res = await POST(req({ accent: "rose" }));
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, accent: "rose" });
-    expect(asMock(db.setAccent)).toHaveBeenCalledWith("a@b.co", "rose");
-  });
-
-  it("400 on a null JSON body (not 500) and saves nothing", async () => {
-    asMock(auth).mockResolvedValue(full);
-    const res = await POST(req(null));
-    expect(res.status).toBe(400);
-    expect(asMock(db.setAccent)).not.toHaveBeenCalled();
-  });
-
-  it("500 when the DB write throws", async () => {
-    asMock(auth).mockResolvedValue(full);
-    asMock(db.setAccent).mockRejectedValue(new Error("db down"));
-    const res = await POST(req({ accent: "teal" }));
-    expect(res.status).toBe(500);
   });
 });

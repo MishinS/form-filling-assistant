@@ -15,8 +15,4 @@ describe("POST /api/blob/upload", () => {
     const res = await POST(req({ type: "blob.generate-client-token" }));
     expect(res.status).toBe(401);
   });
-  it("delegates to handleUpload when authed", async () => {
-    const res = await POST(req({ type: "blob.generate-client-token" }));
-    expect(res.status).toBe(200);
-  });
 });

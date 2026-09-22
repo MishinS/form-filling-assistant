@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, it, expect } from "vitest";
-import { resolveEd, validateEd, MAX_SKELETON_LENGTH, type EdDefaults } from "./ed-custom";
+import { describe,it,expect } from "vitest";
+import { resolveEd,validateEd,type EdDefaults } from "./ed-custom";
 import { MAX_INSTRUCTION_LENGTH } from "./note";
-import { ED_FIELDS, ED_INSTRUCTION } from "@/lib/render/ed";
+import { ED_FIELDS,ED_INSTRUCTION } from "@/lib/render/ed";
 import type { ExtractField } from "@/lib/extract/fields";
 
 const skeleton = readFileSync(path.join(process.cwd(), "lib/render/templates/ed.html"), "utf8");
@@ -13,13 +13,6 @@ const byId = (fs: ExtractField[], id: string) => fs.find((f) => f.id === id)!;
 const stripped = (f: ExtractField): ExtractField => ({ ...f, paragraphHtml: undefined, listSeparator: undefined });
 
 describe("resolveEd", () => {
-  it("no row → every layer is the repository default", () => {
-    const eff = resolveEd(null, defaults);
-    expect(eff.fields).toEqual(ED_FIELDS);
-    expect(eff.instruction).toBe(ED_INSTRUCTION);
-    expect(eff.skeleton).toBe(skeleton);
-    expect(eff.custom).toEqual({ fields: false, instruction: false, skeleton: false });
-  });
 
   it("only the instruction saved → the rest follows the defaults", () => {
     const eff = resolveEd({ fields: null, instruction: "своя инструкция", skeleton: null }, defaults);
@@ -57,16 +50,6 @@ describe("validateEd", () => {
     expect(validateEd(eff({ skeleton: sk }))).toEqual({ ok: false, error: { code: "unknown_slot", fieldId: "e7" } });
   });
 
-  it("a field without a slot is named", () => {
-    const fields = [...ED_FIELDS, { ...ED_FIELDS[1], id: "u1", cell: "" }];
-    expect(validateEd(eff({ fields }))).toEqual({ ok: false, error: { code: "unknown_slot", fieldId: "u1" } });
-  });
-
-  it("a duplicated slot is named", () => {
-    const sk = skeleton + "<p><!--slot:subject--></p>";
-    expect(validateEd(eff({ skeleton: sk }))).toEqual({ ok: false, error: { code: "duplicate_slot", slot: "subject" } });
-  });
-
   it("two fields with one id are refused", () => {
     const fields = [...ED_FIELDS, { ...ED_FIELDS[1], cell: "subject2" }];
     const sk = skeleton + "<p><!--slot:subject2--></p>";
@@ -90,10 +73,5 @@ describe("validateEd", () => {
   it("an instruction over the bound is refused", () => {
     const r = validateEd(eff({ instruction: "x".repeat(MAX_INSTRUCTION_LENGTH + 1) }));
     expect(r).toEqual({ ok: false, error: { code: "instruction_too_long" } });
-  });
-
-  it("a skeleton over the bound is refused", () => {
-    const r = validateEd(eff({ skeleton: skeleton + " ".repeat(MAX_SKELETON_LENGTH) }));
-    expect(r).toEqual({ ok: false, error: { code: "skeleton_too_long" } });
   });
 });

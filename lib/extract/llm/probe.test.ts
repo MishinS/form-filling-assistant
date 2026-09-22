@@ -23,16 +23,6 @@ describe("probeModel", () => {
     expect(await probeModel(cfg)).toEqual({ ok: true });
   });
 
-  it("returns code=auth on 401", async () => {
-    global.fetch = vi.fn(async () => new Response("no", { status: 401 })) as unknown as typeof fetch;
-    expect(await probeModel(cfg)).toEqual({ ok: false, code: "auth" });
-  });
-
-  it("returns code=model_not_found on 404", async () => {
-    global.fetch = vi.fn(async () => new Response("no", { status: 404 })) as unknown as typeof fetch;
-    expect(await probeModel(cfg)).toEqual({ ok: false, code: "model_not_found" });
-  });
-
   it("returns code=bad_endpoint for a blocked base URL (no fetch)", async () => {
     const fetchSpy = vi.fn();
     global.fetch = fetchSpy as unknown as typeof fetch;

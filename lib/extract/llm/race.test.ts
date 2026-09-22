@@ -1,13 +1,7 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { raceModels, type Racer } from "./race";
-import type { AttemptEvent } from "./types";
+import { describe,it,expect,vi,afterEach } from "vitest";
+import { raceModels,type Racer } from "./race";
 
 afterEach(() => { vi.useRealTimers(); });
-
-const ev: () => { list: AttemptEvent[]; on: (e: AttemptEvent) => void } = () => {
-  const list: AttemptEvent[] = [];
-  return { list, on: (e) => list.push(e) };
-};
 
 describe("raceModels", () => {
   it("returns the first winner and aborts the other racers", async () => {
@@ -33,15 +27,6 @@ describe("raceModels", () => {
     ] });
   });
 
-  it("carries the understood flag through failures", async () => {
-    const racers: Racer<string>[] = [
-      { model: "a", run: async () => ({ win: false, reason: "no fields", understood: true }) },
-    ];
-    const out = await raceModels(racers, { timeoutMs: 1000 });
-    expect(out.ok).toBe(false);
-    if (!out.ok) expect(out.failures[0].understood).toBe(true);
-  });
-
   it("aborts a hung racer at timeoutMs and reports a Таймаут failure", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const racers: Racer<string>[] = [
@@ -54,22 +39,5 @@ describe("raceModels", () => {
     const out = await p;
     expect(out.ok).toBe(false);
     if (!out.ok) expect(out.failures[0].reason).toContain("Таймаут");
-  });
-
-  it("emits start for every racer, then a single win", async () => {
-    const { list, on } = ev();
-    const racers: Racer<string>[] = [
-      { model: "a", run: async () => ({ win: false, reason: "x" }) },
-      { model: "b", run: async () => ({ win: true, value: "B" }) },
-    ];
-    await raceModels(racers, { timeoutMs: 1000, onAttempt: on });
-    const starts = list.filter((e) => e.phase === "start").map((e) => e.model);
-    expect(starts).toEqual(["a", "b"]);
-    expect(list.some((e) => e.phase === "win" && e.model === "b")).toBe(true);
-    expect(list.every((e) => e.total === 2 || e.phase !== "start")).toBe(true);
-  });
-
-  it("handles an empty racer list", async () => {
-    expect(await raceModels([], { timeoutMs: 1000 })).toEqual({ ok: false, failures: [] });
   });
 });

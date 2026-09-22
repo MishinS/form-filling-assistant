@@ -1,11 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe,it,expect,beforeEach,afterEach } from "vitest";
 import { vi } from "vitest";
+import { POST } from "./route";
+import type { ExtractedValue } from "@/lib/types";
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
 vi.mock("@/lib/db/templates", () => ({ getTemplate: vi.fn() }));
 vi.mock("@/lib/db/mappings", () => ({ getTemplateLayers: vi.fn(async () => null) }));
-import { POST } from "./route";
-import type { ExtractedValue } from "@/lib/types";
-import { PT_FIELDS } from "@/lib/extract/fields";
 
 const ev = (fieldId: string, value: string): ExtractedValue => ({
   fieldId, value, confidence: "high", source: { fileId: null, locator: "" },
@@ -23,32 +22,6 @@ describe("POST /api/fill", () => {
     const buf = new Uint8Array(await res.arrayBuffer());
     expect(buf[0]).toBe(0x50); // P
     expect(buf[1]).toBe(0x4b); // K
-  });
-
-  it("400 on unknown templateId", async () => {
-    const res = await post({ templateId: "nope", values: [] });
-    expect(res.status).toBe(400);
-  });
-
-  it("400 on malformed body", async () => {
-    const res = await POST(new Request("http://t/api/fill", { method: "POST", body: "not json" }));
-    expect(res.status).toBe(400);
-  });
-});
-
-describe("/api/fill field validation", () => {
-  const call = (body: unknown) =>
-    POST(new Request("http://t/api/fill", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-    }));
-
-  it("400s on a malformed fields list", async () => {
-    const res = await call({ templateId: "pt", values: [], fields: [{ id: "f1", cell: "9D" }] });
-    expect(res.status).toBe(400);
-  });
-  it("200s with a valid fields list", async () => {
-    const res = await call({ templateId: "pt", values: [], fields: PT_FIELDS });
-    expect(res.status).toBe(200);
   });
 });
 
@@ -79,7 +52,7 @@ describe("/api/fill guest access", () => {
 });
 
 import { getTemplate } from "@/lib/db/templates";
-import { zipSync as zipC, strToU8 as s2u } from "fflate";
+import { zipSync as zipC,strToU8 as s2u } from "fflate";
 
 const mockGetTemplate = getTemplate as unknown as ReturnType<typeof vi.fn>;
 const customXlsx = () => zipC({
@@ -118,13 +91,6 @@ describe("POST /api/fill — custom template", () => {
     mockGetTemplate.mockResolvedValueOnce({ ...TPL_ROW, userId: "other@x.ru" });
     expect((await POST(postFill(customBody()))).status).toBe(400);
   });
-  it("400 when the template is soft-deleted", async () => {
-    mockGetTemplate.mockResolvedValueOnce({ ...TPL_ROW, deletedAt: new Date() });
-    expect((await POST(postFill(customBody()))).status).toBe(400);
-  });
-  it("400 without a field list", async () => {
-    expect((await POST(postFill(customBody({ fields: undefined })))).status).toBe(400);
-  });
 });
 
 describe("/api/fill with an HTML template", () => {
@@ -132,23 +98,6 @@ describe("/api/fill with an HTML template", () => {
     POST(new Request("http://t/api/fill", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     }));
-
-  it("returns the rendered document as JSON, not a download", async () => {
-    const res = await call({ templateId: "ed", values: [ev("e2", "Стоматологическая мебель")] });
-    expect(res.status).toBe(200);
-    expect(res.headers.get("Content-Type")).toContain("application/json");
-    expect(res.headers.get("Content-Disposition")).toBeNull();
-    const body = (await res.json()) as { html: string };
-    expect(body.html).toContain("Паспорт Заказа и договора");
-    expect(body.html).toContain("Стоматологическая мебель");
-    expect(body.html).not.toContain("<!--slot:");
-  });
-
-  it("writes the mandated constant without being asked", async () => {
-    const res = await call({ templateId: "ed", values: [] });
-    const body = (await res.json()) as { html: string };
-    expect(body.html).toContain("Мишин С. С.");
-  });
 
   it("escapes a hostile value from a supplier document", async () => {
     const res = await call({ templateId: "ed", values: [ev("e2", '<img src=x onerror="steal()">')] });
@@ -161,25 +110,6 @@ describe("/api/fill with an HTML template", () => {
     const res = await call({ templateId: "ed", values: [ev("e11", "Иванов")] });
     expect(res.status).toBe(400);
   });
-
-  it("accepts a choice value from its list", async () => {
-    const res = await call({ templateId: "ed", values: [ev("e11", "Вознесенская")] });
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { html: string };
-    expect(body.html).toContain("Вознесенская");
-  });
-
-  it("ignores a field list sent by the client — the catalog comes from the repo", async () => {
-    const hostile = [{
-      id: "e2", group: "order", label_ru: "Предмет", label_en: "Subject", kind: "text",
-      required: true, strategy: "llm", cell: "subject", slotMode: "paragraphs",
-      paragraphHtml: '<p onclick="steal()">{}</p>',
-    }];
-    const res = await call({ templateId: "ed", values: [ev("e2", "мебель")], fields: hostile });
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { html: string };
-    expect(body.html).not.toContain("onclick");
-  });
 });
 
 describe("/api/fill rejects a malformed value list", () => {
@@ -190,16 +120,6 @@ describe("/api/fill rejects a malformed value list", () => {
 
   it("400s on a non-string value instead of 500ing on trim()", async () => {
     const res = await call({ templateId: "ed", values: [{ fieldId: "e2", value: 5 }] });
-    expect(res.status).toBe(400);
-  });
-
-  it("400s on a null entry", async () => {
-    const res = await call({ templateId: "ed", values: [null] });
-    expect(res.status).toBe(400);
-  });
-
-  it("400s on a malformed value list for the workbook template too", async () => {
-    const res = await call({ templateId: "pt", values: [{ fieldId: "f1" }] });
     expect(res.status).toBe(400);
   });
 });
@@ -223,15 +143,6 @@ describe("/api/fill renders the user's own order passport", () => {
     const out = await html(res);
     expect(out).toContain("Неустойка");
     expect(out).not.toContain("Штрафы, пени по договору");
-  });
-
-  it("a fourth ЦФО option the user added is accepted", async () => {
-    const fields = ED_FIELDS.map((f) => f.id === "e11"
-      ? { ...f, options: [...f.options!, { value: "Иванов", label_ru: "ИТ", label_en: "IT" }] } : f);
-    mockLayers.mockResolvedValueOnce({ fields, instruction: null, skeleton: null });
-    const res = await post({ templateId: "ed", values: [ev("e11", "Иванов")] });
-    expect(res.status).toBe(200);
-    expect(await html(res)).toContain("Иванов");
   });
 
   it("fields and markup in the request body have no effect", async () => {

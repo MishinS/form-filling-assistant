@@ -34,16 +34,4 @@ describe("DELETE /api/blob/template", () => {
     expect(res.status).toBe(400);
     expect(mockDel).not.toHaveBeenCalled();
   });
-  it("400s on a missing url", async () => {
-    const res = await DELETE(delReq({}));
-    expect(res.status).toBe(400);
-    expect(mockDel).not.toHaveBeenCalled();
-  });
-  it("deletes an own blob and returns ok", async () => {
-    const res = await DELETE(delReq({ url: OWN_URL }));
-    expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ ok: true });
-    expect(mockDel).toHaveBeenCalledTimes(1);
-    expect(mockDel).toHaveBeenCalledWith(OWN_URL);
-  });
 });

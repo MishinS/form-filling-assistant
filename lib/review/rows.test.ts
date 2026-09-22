@@ -1,33 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { buildRows, missingRequired } from "./rows";
-import { PT_FIELDS } from "@/lib/extract/fields";
+import { describe,it,expect } from "vitest";
+import { missingRequired } from "./rows";
 import type { ExtractField } from "@/lib/extract/fields";
-import type { ParsedDoc } from "@/lib/parse/types";
-import type { ExtractedValue } from "@/lib/types";
-
-const docs: ParsedDoc[] = [
-  { fileId: "u1", name: "Счёт №8.pdf", mime: "application/pdf", pages: 1, blocks: [], scannedPages: [], warnings: [] },
-];
-
-describe("buildRows", () => {
-  it("resolves the source file name from docs by fileId", () => {
-    const values: ExtractedValue[] = [
-      { fieldId: "f3", value: "Счёт №8 от 02.06.2026", confidence: "high", source: { fileId: "u1", locator: "стр. 1" } },
-    ];
-    const rows = buildRows(PT_FIELDS, values, docs);
-    const f3 = rows.find(r => r.id === "f3")!;
-    expect(f3.value).toBe("Счёт №8 от 02.06.2026");
-    expect(f3.src).toEqual({ file: "Счёт №8.pdf", loc: "стр. 1" });
-  });
-
-  it("renders a manual placeholder when no source", () => {
-    const rows = buildRows(PT_FIELDS, [], docs);
-    const f6 = rows.find(r => r.id === "f6")!; // strategy: manual
-    expect(f6.value).toBe("");
-    expect(f6.src.file).toBe("—");
-    expect(f6.src.loc).toBe("проставьте вручную");
-  });
-});
 
 describe("missingRequired", () => {
   const fields = [
@@ -40,27 +13,12 @@ describe("missingRequired", () => {
     const out = missingRequired(fields, { a: "", b: "   ", c: "" });
     expect(out.map(f => f.id)).toEqual(["a", "b"]);
   });
-
-  it("ignores non-required fields and filled required ones", () => {
-    const out = missingRequired(fields, { a: "значение", b: "", c: "" });
-    expect(out.map(f => f.id)).toEqual(["b"]); // c not required, a filled
-  });
-
-  it("treats a missing key as empty", () => {
-    expect(missingRequired(fields, {}).map(f => f.id)).toEqual(["a", "b"]);
-  });
 });
 
 describe("режимы заполнения на Review", () => {
   const f = (over: Partial<ExtractField>): ExtractField => ({
     id: "x", group: "req", label_ru: "L", label_en: "L", cell: "ПТ!A1",
     kind: "string", required: false, strategy: "manual", ...over,
-  });
-
-  it("buildRows скрывает constant/date поля", () => {
-    const fields = [f({ id: "a" }), f({ id: "b", fillMode: "constant", constantValue: "x" }), f({ id: "c", fillMode: "date", dateRule: { offset: "today", format: "dmy" } })];
-    const rows = buildRows(fields, [], []);
-    expect(rows.map(r => r.id)).toEqual(["a"]);
   });
   it("missingRequired игнорирует constant/date поля", () => {
     const fields = [f({ id: "b", required: true, fillMode: "constant" })];

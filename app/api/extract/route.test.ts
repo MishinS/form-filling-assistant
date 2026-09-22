@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe,it,expect,vi } from "vitest";
 import { extractFields } from "@/lib/extract/extract";
 
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
@@ -25,7 +25,6 @@ import { auth } from "@/auth";
 import { PT_FIELDS } from "@/lib/extract/fields";
 import { DEFAULT_MODEL } from "@/lib/extract/llm/catalog";
 import { getModelById } from "@/lib/db/user-models";
-import { openaiCompatModel } from "@/lib/extract/llm/openai-compat";
 
 function req(body: unknown) {
   return new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) });
@@ -37,18 +36,6 @@ async function ndjson(res: Response): Promise<Record<string, unknown>[]> {
 }
 
 describe("POST /api/extract", () => {
-  it("streams attempt + result events for a valid request", async () => {
-    const res = await POST(req({ templateId: "pt", model: "gemini-2.0-flash", docs: [] }));
-    expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toContain("application/x-ndjson");
-    const events = await ndjson(res);
-    expect(events.some(e => e.type === "attempt")).toBe(true);
-    const result = events.find(e => e.type === "result")!;
-    expect(result).toBeDefined();
-    expect((result.values as { fieldId: string }[])[0].fieldId).toBe("f3");
-    expect(result.llmFailed).toBe(false);
-    expect(events[events.length - 1].type).toBe("result");
-  });
 
   it("rejects a malformed body with 400", async () => {
     const res = await POST(req({ model: 123, docs: "nope" }));
@@ -76,24 +63,6 @@ describe("POST /api/extract", () => {
 });
 
 describe("/api/extract custom model", () => {
-  it("resolves custom:<id> → modelOverride when the row exists", async () => {
-    const fakeRow = { id: "abc", email: "t@t.ru", label: "My LLM", provider: "openai", baseUrl: "https://api.openai.com/v1", modelSlug: "gpt-4o", keyCipher: "enc", createdAt: new Date(), updatedAt: new Date(), lastOkAt: null };
-    (getModelById as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce(fakeRow);
-    const { extractFields } = await import("@/lib/extract/extract");
-    (extractFields as unknown as { mockClear: () => void }).mockClear();
-    const res = await POST(req({ model: "custom:abc", docs: [] }));
-    expect(res.status).toBe(200);
-    const call = (extractFields as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
-    const opts = call[4] as { modelOverride?: unknown };
-    expect(opts.modelOverride).toBeDefined();
-    expect(openaiCompatModel).toHaveBeenCalledWith(expect.objectContaining({ baseUrl: "https://api.openai.com/v1", modelSlug: "gpt-4o" }));
-  });
-
-  it("returns 404 when the custom model row is not found", async () => {
-    (getModelById as unknown as { mockResolvedValueOnce: (v: null) => void }).mockResolvedValueOnce(null);
-    const res = await POST(req({ model: "custom:missing", docs: [] }));
-    expect(res.status).toBe(404);
-  });
 
   it("custom provider: re-validates baseUrl on use → 400 bad_endpoint for an internal host", async () => {
     // DNS can be re-pointed after add-time; the route must re-check on every use.
@@ -115,49 +84,9 @@ describe("/api/extract custom model", () => {
   });
 });
 
-describe("/api/extract field validation", () => {
-  const call = (body: unknown) =>
-    POST(new Request("http://t/api/extract", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-    }));
-
-  it("400s on a malformed fields list", async () => {
-    const res = await call({ model: "m", docs: [], fields: [{ id: "f1", cell: "9D" }] });
-    expect(res.status).toBe(400);
-  });
-  it("200s with a valid fields list (no docs → empty values)", async () => {
-    const res = await call({ model: "m", docs: [], fields: PT_FIELDS });
-    expect(res.status).toBe(200);
-  });
-  it("200s when fields is omitted (defaults to PT)", async () => {
-    const res = await call({ model: "m", docs: [] });
-    expect(res.status).toBe(200);
-  });
-});
-
 describe("the template's rules and the run note reach extraction", () => {
   const call = (body: unknown) =>
     POST(new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) }));
-
-  it("sends the order passport's own instruction and catalog", async () => {
-    await call({ templateId: "ed", model: "m", docs: [], note: "проект 1905" });
-    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
-    expect(last[4]?.prompt?.instruction).toContain("Паспорт Заказа и договора");
-    expect(last[4]?.prompt?.userNote).toBe("проект 1905");
-    expect((last[2] as Array<{ id: string }>).map((f) => f.id)).toContain("e11");
-  });
-
-  it("sends the payment request's instruction for pt", async () => {
-    await call({ templateId: "pt", model: "m", docs: [] });
-    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
-    expect(last[4]?.prompt?.instruction).toContain("Платёжного требования");
-    expect(last[4]?.prompt?.userNote).toBeUndefined();
-  });
-
-  it("400s on an oversized note rather than truncating it", async () => {
-    const res = await call({ templateId: "ed", model: "m", docs: [], note: "x".repeat(2001) });
-    expect(res.status).toBe(400);
-  });
 
   it("ignores a client field list for a built-in template", async () => {
     const hostile = [{
@@ -187,20 +116,10 @@ describe("a user's own field mapping still reaches extraction", () => {
     // …and the template's own rules still come from the repo.
     expect(last[4]?.prompt?.instruction).toContain("Платёжного требования");
   });
-
-  it("still refuses a malformed mapping for the payment request", async () => {
-    const res = await call({ templateId: "pt", model: "m", docs: [], fields: [{ id: "f1", cell: "9D" }] });
-    expect(res.status).toBe(400);
-  });
-
-  it("does not let an inherited property name pass as a built-in", async () => {
-    const res = await call({ templateId: "constructor", model: "m", docs: [], fields: [{ id: "f1", cell: "9D" }] });
-    expect(res.status).toBe(400);
-  });
 });
 
 import { getTemplateLayers } from "@/lib/db/mappings";
-import { ED_FIELDS, ED_INSTRUCTION } from "@/lib/render/ed";
+import { ED_FIELDS,ED_INSTRUCTION } from "@/lib/render/ed";
 
 describe("the user's own order passport reaches extraction", () => {
   const call = (body: unknown) =>

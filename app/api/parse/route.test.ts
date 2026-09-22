@@ -66,25 +66,6 @@ describe("/api/parse guest blob cleanup", () => {
     expect(res.status).toBe(200);
     expect(delMock).toHaveBeenCalledWith(blobUrl);
   });
-
-  it("обычный юзер: Blob не удаляет", async () => {
-    delMock.mockClear();
-    const body = { sources: [{ fileId: "ok", url: "https://store123.public.blob.vercel-storage.com/x-abc.pdf", name: "a.pdf", mime: "application/pdf" }] };
-    const res = await POST(req(body));
-    expect(res.status).toBe(200);
-    expect(delMock).not.toHaveBeenCalled();
-  });
-
-  it("гость: чужой URL отклоняется до удаления (запрос не доходит до del)", async () => {
-    (parseAuth as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce({
-      user: { role: "guest" },
-    });
-    delMock.mockClear();
-    const body = { sources: [{ fileId: "ok", url: "https://evil.example.com/x.pdf", name: "a.pdf", mime: "application/pdf" }] };
-    const res = await POST(req(body));
-    expect(res.status).toBe(400);
-    expect(delMock).not.toHaveBeenCalled();
-  });
 });
 
 /**
@@ -95,18 +76,11 @@ describe("/api/parse guest blob cleanup", () => {
 describe("/api/parse SSRF guard", () => {
   const source = (url: string) => ({ sources: [{ fileId: "s", url, name: "a.pdf", mime: "application/pdf" }] });
 
-  const rejected: [string, string][] = [
-    ["foreign host", "https://evil.example.com/x.pdf"],
-    ["plain http", "http://store123.public.blob.vercel-storage.com/x.pdf"],
-    ["internal IP literal", "http://10.0.0.5/x.pdf"],
-    ["cloud metadata endpoint", "http://169.254.169.254/latest/meta-data/"],
-    ["store-lookalike domain", "https://public.blob.vercel-storage.com.evil.com/x.pdf"],
-    ["credentials in the authority", "https://store123.public.blob.vercel-storage.com@evil.example.com/x.pdf"],
-  ];
-
-  it.each(rejected)("400s on %s and fetches nothing", async (_name, url) => {
+  // Host variants (http, IP literals, look-alikes, credentials) live in lib/upload/blob-url.test.ts;
+  // here only that the route rejects before any outbound request.
+  it("400s on a foreign host and fetches nothing", async () => {
     delMock.mockClear();
-    const res = await POST(req(source(url)));
+    const res = await POST(req(source("https://evil.example.com/x.pdf")));
     expect(res.status).toBe(400);
     expect(global.fetch).not.toHaveBeenCalled();
     expect(delMock).not.toHaveBeenCalled();
@@ -119,11 +93,5 @@ describe("/api/parse SSRF guard", () => {
     ]}));
     expect(res.status).toBe(400);
     expect(global.fetch).not.toHaveBeenCalled();
-  });
-
-  it("accepts a well-formed store URL", async () => {
-    const res = await POST(req(source(`${STORE}/x-abc.pdf`)));
-    expect(res.status).toBe(200);
-    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });

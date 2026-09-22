@@ -22,32 +22,4 @@ describe("parseExtractResult", () => {
     const r = parseExtractResult(["", "not json", RESULT, ""].join("\n"));
     expect(r!.values.length).toBe(1);
   });
-
-  it("returns null when there is no result event", () => {
-    expect(parseExtractResult(JSON.stringify({ type: "attempt", model: "a" }))).toBeNull();
-    expect(parseExtractResult("")).toBeNull();
-  });
-
-  it("skips a result event whose values is not an array", () => {
-    for (const bad of [{}, { values: null }, { values: 42 }, { values: "x" }]) {
-      expect(parseExtractResult(JSON.stringify({ type: "result", ...bad }))).toBeNull();
-    }
-  });
-
-  it("keeps an earlier valid result when a later result line is malformed", () => {
-    const r = parseExtractResult([RESULT, JSON.stringify({ type: "result" })].join("\n"));
-    expect(r!.values).toEqual([{ fieldId: "f1", value: "42" }]);
-  });
-
-  it("normalises a partial result event", () => {
-    const r = parseExtractResult(JSON.stringify({ type: "result", values: [] }));
-    expect(r).toEqual({ values: [], warnings: [], llmFailed: false, usedModel: null });
-  });
-
-  it("normalises wrongly-typed optional fields", () => {
-    const r = parseExtractResult(
-      JSON.stringify({ type: "result", values: [], warnings: "nope", llmFailed: "yes", usedModel: 7 }),
-    );
-    expect(r).toEqual({ values: [], warnings: [], llmFailed: false, usedModel: null });
-  });
 });

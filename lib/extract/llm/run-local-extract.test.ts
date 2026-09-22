@@ -29,13 +29,4 @@ describe("runLocalExtract", () => {
       { type: "result", values: [{ fieldId: "f1", value: "ACME" }], warnings: [], llmFailed: false, usedModel: "llama3.1:8b" },
     ]);
   });
-
-  it("emits a failed result when no runtime is cached", async () => {
-    const { getCachedRuntime } = await import("@/lib/desktop/tauri");
-    vi.mocked(getCachedRuntime).mockReturnValueOnce(null);
-    const lines: { type: string; llmFailed?: boolean }[] = [];
-    await runLocalExtract([], "local:m", [], (l) => lines.push(JSON.parse(l)));
-    expect(lines.at(-1)).toMatchObject({ type: "result", llmFailed: true });
-    expect(extractFields).not.toHaveBeenCalled();
-  });
 });

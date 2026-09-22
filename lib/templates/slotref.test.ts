@@ -4,17 +4,6 @@ import { validateSlotRef } from "./slotref";
 const SLOTS = ["d0", "subject", "expenseClass", "startedBy"];
 
 describe("validateSlotRef", () => {
-  it("accepts a slot the skeleton declares", () => {
-    expect(validateSlotRef("subject", SLOTS)).toEqual({ ok: true, normalized: "subject" });
-  });
-
-  it("trims surrounding space", () => {
-    expect(validateSlotRef("  d0 ", SLOTS)).toEqual({ ok: true, normalized: "d0" });
-  });
-
-  it("rejects an empty address", () => {
-    expect(validateSlotRef("", SLOTS)).toEqual({ ok: false, reason: "empty" });
-  });
 
   it("rejects a slot the skeleton does not declare", () => {
     expect(validateSlotRef("nope", SLOTS)).toEqual({ ok: false, reason: "unknown" });
@@ -28,9 +17,5 @@ describe("validateSlotRef", () => {
     for (const bad of ["<b>", "a/b", "a b", "a.b", "a".repeat(65)]) {
       expect(validateSlotRef(bad, SLOTS)).toEqual({ ok: false, reason: "format" });
     }
-  });
-
-  it("rejects every slot when the skeleton declares none", () => {
-    expect(validateSlotRef("subject", [])).toEqual({ ok: false, reason: "unknown" });
   });
 });

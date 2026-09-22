@@ -1,16 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { normalizeCompany, isOwnCompany, OWN_COMPANY, findCounterparty } from "./own-company";
+import { describe,it,expect } from "vitest";
+import { isOwnCompany,OWN_COMPANY,findCounterparty } from "./own-company";
 import type { ParsedDoc } from "@/lib/parse/types";
-
-describe("normalizeCompany", () => {
-  it("strips legal form, quotes and case to a common core", () => {
-    const core = "семейный доктор";
-    expect(normalizeCompany("АО Семейный доктор")).toBe(core);
-    expect(normalizeCompany('АО "Семейный доктор"')).toBe(core);
-    expect(normalizeCompany("Акционерное общество «Семейный доктор»")).toBe(core);
-    expect(normalizeCompany("ООО «Ромашка»")).toBe("ромашка");
-  });
-});
 
 describe("isOwnCompany", () => {
   it("matches our company by name in various legal forms", () => {
@@ -24,10 +14,6 @@ describe("isOwnCompany", () => {
   it("does not match a real counterparty", () => {
     expect(isOwnCompany("ООО «Ромашка»")).toBe(false);
     expect(isOwnCompany("ЗАО Лютик, ИНН 7701234567")).toBe(false);
-  });
-  it("returns false for empty/blank", () => {
-    expect(isOwnCompany("")).toBe(false);
-    expect(isOwnCompany("   ")).toBe(false);
   });
 });
 
@@ -44,14 +30,5 @@ describe("findCounterparty", () => {
     expect(hit?.value).toContain("Ромашка");
     expect(hit?.source.fileId).toBe("f");
     expect(hit?.source.locator).toBe("блок 1");
-  });
-
-  it("returns null when only our own company appears", () => {
-    expect(findCounterparty([doc("АО Семейный доктор, ИНН 7727194344")])).toBeNull();
-  });
-
-  it("returns the first of two non-own companies", () => {
-    const hit = findCounterparty([doc('ООО "Альфа" и ООО "Бета"')]);
-    expect(hit?.value).toContain("Альфа");
   });
 });

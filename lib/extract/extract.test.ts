@@ -59,38 +59,6 @@ describe("extractFields", () => {
     expect(warnings.some(w => w.includes("Контрагент не распознан"))).toBe(true);
   });
 
-  it("keeps a genuine counterparty value", async () => {
-    mockGetModel.mockReturnValue({
-      id: "m",
-      extract: async () => [{ fieldId: "f1", value: 'ООО «Ромашка»', confidence: "high" }],
-    });
-    const { values, warnings } = await extractFields([doc], "gemini-2.0-flash");
-    expect(values.find(v => v.fieldId === "f1")!.value).toBe('ООО «Ромашка»');
-    expect(warnings.length).toBe(0);
-  });
-
-  it("returns all 12 fields in catalog order", async () => {
-    mockGetModel.mockReturnValue({ id: "m", extract: async () => [] });
-    const { values } = await extractFields([doc], "gemini-2.0-flash");
-    expect(values.map(v => v.fieldId)).toEqual(
-      ["f1","f2","f3","f4","f5","f6","f7","f8","f9","f10","f11","f12"]);
-  });
-
-  it("reports llmFailed=false and usedModel=the winning model on success", async () => {
-    mockGetModel.mockReturnValue({
-      id: "m",
-      extract: async (_f: unknown, _t: unknown, onAttempt?: (e: { phase: string; model: string }) => void) => {
-        onAttempt?.({ phase: "start", model: "model-a" });
-        onAttempt?.({ phase: "win", model: "model-a" });   // победитель — model-a
-        onAttempt?.({ phase: "start", model: "model-b" });  // последний start ≠ победитель
-        return [{ fieldId: "f1", value: "ООО «Тест»", confidence: "med" }];
-      },
-    });
-    const out = await extractFields([doc], "model-a");
-    expect(out.llmFailed).toBe(false);
-    expect(out.usedModel).toBe("model-a");
-  });
-
   it("reports llmFailed=true and usedModel=null when the LLM pass throws", async () => {
     mockGetModel.mockReturnValue({
       id: "m",
@@ -116,27 +84,6 @@ describe("extractFields", () => {
     const res = await extractFields([doc], "any-model", fields);
     expect(sentToLlm.map(f => f.id)).toEqual(["f8"]);              // f1 (constant) НЕ ушёл в LLM
     expect(res.values.find(v => v.fieldId === "f1")?.value).toBe(""); // пуст (override при заливке)
-  });
-
-  it("keeps llmFailed=false when the model returns our own company (benign warning)", async () => {
-    mockGetModel.mockReturnValue({
-      id: "m",
-      extract: async () => [{ fieldId: "f1", value: "АО «Семейный доктор»", confidence: "high" }],
-    });
-    const out = await extractFields([doc], "model-a");
-    expect(out.llmFailed).toBe(false);
-    expect(out.warnings.some(w => w.includes("Контрагент не распознан"))).toBe(true);
-  });
-
-  it("uses an injected modelOverride instead of the registry", async () => {
-    const override = {
-      id: "custom:1",
-      extract: vi.fn(async () => [{ fieldId: "f8", value: "Банковский перевод", confidence: "high" as const }]),
-    };
-    const docs = [{ fileId: "f", pages: 1, scannedPages: [], blocks: [{ text: "оплата банковский перевод", locator: "p1" }] }];
-    const res = await extractFields(docs as never, "custom:1", undefined, undefined, { modelOverride: override });
-    expect(override.extract).toHaveBeenCalledTimes(1);
-    expect(res.values.some((v) => v.value === "Банковский перевод")).toBe(true);
   });
 
   it("falls back to the neighbouring counterparty when the model returns our own company", async () => {

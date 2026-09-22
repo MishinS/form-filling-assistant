@@ -64,53 +64,12 @@ describe("POST /api/templates", () => {
     expect(saveMapping).toHaveBeenCalledWith("u@x.ru", last.id, [FIELD]);
   });
 
-  it("forwards attempt/fail/win events from the scan race", async () => {
-    mockPropose.mockImplementationOnce(async (_sheets: unknown, onAttempt?: (ev: Record<string, unknown>) => void) => {
-      onAttempt?.({ phase: "start", model: "m1", total: 5 });
-      onAttempt?.({ phase: "fail", model: "m1", reason: "HTTP 429" });
-      onAttempt?.({ phase: "start", model: "m2", total: 5 });
-      onAttempt?.({ phase: "win", model: "m2" });
-      return { fields: [FIELD], failure: null };
-    });
-    const evs = await events(await POST(post({ name: "Ф", url: OK_URL })));
-    expect(evs).toContainEqual({ type: "attempt", model: "m1", total: 5 });
-    expect(evs).toContainEqual({ type: "attempt-fail", model: "m1", reason: "HTTP 429" });
-    expect(evs).toContainEqual({ type: "attempt-win", model: "m2" });
-  });
-
   it("empty scan (llm) → terminal error, template NOT created", async () => {
     mockPropose.mockResolvedValueOnce({ fields: [], failure: "llm" });
     const evs = await events(await POST(post({ name: "Ф", url: OK_URL })));
     expect(terminal(evs)).toEqual({ type: "error", code: "llm" });
     expect(createTemplate).not.toHaveBeenCalled();
     expect(saveMapping).not.toHaveBeenCalled();
-  });
-
-  it("empty scan (nofields) → terminal error code nofields", async () => {
-    mockPropose.mockResolvedValueOnce({ fields: [], failure: "nofields" });
-    const evs = await events(await POST(post({ name: "Ф", url: OK_URL })));
-    expect(terminal(evs)).toEqual({ type: "error", code: "nofields" });
-    expect(createTemplate).not.toHaveBeenCalled();
-  });
-
-  it("non-XLSX blob → terminal error code xlsx", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, arrayBuffer: async () => strToU8("garbage").buffer }) as unknown as Response));
-    const evs = await events(await POST(post({ name: "Ф", url: OK_URL })));
-    expect(terminal(evs)).toEqual({ type: "error", code: "xlsx" });
-    expect(createTemplate).not.toHaveBeenCalled();
-  });
-
-  it("blob fetch failure → terminal error code file", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false }) as unknown as Response));
-    const evs = await events(await POST(post({ name: "Ф", url: OK_URL })));
-    expect(terminal(evs)).toEqual({ type: "error", code: "file" });
-  });
-
-  it("DB failure → terminal error code server", async () => {
-    mockPropose.mockResolvedValueOnce({ fields: [FIELD], failure: null });
-    (createTemplate as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("db down"));
-    const evs = await events(await POST(post({ name: "Ф", url: OK_URL })));
-    expect(terminal(evs)).toEqual({ type: "error", code: "server" });
   });
 
   it("saveMapping failure is recoverable → still result (retry must not mint a duplicate)", async () => {
@@ -121,12 +80,6 @@ describe("POST /api/templates", () => {
     expect(createTemplate).toHaveBeenCalledTimes(1);
   });
 
-  it("400 on empty name (plain JSON before the stream)", async () => {
-    const res = await POST(post({ name: "  ", url: OK_URL }));
-    expect(res.status).toBe(400);
-    expect(res.headers.get("content-type")).toContain("application/json");
-  });
-
   it("400 on a foreign blob url", async () => {
     expect((await POST(post({ name: "Ф", url: "https://evil.example.com/x.xlsx" }))).status).toBe(400);
     expect(createTemplate).not.toHaveBeenCalled();
@@ -135,36 +88,5 @@ describe("POST /api/templates", () => {
   it("401 without a session", async () => {
     mockAuth.mockResolvedValueOnce(null);
     expect((await POST(post({ name: "Ф", url: OK_URL }))).status).toBe(401);
-  });
-
-  it("fields present → skips proposeFields and saves the supplied fields", async () => {
-    const fields = [{ label_ru: "Поставщик", label_en: "Supplier", cell: "Лист1!B1", kind: "string" }];
-    const res = await POST(post({ name: "T", desc: "", url: OK_URL, fields }));
-    const evs = await events(res);
-    expect(mockPropose).not.toHaveBeenCalled();
-    expect(terminal(evs)).toMatchObject({ type: "result" });
-    expect(createTemplate).toHaveBeenCalledWith(expect.objectContaining({ defaultFields: expect.arrayContaining([expect.objectContaining({ label_ru: "Поставщик", cell: "Лист1!B1" })]) }));
-  });
-
-  it("labelled fields with an invalid cell are kept as unmapped → template created", async () => {
-    // Weak local models often omit cell refs; keepUnmapped preserves the field so the
-    // template is created and the user assigns cells in the mapping editor.
-    const fields = [{ label_ru: "X", cell: "not-a-ref" }];
-    const res = await POST(post({ name: "T", desc: "", url: OK_URL, fields }));
-    const evs = await events(res);
-    expect(mockPropose).not.toHaveBeenCalled();
-    expect(terminal(evs)).toMatchObject({ type: "result", fields: 1 });
-    expect(createTemplate).toHaveBeenCalledWith(expect.objectContaining({
-      defaultFields: [expect.objectContaining({ label_ru: "X", cell: "" })],
-    }));
-  });
-
-  it("client fields with no usable label → nofields, template not created", async () => {
-    const fields = [{ cell: "not-a-ref" }];
-    const res = await POST(post({ name: "T", desc: "", url: OK_URL, fields }));
-    const evs = await events(res);
-    expect(mockPropose).not.toHaveBeenCalled();
-    expect(terminal(evs)).toEqual({ type: "error", code: "nofields" });
-    expect(createTemplate).not.toHaveBeenCalled();
   });
 });

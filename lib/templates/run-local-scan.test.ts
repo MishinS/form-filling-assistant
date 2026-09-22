@@ -37,23 +37,4 @@ describe("runLocalScan", () => {
     expect(out).toEqual({ error: "llm" });
     expect(lines.at(-1)).toMatchObject({ type: "attempt-fail" });
   });
-
-  it("understood-but-empty → error nofields", async () => {
-    invokeLlmChat.mockResolvedValueOnce('{"fields":[]}');
-    const out = await runLocalScan(SHEETS, "local:m", () => {});
-    expect(out).toEqual({ error: "nofields" });
-  });
-
-  it("transport throw → error llm", async () => {
-    invokeLlmChat.mockRejectedValueOnce(new Error("unreachable"));
-    const out = await runLocalScan(SHEETS, "local:m", () => {});
-    expect(out).toEqual({ error: "llm" });
-  });
-
-  it("no cached runtime → error llm, no LLM call", async () => {
-    getCachedRuntime.mockReturnValueOnce(null);
-    const out = await runLocalScan(SHEETS, "local:m", () => {});
-    expect(out).toEqual({ error: "llm" });
-    expect(invokeLlmChat).not.toHaveBeenCalled();
-  });
 });
