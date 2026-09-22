@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { vi } from "vitest";
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
 vi.mock("@/lib/db/templates", () => ({ getTemplate: vi.fn() }));
+vi.mock("@/lib/db/mappings", () => ({ getTemplateLayers: vi.fn(async () => null) }));
 import { POST } from "./route";
 import type { ExtractedValue } from "@/lib/types";
 import { PT_FIELDS } from "@/lib/extract/fields";
@@ -200,5 +201,59 @@ describe("/api/fill rejects a malformed value list", () => {
   it("400s on a malformed value list for the workbook template too", async () => {
     const res = await call({ templateId: "pt", values: [{ fieldId: "f1" }] });
     expect(res.status).toBe(400);
+  });
+});
+
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { auth } from "@/auth";
+import { getTemplateLayers } from "@/lib/db/mappings";
+import { ED_FIELDS } from "@/lib/render/ed";
+
+describe("/api/fill renders the user's own order passport", () => {
+  const skeleton = readFileSync(path.join(process.cwd(), "lib/render/templates/ed.html"), "utf8");
+  const mockLayers = vi.mocked(getTemplateLayers);
+  const html = async (res: Response) => ((await res.json()) as { html: string }).html;
+
+  it("a renamed section in the saved skeleton appears in the document", async () => {
+    mockLayers.mockResolvedValueOnce({ fields: null, instruction: null,
+      skeleton: skeleton.replace("Штрафы, пени по договору", "Неустойка") });
+    const res = await post({ templateId: "ed", values: [] });
+    expect(res.status).toBe(200);
+    const out = await html(res);
+    expect(out).toContain("Неустойка");
+    expect(out).not.toContain("Штрафы, пени по договору");
+  });
+
+  it("a fourth ЦФО option the user added is accepted", async () => {
+    const fields = ED_FIELDS.map((f) => f.id === "e11"
+      ? { ...f, options: [...f.options!, { value: "Иванов", label_ru: "ИТ", label_en: "IT" }] } : f);
+    mockLayers.mockResolvedValueOnce({ fields, instruction: null, skeleton: null });
+    const res = await post({ templateId: "ed", values: [ev("e11", "Иванов")] });
+    expect(res.status).toBe(200);
+    expect(await html(res)).toContain("Иванов");
+  });
+
+  it("fields and markup in the request body have no effect", async () => {
+    const hostile = ED_FIELDS.map((f) => ({ ...f, paragraphHtml: "<script>x</script>{}", slotMode: "paragraphs" }));
+    const res = await post({ templateId: "ed", values: [ev("e2", "мебель")], fields: hostile, skeleton: "<script>x</script>" });
+    expect(res.status).toBe(200);
+    expect(await html(res)).not.toContain("<script>");
+  });
+
+  it("a stored version that no longer validates → 422 with a message pointing at the reset", async () => {
+    mockLayers.mockResolvedValueOnce({ fields: null, instruction: null, skeleton: skeleton + '<p id="x">a</p>' });
+    const res = await post({ templateId: "ed", values: [] });
+    expect(res.status).toBe(422);
+    expect(((await res.json()) as { error: string }).error).toMatch(/по умолчанию/);
+  });
+
+  it("a guest renders the repository skeleton without a DB lookup", async () => {
+    mockLayers.mockClear();
+    vi.mocked(auth).mockResolvedValueOnce({ user: { role: "guest" } } as never);
+    const res = await post({ templateId: "ed", values: [] });
+    expect(res.status).toBe(200);
+    expect(mockLayers).not.toHaveBeenCalled();
+    expect(await html(res)).toContain("Штрафы, пени по договору");
   });
 });

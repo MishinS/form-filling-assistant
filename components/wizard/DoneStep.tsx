@@ -51,6 +51,9 @@ export default function DoneStep({ onClose, templateId, values, fields, sources 
       body: JSON.stringify({ templateId, values }),
     })
       .then(async (res) => {
+        // 422 — сохранённая версия шаблона перестала проходить проверку: чинится
+        // в редакторе шаблона, а не повтором.
+        if (res.status === 422) throw new Error("tpl_invalid");
         if (!res.ok) throw new Error(await res.text());
         return (await res.json()) as { html: string };
       })
@@ -59,7 +62,9 @@ export default function DoneStep({ onClose, templateId, values, fields, sources 
         setHtml(d.html);
         recordFill();
       })
-      .catch(() => { if (alive) setErr(t("done_html_err")); })
+      .catch((e: unknown) => {
+        if (alive) setErr(t(e instanceof Error && e.message === "tpl_invalid" ? "done_html_tpl_invalid" : "done_html_err"));
+      })
       .finally(() => { if (alive) setBusy(false); });
     return () => { alive = false; };
   }, [kind, html, templateId, values, recordFill, t]);

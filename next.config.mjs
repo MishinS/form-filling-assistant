@@ -7,6 +7,11 @@ const nextConfig = {
   experimental: {
     outputFileTracingIncludes: {
       "/api/fill": ["./lib/fill/templates/pt.xlsx", "./lib/render/templates/ed.html"],
+      // The order passport's default skeleton is also read by the routes that
+      // resolve a user's own version of it.
+      "/api/mappings": ["./lib/render/templates/ed.html"],
+      "/api/extract": ["./lib/render/templates/ed.html"],
+      "/templates/[id]": ["./lib/render/templates/ed.html"],
     },
   },
 };

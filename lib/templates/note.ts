@@ -8,3 +8,6 @@ export function parseUserNote(v: unknown): { ok: true; note: string } | { ok: fa
   if (v.length > MAX_NOTE_LENGTH) return { ok: false };
   return { ok: true, note: v.trim() };
 }
+
+/** Инструкция шаблона от пользователя. Встроенная — около 600 символов. */
+export const MAX_INSTRUCTION_LENGTH = 4000;

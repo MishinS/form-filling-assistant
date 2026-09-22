@@ -8,8 +8,9 @@ import { parseFieldList, validateChoiceValues, isValueList } from "@/lib/templat
 import { getTemplate } from "@/lib/db/templates";
 import { PT_FIELDS } from "@/lib/extract/fields";
 import { renderHtml } from "@/lib/render/html";
-import { ED_FIELDS } from "@/lib/render/ed";
-import { ED_SKELETON_PATH } from "@/lib/render/ed-skeleton";
+import { effectiveEd } from "@/lib/templates/ed-server";
+import { validateEd } from "@/lib/templates/ed-custom";
+import { STR } from "@/lib/seed/pt";
 
 /** Встроенные шаблоны: лежат в репозитории, доступны всем, включая гостей. */
 const BUILTIN_IDS = ["pt", "ed"];
@@ -45,20 +46,28 @@ export async function POST(req: Request): Promise<Response> {
     return new Response("Forbidden", { status: 403 });
   }
 
-  // Встроенный «Паспорт Заказа и договора»: разметка и каталог полей берутся из
-  // репозитория, а не из тела запроса. Клиент присылает только значения — режимы
-  // рендера задаёт каталог, поэтому чужая разметка в документ попасть не может.
+  // «Паспорт Заказа и договора»: разметка и каталог берутся с сервера — из
+  // репозитория или из сохранённой версии пользователя, проверенной при
+  // сохранении, — но не из тела запроса. Клиент присылает только значения.
   if (body.templateId === "ed") {
-    if (!validateChoiceValues(ED_FIELDS, body.values)) {
-      return new Response("Bad values", { status: 400 });
-    }
-    let skeleton: string;
+    let ed;
     try {
-      skeleton = await readFile(ED_SKELETON_PATH, "utf8");
+      ed = await effectiveEd(guest ? null : (session.user.email ?? null));
     } catch (e) {
       return new Response(`Fill failed: ${(e as Error).message}`, { status: 500 });
     }
-    const rendered = renderHtml(skeleton, ED_FIELDS, body.values);
+    if (!validateChoiceValues(ed.fields, body.values)) {
+      return new Response("Bad values", { status: 400 });
+    }
+    // Сохранённая версия могла устареть (например, сузилось подмножество
+    // редактора) — документ, который navi перепишет, не отдаём.
+    if (!validateEd(ed).ok) {
+      return Response.json(
+        { error: STR.done_html_tpl_invalid.ru },
+        { status: 422 },
+      );
+    }
+    const rendered = renderHtml(ed.skeleton, ed.fields, body.values);
     if (!rendered.ok) {
       return new Response(`Fill failed: ${rendered.error.code}`, { status: 500 });
     }

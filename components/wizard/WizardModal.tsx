@@ -14,8 +14,10 @@ import NoteBox from "./NoteBox";
 import Processing from "./Processing";
 import DoneStep from "./DoneStep";
 import ReviewStep from "@/components/review/ReviewStep";
-import { ED_FIELDS, ED_TEMPLATE_ID } from "@/lib/render/ed";
+import { ED_TEMPLATE_ID } from "@/lib/render/ed";
+import { GuestContext } from "@/components/shell/GuestContext";
 import { noteState } from "./note-core";
+import { wizardTemplate, parseEdConfig, type EdConfig } from "./template-fields-core";
 
 let uid = 0;
 const nextId = () => `up-${Date.now()}-${uid++}`;
@@ -34,22 +36,31 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
   const { fields: ptFields } = useContext(TemplateMappingContext);
   const { templates } = useContext(TemplatesContext);
   const [customFields, setCustomFields] = useState<Record<string, ExtractField[]>>({});
+  const [edConfig, setEdConfig] = useState<EdConfig | undefined>(undefined);
   const [fieldsLoading, setFieldsLoading] = useState(false);
-  // Каталог встроенного шаблона берётся из репозитория — так же, как на сервере.
-  const fields = tpl === "pt" ? ptFields : tpl === ED_TEMPLATE_ID ? ED_FIELDS : customFields[tpl] ?? [];
+  const { guest } = useContext(GuestContext);
+  // «Паспорт» пользователя — его сохранённая версия, гостя — репозиторная; так же решает сервер.
+  const { fields, instruction } = wizardTemplate(tpl, { guest, ptFields, customFields, edConfig });
   const noteS = noteState(note);
 
   const selectTpl = (id: string) => {
     setTpl(id);
-    if (id !== "pt" && customFields[id] === undefined) {
-      setFieldsLoading(true);
-      fetch(`/api/mappings?templateId=${encodeURIComponent(id)}`)
+    if (!wizardTemplate(id, { guest, ptFields, customFields, edConfig }).needsFetch) return;
+    setFieldsLoading(true);
+    if (id === ED_TEMPLATE_ID) {
+      fetch(`/api/mappings?templateId=${ED_TEMPLATE_ID}`)
         .then(r => r.json())
-        .then((d: { fields?: ExtractField[] | null }) =>
-          setCustomFields(c => ({ ...c, [id]: Array.isArray(d.fields) ? d.fields : [] })))
-        .catch(() => setCustomFields(c => ({ ...c, [id]: [] })))
+        .then((d: unknown) => setEdConfig(parseEdConfig(d) ?? { fields: [], instruction: "" }))
+        .catch(() => setEdConfig({ fields: [], instruction: "" }))
         .finally(() => setFieldsLoading(false));
+      return;
     }
+    fetch(`/api/mappings?templateId=${encodeURIComponent(id)}`)
+      .then(r => r.json())
+      .then((d: { fields?: ExtractField[] | null }) =>
+        setCustomFields(c => ({ ...c, [id]: Array.isArray(d.fields) ? d.fields : [] })))
+      .catch(() => setCustomFields(c => ({ ...c, [id]: [] })))
+      .finally(() => setFieldsLoading(false));
   };
 
   const patch = (id: string, p: Partial<UploadFile>) =>
@@ -118,7 +129,7 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
                 <NoteBox value={note} onChange={setNote} state={noteS} />
               </div>
             )}
-            {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} fields={fields} note={noteS.value} onDone={onExtracted} onBack={() => setStep(0)} />}
+            {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} fields={fields} instruction={instruction} note={noteS.value} onDone={onExtracted} onBack={() => setStep(0)} />}
             {step === 2 && <ReviewStep values={values} docs={docs} fields={fields} warnings={warnings} onChange={setReviewValues} />}
             {step === 3 && (
               <DoneStep

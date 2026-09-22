@@ -28,6 +28,7 @@ const ALLOWED: { pattern: RegExp; why: string; file?: string }[] = [
   { pattern: /^rgba\(6,\s*9,\s*8/, why: "modal scrim is a fixed dark veil by design" },
   { pattern: /^#(000|fff)$/i, file: "components/shell/SettingsCog.tsx", why: "SVG mask fills, not UI color" },
   { pattern: /^#fff$/i, file: "components/wizard/DoneStep.tsx", why: "preview iframe shows the document on the editor's own white page, not on our surface" },
+  { pattern: /^#fff$/i, file: "components/templates/HtmlTemplateEditor.tsx", why: "skeleton preview iframe, same white editor page as the done step" },
 ];
 
 function tsxFiles(dir: string): string[] {

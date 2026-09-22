@@ -14,6 +14,7 @@ vi.mock("@/lib/extract/extract", () => ({
   }),
 }));
 vi.mock("@/lib/db/user-models", () => ({ getModelById: vi.fn() }));
+vi.mock("@/lib/db/mappings", () => ({ getTemplateLayers: vi.fn(async () => null) }));
 vi.mock("@/lib/crypto/secrets", () => ({ decryptSecret: vi.fn(() => "plain-key") }));
 vi.mock("@/lib/extract/llm/openai-compat", () => ({
   openaiCompatModel: vi.fn(() => ({ id: "custom-model", extract: vi.fn(async () => []) })),
@@ -195,5 +196,41 @@ describe("a user's own field mapping still reaches extraction", () => {
   it("does not let an inherited property name pass as a built-in", async () => {
     const res = await call({ templateId: "constructor", model: "m", docs: [], fields: [{ id: "f1", cell: "9D" }] });
     expect(res.status).toBe(400);
+  });
+});
+
+import { getTemplateLayers } from "@/lib/db/mappings";
+import { ED_FIELDS, ED_INSTRUCTION } from "@/lib/render/ed";
+
+describe("the user's own order passport reaches extraction", () => {
+  const call = (body: unknown) =>
+    POST(new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) }));
+  const mockLayers = vi.mocked(getTemplateLayers);
+
+  it("sends the user's saved instruction and fields", async () => {
+    const fields = ED_FIELDS.map((f) => (f.id === "e2" ? { ...f, hint_ru: "моя подсказка" } : f));
+    mockLayers.mockResolvedValueOnce({ fields, instruction: "моя инструкция", skeleton: null });
+    await call({ templateId: "ed", model: "m", docs: [] });
+    expect(mockLayers).toHaveBeenLastCalledWith("t@t.ru", "ed");
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    expect(last[4]?.prompt?.instruction).toBe("моя инструкция");
+    const sent = last[2] as Array<{ id: string; hint_ru?: string }>;
+    expect(sent.find((f) => f.id === "e2")?.hint_ru).toBe("моя подсказка");
+  });
+
+  it("a guest gets the repository passport — its own catalog, not PT's — without a DB lookup", async () => {
+    mockLayers.mockClear();
+    vi.mocked(auth).mockResolvedValueOnce({ user: { role: "guest" } } as never);
+    await call({ templateId: "ed", model: "m", docs: [] });
+    expect(mockLayers).not.toHaveBeenCalled();
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    expect(last[4]?.prompt?.instruction).toBe(ED_INSTRUCTION);
+    expect((last[2] as Array<{ id: string }>).map((f) => f.id)).toEqual(ED_FIELDS.map((f) => f.id));
+  });
+
+  it("a DB failure is an error, not a silent fall back to the repository passport", async () => {
+    mockLayers.mockRejectedValueOnce(new Error("db down"));
+    const res = await call({ templateId: "ed", model: "m", docs: [] });
+    expect(res.status).toBe(500);
   });
 });

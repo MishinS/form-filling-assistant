@@ -68,7 +68,10 @@ export const extractedValues = pgTable("extracted_values", {
 export const templateMappings = pgTable("template_mappings", {
   userId: text("user_id").notNull(),
   templateId: text("template_id").notNull().references(() => templates.id),
-  fields: jsonb("fields").$type<ExtractField[]>().notNull(),
+  // Для html-шаблона каждый слой независим: null — значит «как в репозитории».
+  fields: jsonb("fields").$type<ExtractField[]>(),
+  instruction: text("instruction"),
+  skeleton: text("skeleton"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => ({ pk: primaryKey({ columns: [t.userId, t.templateId] }) }));
 

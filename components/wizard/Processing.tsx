@@ -11,13 +11,14 @@ import type { ExtractField } from "@/lib/extract/fields";
 import RaceList, { type RaceItem } from "@/components/wizard/RaceList";
 import { isTauri } from "@/lib/desktop/tauri";
 import { runLocalExtract } from "@/lib/extract/llm/run-local-extract";
-import { builtinInstruction } from "@/lib/templates/builtins";
 
 type Props = {
   sources: UploadFile[];
   model: string;
   templateId: string;
   fields: ExtractField[];
+  /** Инструкция шаблона для локальной модели — промт собирается здесь, а не на сервере. */
+  instruction?: string;
   /** Заметка пользователя к этому прогону; пустая — раздела в промте не будет. */
   note?: string;
   onDone: (values: ExtractedValue[], docs: ParsedDoc[], warnings: string[]) => void;
@@ -28,7 +29,7 @@ type Phase = "parsing" | "extracting" | "llm-failed" | "error";
 type ResultEvent = { values: ExtractedValue[]; warnings: string[]; llmFailed: boolean; usedModel: string | null };
 
 
-export default function Processing({ sources, model, templateId, fields, note, onDone, onBack }: Props) {
+export default function Processing({ sources, model, templateId, fields, instruction, note, onDone, onBack }: Props) {
   const { t } = useI18n();
   const { setModel } = useContext(ModelContext);
   const [phase, setPhase] = useState<Phase>("parsing");
@@ -89,7 +90,7 @@ export default function Processing({ sources, model, templateId, fields, note, o
       if (isTauri() && modelId.startsWith("local:")) {
         // Desktop local model: run extraction in the webview; feed the same consumer.
         await runLocalExtract(docs, modelId, fields, (line) => handleLine(line.trim()),
-          { instruction: builtinInstruction(templateId), userNote: note || undefined });
+          { instruction, userNote: note || undefined });
       } else {
         const res = await fetch("/api/extract", {
           method: "POST",
@@ -132,7 +133,7 @@ export default function Processing({ sources, model, templateId, fields, note, o
       setError((e as Error).message);
       setPhase("error");
     }
-  }, [templateId, fields, note, onDone, t]);
+  }, [templateId, fields, instruction, note, onDone, t]);
 
   // Parse then extract. Parse runs once per mount (ref-guarded).
   const start = useCallback(async () => {

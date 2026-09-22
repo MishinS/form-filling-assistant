@@ -13,6 +13,8 @@ import { getModelById } from "@/lib/db/user-models";
 import { decryptSecret } from "@/lib/crypto/secrets";
 import { openaiCompatModel } from "@/lib/extract/llm/openai-compat";
 import { assertSafeBaseUrl } from "@/lib/extract/llm/providers";
+import { ED_TEMPLATE_ID } from "@/lib/render/ed";
+import { effectiveEd } from "@/lib/templates/ed-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -46,9 +48,23 @@ export async function POST(req: Request): Promise<Response> {
   const note = parseUserNote(body.note);
   if (!note.ok) return NextResponse.json({ error: "Слишком длинная заметка" }, { status: 400 });
 
+  // «Паспорт» пользователя берётся из БД, а не из тела: каталог и инструкцию
+  // решает сервер. Гость получает репозиторный — со своим каталогом, не ПТ.
+  let instruction = builtin?.instruction;
+  let builtinFields = builtin?.fields;
+  if (body.templateId === ED_TEMPLATE_ID && !guest) {
+    try {
+      const ed = await effectiveEd(session.user.email ?? null);
+      instruction = ed.instruction;
+      builtinFields = ed.fields;
+    } catch {
+      return NextResponse.json({ error: "Не удалось загрузить шаблон" }, { status: 500 });
+    }
+  }
+
   const effModel = guest ? DEFAULT_MODEL : body.model;
-  const effFields = guest ? PT_FIELDS : (fields ?? builtin?.fields ?? undefined);
-  const prompt = { instruction: builtin?.instruction, userNote: note.note || undefined };
+  const effFields = guest ? (builtin?.fieldsLocked ? builtin.fields : PT_FIELDS) : (fields ?? builtinFields ?? undefined);
+  const prompt = { instruction, userNote: note.note || undefined };
 
   let modelOverride: ExtractionModel | undefined;
   if (!guest && body.model.startsWith("custom:")) {
