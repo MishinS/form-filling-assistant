@@ -46,8 +46,9 @@ the slot token of any field at the cursor.
 The system SHALL refuse to save a user's version of the order-passport template
 unless the combination of its effective fields, instruction and skeleton is a
 valid template: every slot the skeleton declares SHALL be addressed by exactly
-one field, every field that addresses a slot SHALL address one the skeleton
-declares, no slot SHALL appear twice, the skeleton SHALL stay within the
+one field, every field SHALL address a slot the skeleton declares, no slot
+SHALL appear twice, no two fields SHALL share an identifier, the skeleton SHALL
+be bounded in length and SHALL stay within the
 destination editor's accepted subset (allowed elements and attributes, no `id`,
 font sizes from the editor's list), and the instruction SHALL satisfy the
 instruction bound. The editor SHALL show the reason before saving, and the
