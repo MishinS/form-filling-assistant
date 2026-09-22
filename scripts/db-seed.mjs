@@ -17,4 +17,11 @@ await sql`
           'ru', 'xlsx', 'pt.xlsx', '["ПТ","Счёт","График оплат"]'::jsonb, true)
   ON CONFLICT (id) DO NOTHING
 `;
-console.log("seed: pt template ensured");
+await sql`
+  INSERT INTO templates (id, code, name_ru, name_en, desc_ru, desc_en, locale, format, file_key, sheets, "primary")
+  VALUES ('ed', 'ЭД-ПЗД', 'Паспорт Заказа и договора', 'Order & Contract Passport',
+          'Электронный документ для вставки в редактор navi', 'Electronic document to paste into the navi editor',
+          'ru', 'html', NULL, '[]'::jsonb, false)
+  ON CONFLICT (id) DO NOTHING
+`;
+console.log("seed: pt and ed templates ensured");

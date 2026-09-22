@@ -1,0 +1,48 @@
+
+ RUN  v4.1.7 /home/sergei/Work/dev/form-filling-assistant/web
+
+ ❯ lib/review/attention.test.ts (12 tests | 2 failed) 25ms
+     × marks an empty note-sourced field as awaiting input, not as low confidence 9ms
+     × marks an empty required choice field as awaiting input rather than required 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/review/attention.test.ts > fields the documents cannot answer > marks an empty note-sourced field as awaiting input, not as low confidence
+AssertionError: expected 'low' to be 'awaiting' // Object.is equality
+
+Expected: "awaiting"
+Received: "low"
+
+ ❯ lib/review/attention.test.ts:62:35
+     60|
+     61|   it("marks an empty note-sourced field as awaiting input, not as low …
+     62|     expect(f({ awaiting: true })).toBe("awaiting");
+       |                                   ^
+     63|   });
+     64|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  lib/review/attention.test.ts > fields the documents cannot answer > marks an empty required choice field as awaiting input rather than required
+AssertionError: expected 'required' to be 'awaiting' // Object.is equality
+
+Expected: "awaiting"
+Received: "required"
+
+ ❯ lib/review/attention.test.ts:66:51
+     64|
+     65|   it("marks an empty required choice field as awaiting input rather th…
+     66|     expect(f({ awaiting: true, required: true })).toBe("awaiting");
+       |                                                   ^
+     67|   });
+     68|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  11:26:09
+   Duration  499ms (transform 76ms, setup 0ms, import 106ms, tests 25ms, environment 0ms)
+
+exit=1

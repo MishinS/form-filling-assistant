@@ -19,9 +19,22 @@ export interface AttemptEvent {
 
 export type OnAttempt = (ev: AttemptEvent) => void;
 
+/** Тексты, принадлежащие шаблону и прогону, а не адаптеру: правила шаблона и
+ *  заметка пользователя. Доходят до каждого пути извлечения одинаково — от
+ *  облачной гонки до локальной модели. */
+export interface PromptContext {
+  instruction?: string;
+  userNote?: string;
+}
+
 export interface ExtractionModel {
   id: string;
-  extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt): Promise<LlmFieldResult[]>;
+  extract(
+    fields: ExtractField[],
+    text: string,
+    onAttempt?: OnAttempt,
+    ctx?: PromptContext,
+  ): Promise<LlmFieldResult[]>;
 }
 
 export class ModelNotConfigured extends Error {

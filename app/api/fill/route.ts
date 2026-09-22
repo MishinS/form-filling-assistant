@@ -4,9 +4,16 @@ import { auth } from "@/auth";
 import { isGuest, unauthorized } from "@/lib/auth/guard";
 import type { ExtractedValue } from "@/lib/types";
 import { fillPtXlsx, fillCustomXlsx } from "@/lib/fill/xlsx";
-import { parseFieldList } from "@/lib/templates/validate";
+import { parseFieldList, validateChoiceValues, isValueList } from "@/lib/templates/validate";
 import { getTemplate } from "@/lib/db/templates";
 import { PT_FIELDS } from "@/lib/extract/fields";
+import { renderHtml } from "@/lib/render/html";
+import { effectiveEd } from "@/lib/templates/ed-server";
+import { validateEd } from "@/lib/templates/ed-custom";
+import { STR } from "@/lib/seed/pt";
+
+/** Встроенные шаблоны: лежат в репозитории, доступны всем, включая гостей. */
+const BUILTIN_IDS = ["pt", "ed"];
 
 export const runtime = "nodejs";
 
@@ -32,11 +39,39 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return new Response("Bad JSON", { status: 400 });
   }
-  if (typeof body.templateId !== "string" || !Array.isArray(body.values)) {
+  if (typeof body.templateId !== "string" || !isValueList(body.values)) {
     return new Response("Bad request", { status: 400 });
   }
-  if (guest && body.templateId !== "pt") {
+  if (guest && !BUILTIN_IDS.includes(body.templateId)) {
     return new Response("Forbidden", { status: 403 });
+  }
+
+  // «Паспорт Заказа и договора»: разметка и каталог берутся с сервера — из
+  // репозитория или из сохранённой версии пользователя, проверенной при
+  // сохранении, — но не из тела запроса. Клиент присылает только значения.
+  if (body.templateId === "ed") {
+    let ed;
+    try {
+      ed = await effectiveEd(guest ? null : (session.user.email ?? null));
+    } catch (e) {
+      return new Response(`Fill failed: ${(e as Error).message}`, { status: 500 });
+    }
+    if (!validateChoiceValues(ed.fields, body.values)) {
+      return new Response("Bad values", { status: 400 });
+    }
+    // Сохранённая версия могла устареть (например, сузилось подмножество
+    // редактора) — документ, который navi перепишет, не отдаём.
+    if (!validateEd(ed).ok) {
+      return Response.json(
+        { error: STR.done_html_tpl_invalid.ru },
+        { status: 422 },
+      );
+    }
+    const rendered = renderHtml(ed.skeleton, ed.fields, body.values);
+    if (!rendered.ok) {
+      return new Response(`Fill failed: ${rendered.error.code}`, { status: 500 });
+    }
+    return Response.json({ html: rendered.html });
   }
 
   // Built-in ПТ: repo file + schedule logic (unchanged).
@@ -71,7 +106,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!tpl || tpl.deletedAt || tpl.userId !== email || !tpl.fileKey) {
     return new Response("Bad request", { status: 400 });
   }
-  const fields = parseFieldList(body.fields, tpl.sheets);
+  const fields = parseFieldList(body.fields, { allowedSheets: tpl.sheets });
   if (!fields) return new Response("Bad fields", { status: 400 });
 
   let bytes: Uint8Array;

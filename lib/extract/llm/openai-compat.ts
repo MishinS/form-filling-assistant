@@ -1,4 +1,4 @@
-import type { ExtractionModel, LlmFieldResult, OnAttempt } from "./types";
+import type { ExtractionModel, LlmFieldResult, OnAttempt, PromptContext } from "./types";
 import type { ExtractField } from "../fields";
 import { buildExtractionPrompt } from "./prompt";
 
@@ -101,8 +101,8 @@ export function parseFieldsLenient(txt: string): LlmFieldResult[] {
 export function openaiCompatModel(cfg: CompatConfig): ExtractionModel {
   return {
     id: cfg.modelSlug,
-    async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt): Promise<LlmFieldResult[]> {
-      const prompt = buildExtractionPrompt(fields, text, JSON_INSTRUCTION);
+    async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt, ctx?: PromptContext): Promise<LlmFieldResult[]> {
+      const prompt = buildExtractionPrompt({ fields, text, ...ctx, jsonFormatLine: JSON_INSTRUCTION });
       onAttempt?.({ phase: "start", model: cfg.modelSlug, total: 1 });
       const txt = await chatComplete(cfg, prompt);
       let out: LlmFieldResult[];

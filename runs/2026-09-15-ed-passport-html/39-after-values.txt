@@ -1,0 +1,38 @@
+$ grep -n 'templateFormat' lib/db/schema.ts
+4:export const templateFormat = pgEnum("template_format", ["xlsx", "docx", "html"]);
+17:  format: templateFormat("format").notNull(),
+
+$ grep -n 'format' lib/db/templates.ts | head -3
+15:  format: TemplateFormat;
+27:  format: templates.format, fileKey: templates.fileKey, sheets: templates.sheets,
+69:    locale: "ru", format: "xlsx", fileKey: t.fileKey, sheets: t.sheets, primary: false,
+
+$ grep -rn 'export const .*_FIELDS' lib/extract/fields.ts lib/render/ed.ts
+lib/render/ed.ts:26:export const ED_FIELDS: ExtractField[] = [
+lib/extract/fields.ts:64:export const PT_FIELDS: ExtractField[] = [
+lib/extract/fields.ts:91:export const SCHEDULE_LOCKED_FIELDS = ["f4", "f7"] as const;
+
+$ ls lib/render
+ed-skeleton.ts
+ed.test.ts
+ed.ts
+html.test.ts
+html.ts
+subset.test.ts
+subset.ts
+templates
+
+$ grep -rn 'Платёжного требования' lib --include='*.ts'
+lib/extract/fields.ts:82:  "Извлеки значения полей для российского «Платёжного требования» из текста документа ниже.";
+lib/extract/llm/local-model.test.ts:69:    expect(prompt).not.toContain("Платёжного требования");
+lib/seed/pt.ts:153:  proc_fill_d:     { ru: "Значения подставляются в ячейки «Платёжного требования»", en: "Values mapped into the Payment Request cells" },
+lib/extract/llm/prompt.test.ts:59:    expect(p).not.toContain("Платёжного требования");
+lib/extract/llm/prompt.test.ts:66:    expect(pt).toContain("Платёжного требования");
+lib/extract/llm/prompt.test.ts:69:    expect(ed).not.toContain("Платёжного требования");
+
+$ grep -n 'Content-Type\|Response.json' app/api/fill/route.ts
+26:      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+65:    return Response.json({ html: rendered.html });
+
+$ sha256sum lib/fill/templates/pt.xlsx
+e166942470f527888dd78b9679ee55429137c44596924d572edeacb4ab74834a  lib/fill/templates/pt.xlsx

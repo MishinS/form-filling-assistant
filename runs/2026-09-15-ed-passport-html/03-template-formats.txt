@@ -1,0 +1,10 @@
+$ grep -n 'templateFormat\|fieldSource' lib/db/schema.ts
+4:export const templateFormat = pgEnum("template_format", ["xlsx", "docx"]);
+6:export const fieldSource = pgEnum("field_source", ["rule", "llm", "manual"]);
+17:  format: templateFormat("format").notNull(),
+35:  source: fieldSource("source").notNull(),
+
+$ grep -rn 'format:' lib/db/templates.ts
+13:  format: "xlsx" | "docx";
+25:  format: templates.format, fileKey: templates.fileKey, sheets: templates.sheets,
+67:    locale: "ru", format: "xlsx", fileKey: t.fileKey, sheets: t.sheets, primary: false,

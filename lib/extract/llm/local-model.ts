@@ -1,4 +1,4 @@
-import type { ExtractionModel, LlmFieldResult, OnAttempt } from "./types";
+import type { ExtractionModel, LlmFieldResult, OnAttempt, PromptContext } from "./types";
 import type { ExtractField } from "../fields";
 import { buildExtractionPrompt } from "./prompt";
 import { parseFieldsLenient, JSON_INSTRUCTION, LlmRequestError, type ProbeCode } from "./openai-compat";
@@ -16,8 +16,8 @@ function toProbeCode(msg: string): ProbeCode {
 export function localCompatModel(baseUrl: string, modelSlug: string): ExtractionModel {
   return {
     id: modelSlug,
-    async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt): Promise<LlmFieldResult[]> {
-      const prompt = buildExtractionPrompt(fields, text, JSON_INSTRUCTION, true);
+    async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt, ctx?: PromptContext): Promise<LlmFieldResult[]> {
+      const prompt = buildExtractionPrompt({ fields, text, ...ctx, jsonFormatLine: JSON_INSTRUCTION, localGuidance: true });
       onAttempt?.({ phase: "start", model: modelSlug, total: 1 });
       let txt: string;
       try {

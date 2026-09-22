@@ -1,7 +1,7 @@
 import { pgTable, text, integer, boolean, jsonb, timestamp, pgEnum, primaryKey } from "drizzle-orm/pg-core";
 import type { ExtractField } from "../extract/fields";
 
-export const templateFormat = pgEnum("template_format", ["xlsx", "docx"]);
+export const templateFormat = pgEnum("template_format", ["xlsx", "docx", "html"]);
 export const fieldKind = pgEnum("field_kind", ["string", "amount", "date", "text"]);
 export const fieldSource = pgEnum("field_source", ["rule", "llm", "manual"]);
 export const fillStatus = pgEnum("fill_status", ["uploading", "processing", "review", "done", "error"]);
@@ -68,7 +68,10 @@ export const extractedValues = pgTable("extracted_values", {
 export const templateMappings = pgTable("template_mappings", {
   userId: text("user_id").notNull(),
   templateId: text("template_id").notNull().references(() => templates.id),
-  fields: jsonb("fields").$type<ExtractField[]>().notNull(),
+  // Для html-шаблона каждый слой независим: null — значит «как в репозитории».
+  fields: jsonb("fields").$type<ExtractField[]>(),
+  instruction: text("instruction"),
+  skeleton: text("skeleton"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => ({ pk: primaryKey({ columns: [t.userId, t.templateId] }) }));
 

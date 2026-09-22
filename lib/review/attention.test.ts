@@ -53,3 +53,28 @@ describe("nextAttentionIndex as the navigation cursor", () => {
     expect([-1, -1, -1].map((c) => nextAttentionIndex(r, c))).toEqual([1, 1, 1]);
   });
 });
+
+describe("fields the documents cannot answer", () => {
+  const f = (over: Partial<Parameters<typeof attentionOf>[0]> = {}) =>
+    attentionOf({ kind: "string", required: false, conf: "low", value: "", reviewed: false, ...over });
+
+  it("marks an empty note-sourced field as awaiting input, not as low confidence", () => {
+    expect(f({ awaiting: true })).toBe("awaiting");
+  });
+
+  it("marks an empty required choice field as awaiting input rather than required", () => {
+    expect(f({ awaiting: true, required: true })).toBe("awaiting");
+  });
+
+  it("clears once the person fills it", () => {
+    expect(f({ awaiting: true, conf: "high", value: "ПРОЕКТЫ/1905/Мебель" })).toBe(null);
+  });
+
+  it("still flags an invalid value ahead of awaiting", () => {
+    expect(f({ awaiting: true, kind: "amount", value: "не число" })).toBe("invalid");
+  });
+
+  it("leaves an ordinary empty low-confidence field alone", () => {
+    expect(f({})).toBe("low");
+  });
+});

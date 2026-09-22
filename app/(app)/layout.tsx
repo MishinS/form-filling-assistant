@@ -45,9 +45,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   let templates: UiTemplate[] = TEMPLATES;
-  const templateNames: Record<string, { ru: string; en: string }> = {
-    pt: { ru: TEMPLATES[0].name_ru, en: TEMPLATES[0].name_en },
-  };
+  // Встроенные шаблоны перечислены в коде, а не читаются из БД: они должны быть
+  // видны и гостю, и при недоступной базе. Строки БД с user_id = NULL поэтому
+  // отфильтровываются ниже — иначе встроенный шаблон задвоился бы.
+  const templateNames: Record<string, { ru: string; en: string }> =
+    Object.fromEntries(TEMPLATES.map(t => [t.id, { ru: t.name_ru, en: t.name_en }]));
   if (user.email) {
     try {
       const rows = await listTemplates(user.email);

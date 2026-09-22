@@ -10,9 +10,14 @@ import type { ExtractField } from "@/lib/extract/fields";
 import Stepper from "./Stepper";
 import TemplatePick from "./TemplatePick";
 import Dropzone from "./Dropzone";
+import NoteBox from "./NoteBox";
 import Processing from "./Processing";
 import DoneStep from "./DoneStep";
 import ReviewStep from "@/components/review/ReviewStep";
+import { ED_TEMPLATE_ID } from "@/lib/render/ed";
+import { GuestContext } from "@/components/shell/GuestContext";
+import { noteState } from "./note-core";
+import { wizardTemplate, parseEdConfig, type EdConfig } from "./template-fields-core";
 
 let uid = 0;
 const nextId = () => `up-${Date.now()}-${uid++}`;
@@ -25,25 +30,37 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
   const [docs, setDocs] = useState<ParsedDoc[]>([]);
   const [values, setValues] = useState<ExtractedValue[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [note, setNote] = useState("");
   const [reviewValues, setReviewValues] = useState<ExtractedValue[]>([]);
   const { model: MODEL } = useContext(ModelContext);
   const { fields: ptFields } = useContext(TemplateMappingContext);
   const { templates } = useContext(TemplatesContext);
   const [customFields, setCustomFields] = useState<Record<string, ExtractField[]>>({});
+  const [edConfig, setEdConfig] = useState<EdConfig | undefined>(undefined);
   const [fieldsLoading, setFieldsLoading] = useState(false);
-  const fields = tpl === "pt" ? ptFields : customFields[tpl] ?? [];
+  const { guest } = useContext(GuestContext);
+  // «Паспорт» пользователя — его сохранённая версия, гостя — репозиторная; так же решает сервер.
+  const { fields, instruction } = wizardTemplate(tpl, { guest, ptFields, customFields, edConfig });
+  const noteS = noteState(note);
 
   const selectTpl = (id: string) => {
     setTpl(id);
-    if (id !== "pt" && customFields[id] === undefined) {
-      setFieldsLoading(true);
-      fetch(`/api/mappings?templateId=${encodeURIComponent(id)}`)
+    if (!wizardTemplate(id, { guest, ptFields, customFields, edConfig }).needsFetch) return;
+    setFieldsLoading(true);
+    if (id === ED_TEMPLATE_ID) {
+      fetch(`/api/mappings?templateId=${ED_TEMPLATE_ID}`)
         .then(r => r.json())
-        .then((d: { fields?: ExtractField[] | null }) =>
-          setCustomFields(c => ({ ...c, [id]: Array.isArray(d.fields) ? d.fields : [] })))
-        .catch(() => setCustomFields(c => ({ ...c, [id]: [] })))
+        .then((d: unknown) => setEdConfig(parseEdConfig(d) ?? { fields: [], instruction: "" }))
+        .catch(() => setEdConfig({ fields: [], instruction: "" }))
         .finally(() => setFieldsLoading(false));
+      return;
     }
+    fetch(`/api/mappings?templateId=${encodeURIComponent(id)}`)
+      .then(r => r.json())
+      .then((d: { fields?: ExtractField[] | null }) =>
+        setCustomFields(c => ({ ...c, [id]: Array.isArray(d.fields) ? d.fields : [] })))
+      .catch(() => setCustomFields(c => ({ ...c, [id]: [] })))
+      .finally(() => setFieldsLoading(false));
   };
 
   const patch = (id: string, p: Partial<UploadFile>) =>
@@ -109,9 +126,10 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
               <div className="col gap-24" style={{ maxWidth: 760, margin: "0 auto" }}>
                 <TemplatePick selected={tpl} onSelect={selectTpl} />
                 <Dropzone files={files} onPick={onPick} onRemove={removeFile} />
+                <NoteBox value={note} onChange={setNote} state={noteS} />
               </div>
             )}
-            {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} fields={fields} onDone={onExtracted} onBack={() => setStep(0)} />}
+            {step === 1 && <Processing sources={uploaded} model={MODEL} templateId={tpl} fields={fields} instruction={instruction} note={noteS.value} onDone={onExtracted} onBack={() => setStep(0)} />}
             {step === 2 && <ReviewStep values={values} docs={docs} fields={fields} warnings={warnings} onChange={setReviewValues} />}
             {step === 3 && (
               <DoneStep
@@ -131,7 +149,7 @@ export function WizardModal({ start, onClose, embedded = false }: { start: numbe
             {embedded && step === 0
               ? <span aria-hidden />
               : <Btn variant="quiet" size="md" icon="arrowL" onClick={() => step === 0 ? onClose() : setStep(step - 1)}>{t("back")}</Btn>}
-            {step === 0 && <Btn variant="primary" size="md" iconRight="arrowR" disabled={!canStart} onClick={startParse}>{t("start_process")}</Btn>}
+            {step === 0 && <Btn variant="primary" size="md" iconRight="arrowR" disabled={!canStart || noteS.tooLong} onClick={startParse}>{t("start_process")}</Btn>}
             {step === 2 && <Btn variant="primary" size="md" icon="check" onClick={() => setStep(3)}>{t("confirm_fill")}</Btn>}
           </div>
         )}

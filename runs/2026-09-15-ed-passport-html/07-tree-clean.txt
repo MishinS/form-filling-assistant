@@ -1,0 +1,8 @@
+$ git status --porcelain (после удаления зонда)
+?? openspec/changes/ed-passport-html/
+?? runs/
+
+$ head -3 runs/2026-09-15-ed-passport-html/06-pt-prompt-before.txt
+Извлеки значения полей для российского «Платёжного требования» из текста документа ниже.
+
+Верни значение для каждого поля. Если значение не найдено — пустая строка и confidence "low".

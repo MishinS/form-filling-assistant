@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
-vi.mock("@/lib/db/mappings", () => ({ saveMapping: vi.fn(async () => {}), deleteMapping: vi.fn(async () => {}), getMapping: vi.fn(async () => null) }));
+vi.mock("@/lib/db/mappings", () => ({
+  saveMapping: vi.fn(async () => {}), deleteMapping: vi.fn(async () => {}), getMapping: vi.fn(async () => null),
+  getTemplateLayers: vi.fn(async () => null), saveTemplateLayers: vi.fn(async () => {}),
+}));
 vi.mock("@/lib/db/templates", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/db/templates")>();
   return { getTemplate: vi.fn(async () => null), isTemplateAccessible: actual.isTemplateAccessible };
@@ -160,5 +163,114 @@ describe("POST /api/mappings — ownership gate", () => {
     const res = await POST(body({ templateId: "tpl-abc", fields: [{ ...validField, cell: "Форма!B2" }] }));
     expect(res.status).toBe(500);
     expect(saveMapping).not.toHaveBeenCalled();
+  });
+});
+
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { getTemplateLayers, saveTemplateLayers } from "@/lib/db/mappings";
+import { ED_FIELDS, ED_INSTRUCTION } from "@/lib/render/ed";
+import { MAX_INSTRUCTION_LENGTH } from "@/lib/templates/note";
+
+const ED_SKELETON = readFileSync(path.join(process.cwd(), "lib/render/templates/ed.html"), "utf8");
+const mockLayers = getTemplateLayers as unknown as ReturnType<typeof vi.fn>;
+const mockSaveLayers = saveTemplateLayers as unknown as ReturnType<typeof vi.fn>;
+const edSave = (b: Record<string, unknown>) => body({ templateId: "ed", fields: null, instruction: null, skeleton: null, ...b });
+
+describe("GET /api/mappings — ed", () => {
+  it("no saved row → the repository layers, nothing marked custom", async () => {
+    asAuthed();
+    const res = await GET(getReq("ed"));
+    expect(res.status).toBe(200);
+    const j = await res.json();
+    expect(j.instruction).toBe(ED_INSTRUCTION);
+    expect(j.skeleton).toBe(ED_SKELETON);
+    expect(j.fields.map((f: { id: string }) => f.id)).toEqual(ED_FIELDS.map(f => f.id));
+    expect(j.custom).toEqual({ fields: false, instruction: false, skeleton: false });
+    expect(j.defaults.skeleton).toBe(ED_SKELETON);
+    expect(mockLayers).toHaveBeenCalledWith("me@x.ru", "ed");
+  });
+
+  it("a saved instruction comes back marked custom", async () => {
+    asAuthed();
+    mockLayers.mockResolvedValueOnce({ fields: null, instruction: "своя", skeleton: null });
+    const j = await (await GET(getReq("ed"))).json();
+    expect(j.instruction).toBe("своя");
+    expect(j.defaults.instruction).toBe(ED_INSTRUCTION);
+    expect(j.custom).toEqual({ fields: false, instruction: true, skeleton: false });
+  });
+
+  it("гость → 403", async () => {
+    (auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ user: { role: "guest" } });
+    expect((await GET(getReq("ed"))).status).toBe(403);
+    expect(mockLayers).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/mappings — ed", () => {
+  it("stores a partial save verbatim, null layers staying null", async () => {
+    asAuthed();
+    const res = await POST(edSave({ instruction: "своя инструкция" }));
+    expect(res.status).toBe(200);
+    expect(mockSaveLayers).toHaveBeenCalledWith("me@x.ru", "ed", { fields: null, instruction: "своя инструкция", skeleton: null });
+  });
+
+  it("stores edited fields with a fourth ЦФО option and no body markup", async () => {
+    asAuthed();
+    const fields = ED_FIELDS.map(f => f.id === "e11"
+      ? { ...f, options: [...f.options!, { value: "Иванов", label_ru: "ИТ", label_en: "IT" }] }
+      : { ...f, paragraphHtml: "<p><script>x</script>{}</p>", listSeparator: "<b>|</b>" });
+    const res = await POST(edSave({ fields }));
+    expect(res.status).toBe(200);
+    const saved = mockSaveLayers.mock.calls[0][2].fields as typeof ED_FIELDS;
+    expect(saved.find(f => f.id === "e11")!.options).toHaveLength(4);
+    expect(saved.every(f => f.paragraphHtml === undefined && f.listSeparator === undefined)).toBe(true);
+  });
+
+  it("a slot no field addresses → 400 naming it", async () => {
+    asAuthed();
+    const res = await POST(edSave({ skeleton: ED_SKELETON + "<p><!--slot:delivery--></p>" }));
+    expect(res.status).toBe(400);
+    const j = await res.json();
+    expect(j.code).toBe("unaddressed_slot");
+    expect(j.name).toBe("delivery");
+    expect(j.error).toMatch(/delivery/);
+    expect(mockSaveLayers).not.toHaveBeenCalled();
+  });
+
+  it("a new field and its slot saved together are checked against each other", async () => {
+    asAuthed();
+    const sk = ED_SKELETON + "<p><!--slot:delivery--></p>";
+    const extra = { id: "u1", group: "terms", cell: "delivery", label_ru: "Доставка", label_en: "Delivery", kind: "text", required: false, strategy: "llm", slotMode: "text" };
+    const res = await POST(edSave({ fields: [...ED_FIELDS, extra], skeleton: sk }));
+    expect(res.status).toBe(200);
+  });
+
+  it("an element the editor would drop → 400", async () => {
+    asAuthed();
+    const res = await POST(edSave({ skeleton: ED_SKELETON + "<script>x</script>" }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe("subset");
+  });
+
+  it("an oversized instruction → 400", async () => {
+    asAuthed();
+    const res = await POST(edSave({ instruction: "x".repeat(MAX_INSTRUCTION_LENGTH + 1) }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe("instruction_too_long");
+  });
+
+  it("a layer of the wrong type → 400", async () => {
+    asAuthed();
+    expect((await POST(edSave({ skeleton: 42 }))).status).toBe(400);
+    asAuthed();
+    expect((await POST(edSave({ fields: "nope" }))).status).toBe(400);
+    expect(mockSaveLayers).not.toHaveBeenCalled();
+  });
+
+  it("гость → 403", async () => {
+    (auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ user: { role: "guest" } });
+    expect((await POST(edSave({ instruction: "x" }))).status).toBe(403);
+    expect(mockSaveLayers).not.toHaveBeenCalled();
   });
 });

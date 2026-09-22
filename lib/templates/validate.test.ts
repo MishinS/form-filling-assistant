@@ -99,7 +99,119 @@ describe("parseFieldList with allowedSheets", () => {
       { id: "f1", group: "req", label_ru: "Поставщик", label_en: "Supplier", cell: "Данные!B2", kind: "string", required: false, strategy: "llm" },
       { id: "f2", group: "req", label_ru: "Сумма", label_en: "Amount", cell: "C3", kind: "amount", required: false, strategy: "llm" },
     ];
-    const out = parseFieldList(input, ["Лист1", "Данные"]);
+    const out = parseFieldList(input, { allowedSheets: ["Лист1", "Данные"] });
     expect(out?.map(f => f.cell)).toEqual(["Данные!B2", "Лист1!C3"]);
+  });
+});
+
+import { validateChoiceValues, parseUserNote, MAX_NOTE_LENGTH, isValueList, MAX_VALUE_LENGTH } from "./validate";
+import { ED_FIELDS } from "@/lib/render/ed";
+
+const EDSLOTS = ED_FIELDS.map((f) => f.cell);
+const edField = (over: Record<string, unknown> = {}) => ({
+  id: "e2", group: "order", label_ru: "Предмет", label_en: "Subject",
+  kind: "text", required: true, strategy: "llm", cell: "subject", ...over,
+});
+
+describe("parseFieldList picks its address validator from the template format", () => {
+  const opts = { format: "html" as const, allowedSlots: EDSLOTS, allowedGroups: ["order", "terms", "sign"] };
+
+  it("accepts a slot the skeleton declares", () => {
+    expect(parseFieldList([edField()], opts)?.[0].cell).toBe("subject");
+  });
+
+  it("rejects a spreadsheet cell reference on an HTML template", () => {
+    expect(parseFieldList([edField({ cell: "ПТ!D9" })], opts)).toBeNull();
+  });
+
+  it("rejects a slot the skeleton does not declare", () => {
+    expect(parseFieldList([edField({ cell: "nosuchslot" })], opts)).toBeNull();
+  });
+
+  it("rejects a slot name on an XLSX template", () => {
+    expect(parseFieldList([{ ...PT_FIELDS[0], cell: "subject" }])).toBeNull();
+  });
+
+  it("rejects a group the template does not declare", () => {
+    expect(parseFieldList([edField({ group: "pay" })], opts)).toBeNull();
+  });
+
+  it("never carries render markup in from a request body", () => {
+    const hostile = edField({
+      paragraphHtml: '<p onclick="steal()">{}</p>',
+      listSeparator: "<script>alert(1)</script>",
+      slotMode: "paragraphs",
+    });
+    const out = parseFieldList([hostile], opts);
+    expect(out).not.toBeNull();
+    expect(out![0].paragraphHtml).toBeUndefined();
+    expect(out![0].listSeparator).toBeUndefined();
+  });
+});
+
+describe("choice values", () => {
+  it("accepts a value from the field's own list", () => {
+    expect(validateChoiceValues(ED_FIELDS, [{ fieldId: "e11", value: "Суровцев" }])).toBe(true);
+  });
+
+  it("accepts an empty value — the person simply has not chosen yet", () => {
+    expect(validateChoiceValues(ED_FIELDS, [{ fieldId: "e11", value: "" }])).toBe(true);
+  });
+
+  it("rejects a value outside the list", () => {
+    expect(validateChoiceValues(ED_FIELDS, [{ fieldId: "e11", value: "Иванов" }])).toBe(false);
+  });
+
+  it("ignores fields that are not choices", () => {
+    expect(validateChoiceValues(ED_FIELDS, [{ fieldId: "e2", value: "что угодно" }])).toBe(true);
+  });
+});
+
+describe("the run note", () => {
+  it("accepts an absent note", () => {
+    expect(parseUserNote(undefined)).toEqual({ ok: true, note: "" });
+  });
+
+  it("trims and keeps a normal note", () => {
+    expect(parseUserNote("  проект 1905  ")).toEqual({ ok: true, note: "проект 1905" });
+  });
+
+  it("rejects a note that is not text", () => {
+    expect(parseUserNote({ evil: true })).toEqual({ ok: false });
+    expect(parseUserNote(42)).toEqual({ ok: false });
+  });
+
+  it("rejects an oversized note rather than truncating it", () => {
+    expect(parseUserNote("x".repeat(MAX_NOTE_LENGTH + 1))).toEqual({ ok: false });
+  });
+
+  it("accepts a note exactly at the bound", () => {
+    const note = "x".repeat(MAX_NOTE_LENGTH);
+    expect(parseUserNote(note)).toEqual({ ok: true, note });
+  });
+});
+
+describe("value shape", () => {
+  it("accepts a normal value list", () => {
+    expect(isValueList([{ fieldId: "e2", value: "мебель" }])).toBe(true);
+  });
+  it("accepts an empty list", () => {
+    expect(isValueList([])).toBe(true);
+  });
+  it("rejects a non-string value — trim() on a number is a 500, not a 400", () => {
+    expect(isValueList([{ fieldId: "e2", value: 5 }])).toBe(false);
+  });
+  it("rejects a null entry", () => {
+    expect(isValueList([null])).toBe(false);
+  });
+  it("rejects a missing fieldId", () => {
+    expect(isValueList([{ value: "x" }])).toBe(false);
+  });
+  it("rejects anything that is not an array", () => {
+    expect(isValueList({ fieldId: "e2", value: "x" })).toBe(false);
+    expect(isValueList(undefined)).toBe(false);
+  });
+  it("rejects an oversized value", () => {
+    expect(isValueList([{ fieldId: "e2", value: "x".repeat(MAX_VALUE_LENGTH + 1) }])).toBe(false);
   });
 });

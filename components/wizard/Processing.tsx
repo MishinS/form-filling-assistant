@@ -17,6 +17,10 @@ type Props = {
   model: string;
   templateId: string;
   fields: ExtractField[];
+  /** Инструкция шаблона для локальной модели — промт собирается здесь, а не на сервере. */
+  instruction?: string;
+  /** Заметка пользователя к этому прогону; пустая — раздела в промте не будет. */
+  note?: string;
   onDone: (values: ExtractedValue[], docs: ParsedDoc[], warnings: string[]) => void;
   onBack: () => void;
 };
@@ -25,7 +29,7 @@ type Phase = "parsing" | "extracting" | "llm-failed" | "error";
 type ResultEvent = { values: ExtractedValue[]; warnings: string[]; llmFailed: boolean; usedModel: string | null };
 
 
-export default function Processing({ sources, model, templateId, fields, onDone, onBack }: Props) {
+export default function Processing({ sources, model, templateId, fields, instruction, note, onDone, onBack }: Props) {
   const { t } = useI18n();
   const { setModel } = useContext(ModelContext);
   const [phase, setPhase] = useState<Phase>("parsing");
@@ -85,12 +89,13 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       };
       if (isTauri() && modelId.startsWith("local:")) {
         // Desktop local model: run extraction in the webview; feed the same consumer.
-        await runLocalExtract(docs, modelId, fields, (line) => handleLine(line.trim()));
+        await runLocalExtract(docs, modelId, fields, (line) => handleLine(line.trim()),
+          { instruction, userNote: note || undefined });
       } else {
         const res = await fetch("/api/extract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ templateId, model: modelId, docs, fields }),
+          body: JSON.stringify({ templateId, model: modelId, docs, fields, note }),
         });
         if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
         const reader = res.body.getReader();
@@ -128,7 +133,7 @@ export default function Processing({ sources, model, templateId, fields, onDone,
       setError((e as Error).message);
       setPhase("error");
     }
-  }, [templateId, fields, onDone, t]);
+  }, [templateId, fields, instruction, note, onDone, t]);
 
   // Parse then extract. Parse runs once per mount (ref-guarded).
   const start = useCallback(async () => {

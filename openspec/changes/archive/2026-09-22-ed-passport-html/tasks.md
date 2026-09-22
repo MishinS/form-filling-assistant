@@ -1,0 +1,159 @@
+## 1. The renderer (TDD)
+
+- [x] 1.1 Write `lib/render/html.test.ts` red against a not-yet-existing
+  `./html`: a two-slot skeleton renders both values; a slot with no value still
+  emits its section; a field's `constantValue` wins over an empty extracted
+  value; an address naming a slot the skeleton lacks returns a typed error and no
+  partial document. Proven by: `lib/render/html.test.ts` fails to resolve the
+  module (red on purpose). Файл прогона: `08-render-red-1.txt`.
+- [x] 1.2 Add the escaping cases to `lib/render/html.test.ts`: a value containing
+  `<script>` renders as visible characters; a value containing `onclick=` emits
+  no attribute; a `javascript:` URL in a `contact` value renders as plain text
+  with no `<a>`; an e-mail in a `contact` value emits a `mailto:` link; a phone
+  emits `tel:`. Proven by: those cases red. Файл прогона: `09-render-red-2.txt`.
+- [x] 1.3 Add the value-mode cases: `paragraphs` splits a four-line payment
+  schedule into four `<p>` elements in the skeleton's paragraph formatting;
+  `list` joins items with the declared separator and leaves one trailing
+  separator; an empty `list` renders separators and no items; `text` leaves a
+  single escaped run. Proven by: those cases red. Файл прогона: `09-render-red-2.txt`.
+- [x] 1.4 Implement `lib/render/html.ts`: split the skeleton on literal
+  `<!--slot:ID-->` tokens into static chunks, join with per-mode formatted
+  values, one escape function on the single substitution path. Proven by:
+  `lib/render/html.test.ts` green. Файл прогона: `10-render-green.txt` — 26 passed.
+- [x] 1.5 Add `lib/render/subset.ts` + `subset.test.ts` asserting a skeleton
+  stays inside the destination editor's declared element/attribute subset and
+  uses only font sizes from its list, and that loading a skeleton outside it
+  fails with a typed error. Proven by: `lib/render/subset.test.ts` green. Файл прогона: `11-subset.txt` — 10 passed.
+
+## 2. The «Паспорт Заказа и договора» template
+
+- [x] 2.1 Convert `~/Downloads/Шаблон ЭД.txt` from CP1251 to UTF-8, strip the
+  instruction header and every `id` attribute, and save the remainder as
+  `lib/render/templates/ed.html` with `<!--slot:ID-->` markers in place of the
+  example's values. Proven by: manual check — the file opens in a browser and
+  renders the owner's layout; `lib/render/ed.test.ts` green on it. Файл прогона: `14-ed-green.txt` — 56 passed.
+- [x] 2.2 Add `ED_FIELDS` to `lib/extract/fields.ts`: the documents row (`list`),
+  the sections in form order with their slot addresses and render modes,
+  «Класс расхода» as note-sourced, and the signature row as one line of three —
+  «Запустил» constant «Мишин С. С.», «Инициатор» a blank label with no field,
+  «ЦФО» a choice among Суровцев / Вознесенская / Субханкулова labelled by
+  department. Proven by: `lib/extract/fields.test.ts` case asserting every
+  `ED_FIELDS` address resolves to a slot present in `ed.html`, and that the
+  signature slots appear in that order. Отступление от плана: каталог лежит в
+  `lib/render/ed.ts` рядом со своей разметкой, а не в `lib/extract/fields.ts` —
+  в общий файл уехал только тип `ExtractField`. Файл прогона:
+  `14-ed-green.txt`; типы — `15-tsc-mid.txt`, весь набор — `16-tests-mid.txt`
+  (601 passed).
+- [x] 2.3 Add the ED instruction text (the stripped header from 2.1, minus the
+  colour rules that belong to the skeleton) as the template's own instruction.
+  Proven by: `lib/extract/llm/prompt.test.ts` case asserting the rendered prompt
+  contains the mandatory-section list. Файл прогона: `18-prompt-green.txt`.
+
+## 3. Template-owned prompts
+
+- [x] 3.1 Write the red cases in `lib/extract/llm/prompt.test.ts`: a template's
+  instruction appears under its own heading; a run note appears under a separate
+  heading marked as the user's context; no note means no such section; a
+  template with no instruction yields mechanics only; a note-sourced field's
+  hint appears on its field line. Proven by: those cases red. Файл прогона:
+  `17-prompt-red.txt` — 14 failed.
+- [x] 3.2 Move PT's opening sentence and own-company counterparty rule out of
+  `buildExtractionPrompt()` into PT's own instruction, leaving only mechanics in
+  shared code, and thread `instruction` + `userNote` through. Proven by:
+  `lib/extract/llm/prompt.test.ts` green, включая сверку промта ПТ с записанным в
+  `baseline.md` текстом. Файл прогона: `18-prompt-green.txt` — 14 passed.
+  Отступление: в инструкцию шаблона уехала только фраза про «Платёжное
+  требование». Правила про нашу компанию остались в общей механике — они
+  называют нашу организацию, а не вид документа, и нужны обоим шаблонам; так
+  промт ПТ остался побайтово прежним.
+- [x] 3.3 Thread the note through every model path — hosted, OpenRouter race,
+  BYOK, and `run-local-extract.ts`. Proven by:
+  проверено на уровне адаптера — `lib/extract/llm/local-model.test.ts`, куда
+  доходит собранный промт; `runLocalExtract` только пробрасывает контекст.
+  Файл прогона: `22-local-prompt.txt` — 5 passed.
+- [x] 3.4 Exclude note-sourced and choice fields from the empty-value warning.
+  Отступление: `extractFields` пустые поля предупреждениями не помечает вовсе —
+  классификация живёт в `lib/review/attention.ts`. Добавлено состояние
+  `awaiting`: пустое поле из заметки или из списка читается как «ждёт человека»,
+  а не как низкая уверенность. Файл прогона: `20-attention-green.txt` — 12 passed.
+
+## 4. Boundary validation
+
+- [x] 4.1 Add `lib/templates/slotref.ts` + `slotref.test.ts` validating a slot
+  name against a skeleton's declared slots. Proven by:
+  `lib/templates/slotref.test.ts` green. Файл прогона: `24-slotref.txt` — 7 passed.
+- [x] 4.2 Make `parseFieldList()` pick its address validator from the template
+  format and enforce a choice field's option set. Proven by:
+  `lib/templates/validate.test.ts` cases — a cell reference on an HTML template
+  is rejected, a slot name on an XLSX template is rejected, an undeclared slot is
+  rejected, and a choice value outside its options is rejected (`validateChoiceValues`).
+  Сверх плана: `paragraphHtml` и `listSeparator` из тела запроса не переносятся
+  вовсе — они уходят в вывод сырой разметкой, поэтому их задаёт только каталог
+  в репозитории. Файл прогона: `25-boundary.txt` — 85 passed.
+- [x] 4.3 Bound the run note's length and reject a non-string note at the API
+  boundary (`parseUserNote`, предел 2000 символов). Proven by:
+  `lib/templates/validate.test.ts` — переросшая заметка отвергается, а не
+  обрезается. Файл прогона: `25-boundary.txt`.
+
+## 5. Persistence
+
+- [x] 5.1 Add `html` to the `template_format` enum in `lib/db/schema.ts` and
+  widen `TemplateRow["format"]` (теперь выводится из самого enum). Отступление:
+  файлов миграций в репозитории нет — схема раскатывается `drizzle-kit push`,
+  поэтому генерировать было нечего; изменение аддитивное. Proven by:
+  `npx tsc --noEmit` clean — `30-tsc-group6.txt`.
+- [x] 5.2 Add the idempotent ED seed row (`id: 'ed'`, `userId: null`,
+  `fileKey: null`, `format: 'html'`) в `scripts/db-seed.mjs` через
+  `ON CONFLICT (id) DO NOTHING`. Проверка владельца: прогнать сид дважды и
+  убедиться, что строка одна — записано в `verification.md`.
+
+## 6. Pipeline and API
+
+- [x] 6.1 Branch `app/api/fill/route.ts` on the template's stored format:
+  workbook bytes for `xlsx`, JSON `{ html }` for `html`, one guard and one
+  history write for both. Сверх плана: для встроенного шаблона каталог полей
+  берётся из репозитория, список из тела запроса игнорируется — иначе клиент
+  подсунул бы свою разметку. Proven by: `app/api/fill/route.test.ts` —
+  `28-fill-route.txt`, 18 passed.
+- [x] 6.2 Accept the run note on the extraction request and pass it to
+  `extractFields` вместе с инструкцией шаблона. Proven by:
+  `app/api/extract/route.test.ts` — `29-extract-route.txt`, 15 passed.
+
+## 7. Wizard
+
+- [x] 7.1 Add the run-note box to the upload step (`components/wizard/NoteBox.tsx`),
+  carried through `Processing` to both the API and the local path. Proven by:
+  `components/wizard/done-core.test.ts` (в нём же `noteState`) — файл прогона
+  `32-review-groups.txt`, 43 passed.
+- [x] 7.2 Show note-sourced and choice fields in review as awaiting input rather
+  than as low-confidence extractions, with a choice control for the option set.
+  Proven by: `lib/review/attention.test.ts` — состояние `awaiting`.
+  Сверх плана — найденная по ходу ошибка: шаг проверки рисовал группы полей из
+  каталога ПТ, поэтому поля «Паспорта» не отрисовались бы вовсе. Группы теперь
+  берутся из полей самого шаблона (`lib/review/groups.ts` + тест).
+  Файл прогона: `32-review-groups.txt`.
+- [x] 7.3 Replace the done step's download with a preview and a copy action for
+  an HTML template, falling back to a selectable text area when the clipboard is
+  refused. Предпросмотр — iframe с `sandbox=""`: скрипты не выполняются, стили
+  документа не текут в приложение. Proven by:
+  `components/wizard/done-core.test.ts` (`outputKindOf`, `workbookName`);
+  предпросмотр глазами — за владельцем. Файл прогона: `33-tests-group7.txt` —
+  664 passed.
+
+## 8. Verification against reality
+
+- [ ] 8.1 СНЯТО владельцем 2026-09-22 (выполняться не будет). Run the ED template against the owner's own documents from
+  `~/Downloads` — at minimum the «Договор №07_26 + Счёт №7 + Смета» triple and
+  two single-invoice cases — and record per-field accuracy. НЕ ВЫПОЛНЕНО: из
+  этой среды Node не достаёт до OpenRouter (`connect ETIMEDOUT` на 104.18.3.115:443,
+  `ENETUNREACH` по IPv6), при том что `curl` к тому же адресу отвечает 200.
+  Разбор документов и рендер на них прошли (`35-accuracy.txt`); измерить осталось
+  только качество ответов модели. Вынесено владельцу в `verification.md`.
+- [ ] 8.2 СНЯТО владельцем 2026-09-22 (выполняться не будет). Paste one rendered document into navi's editor and compare it with the
+  owner's original. За владельцем: документ для вставки собран —
+  `36-passport-example.html`, предпросмотр — `36-passport-example-preview.html`.
+- [x] 8.3 Confirm the PT path is untouched: the PT prompt still matches the
+  baseline string and a PT fill still downloads a workbook. Proven by:
+  `37-tests-final.txt` — 664 passed, включая сверку промта ПТ с `baseline.md` и
+  выдачу книги в `app/api/fill/route.test.ts`; `38-tsc-final.txt` — код 0;
+  sha256 `pt.xlsx` не изменился (`39-after-values.txt`).

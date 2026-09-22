@@ -1,4 +1,4 @@
-import type { ExtractionModel, LlmFieldResult, OnAttempt } from "./types";
+import type { ExtractionModel, LlmFieldResult, OnAttempt, PromptContext } from "./types";
 import { ModelNotConfigured } from "./types";
 import type { ExtractField } from "../fields";
 import { FREE_MODEL_IDS, isFreeSlug, isPaidModel, PAID_LAST_RESORT } from "./catalog";
@@ -24,15 +24,17 @@ function parseFields(txt: string): LlmFieldResult[] {
 export function openrouterModel(modelName: string, opts?: { freeOnly?: boolean }): ExtractionModel {
   return {
     id: modelName,
-    async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt): Promise<LlmFieldResult[]> {
+    async extract(fields: ExtractField[], text: string, onAttempt?: OnAttempt, ctx?: PromptContext): Promise<LlmFieldResult[]> {
       const key = process.env.OPENROUTER_API_KEY;
       if (!key) throw new ModelNotConfigured(modelName);
 
-      const prompt = buildExtractionPrompt(
+      const prompt = buildExtractionPrompt({
         fields,
         text,
-        'Ответь СТРОГО валидным JSON вида {"fields":[{"fieldId":"f1","value":"...","confidence":"high|med|low","sourceHint":"..."}]} без markdown и пояснений.',
-      );
+        ...ctx,
+        jsonFormatLine:
+          'Ответь СТРОГО валидным JSON вида {"fields":[{"fieldId":"f1","value":"...","confidence":"high|med|low","sourceHint":"..."}]} без markdown и пояснений.',
+      });
 
       const makeRacer = (model: string): Racer<LlmFieldResult[]> => ({
         model,

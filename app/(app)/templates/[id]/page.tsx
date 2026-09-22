@@ -4,6 +4,12 @@ import { getTemplate } from "@/lib/db/templates";
 import { getMapping } from "@/lib/db/mappings";
 import { TEMPLATES } from "@/lib/seed/pt";
 import MappingEditor, { type EditorTpl } from "@/components/templates/MappingEditor";
+import HtmlTemplateEditor from "@/components/templates/HtmlTemplateEditor";
+import { isGuest } from "@/lib/auth/guard";
+import { getTemplateLayers } from "@/lib/db/mappings";
+import { ED_TEMPLATE_ID } from "@/lib/render/ed";
+import { edDefaults } from "@/lib/templates/ed-server";
+import { EMPTY_DRAFT } from "@/components/templates/html-editor-core";
 
 export default async function TemplateEditorPage({ params }: { params: { id: string } }) {
   if (params.id === "pt") {
@@ -17,6 +23,15 @@ export default async function TemplateEditorPage({ params }: { params: { id: str
 
   const session = await auth();
   const email = (session?.user?.email ?? "").toLowerCase();
+
+  // «Паспорт» правит только зарегистрированный пользователь — свою версию.
+  if (params.id === ED_TEMPLATE_ID) {
+    if (!email || isGuest(session)) notFound();
+    const defaults = await edDefaults();
+    let layers = null;
+    try { layers = await getTemplateLayers(email, ED_TEMPLATE_ID); } catch { /* defaults below */ }
+    return <HtmlTemplateEditor defaults={defaults} initial={layers ?? EMPTY_DRAFT} />;
+  }
   let row = null;
   try { row = await getTemplate(params.id); } catch { /* treat as missing */ }
   if (!row || row.deletedAt || row.userId !== email || !email) notFound();

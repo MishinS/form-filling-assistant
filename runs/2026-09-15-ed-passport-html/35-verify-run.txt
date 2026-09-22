@@ -1,0 +1,9 @@
+
+ RUN  v4.1.7 /home/sergei/Work/dev/form-filling-assistant/web
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  11:47:12
+   Duration  82.97s (transform 170ms, setup 0ms, import 503ms, tests 82.12s, environment 0ms)
+

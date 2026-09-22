@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { extractFields } from "@/lib/extract/extract";
 
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => ({ user: { email: "t@t.ru" } })) }));
 vi.mock("@/lib/extract/extract", () => ({
@@ -13,6 +14,7 @@ vi.mock("@/lib/extract/extract", () => ({
   }),
 }));
 vi.mock("@/lib/db/user-models", () => ({ getModelById: vi.fn() }));
+vi.mock("@/lib/db/mappings", () => ({ getTemplateLayers: vi.fn(async () => null) }));
 vi.mock("@/lib/crypto/secrets", () => ({ decryptSecret: vi.fn(() => "plain-key") }));
 vi.mock("@/lib/extract/llm/openai-compat", () => ({
   openaiCompatModel: vi.fn(() => ({ id: "custom-model", extract: vi.fn(async () => []) })),
@@ -69,7 +71,7 @@ describe("POST /api/extract", () => {
     const call = (extractFields as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
     expect(call[1]).toBe(DEFAULT_MODEL);
     expect(call[2]).toBe(PT_FIELDS);
-    expect(call[4]).toEqual({ freeOnly: true });
+    expect(call[4]).toEqual(expect.objectContaining({ freeOnly: true }));
   });
 });
 
@@ -130,5 +132,105 @@ describe("/api/extract field validation", () => {
   it("200s when fields is omitted (defaults to PT)", async () => {
     const res = await call({ model: "m", docs: [] });
     expect(res.status).toBe(200);
+  });
+});
+
+describe("the template's rules and the run note reach extraction", () => {
+  const call = (body: unknown) =>
+    POST(new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) }));
+
+  it("sends the order passport's own instruction and catalog", async () => {
+    await call({ templateId: "ed", model: "m", docs: [], note: "проект 1905" });
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    expect(last[4]?.prompt?.instruction).toContain("Паспорт Заказа и договора");
+    expect(last[4]?.prompt?.userNote).toBe("проект 1905");
+    expect((last[2] as Array<{ id: string }>).map((f) => f.id)).toContain("e11");
+  });
+
+  it("sends the payment request's instruction for pt", async () => {
+    await call({ templateId: "pt", model: "m", docs: [] });
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    expect(last[4]?.prompt?.instruction).toContain("Платёжного требования");
+    expect(last[4]?.prompt?.userNote).toBeUndefined();
+  });
+
+  it("400s on an oversized note rather than truncating it", async () => {
+    const res = await call({ templateId: "ed", model: "m", docs: [], note: "x".repeat(2001) });
+    expect(res.status).toBe(400);
+  });
+
+  it("ignores a client field list for a built-in template", async () => {
+    const hostile = [{
+      id: "e2", group: "order", label_ru: "П", label_en: "S", kind: "text",
+      required: true, strategy: "llm", cell: "subject",
+    }];
+    await call({ templateId: "ed", model: "m", docs: [], fields: hostile });
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    expect((last[2] as Array<{ id: string }>).length).toBe(11);
+  });
+});
+
+describe("a user's own field mapping still reaches extraction", () => {
+  const call = (body: unknown) =>
+    POST(new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) }));
+
+  it("honours a mapping sent for the payment request", async () => {
+    const mapped = [{
+      id: "f1", group: "req", label_ru: "Контрагент", label_en: "Counterparty", kind: "string",
+      required: true, strategy: "llm", cell: "ПТ!D9", hint_ru: "моя подсказка",
+    }];
+    await call({ templateId: "pt", model: "m", docs: [], fields: mapped });
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    const fields = last[2] as Array<{ id: string; hint_ru?: string }>;
+    expect(fields).toHaveLength(1);
+    expect(fields[0].hint_ru).toBe("моя подсказка");
+    // …and the template's own rules still come from the repo.
+    expect(last[4]?.prompt?.instruction).toContain("Платёжного требования");
+  });
+
+  it("still refuses a malformed mapping for the payment request", async () => {
+    const res = await call({ templateId: "pt", model: "m", docs: [], fields: [{ id: "f1", cell: "9D" }] });
+    expect(res.status).toBe(400);
+  });
+
+  it("does not let an inherited property name pass as a built-in", async () => {
+    const res = await call({ templateId: "constructor", model: "m", docs: [], fields: [{ id: "f1", cell: "9D" }] });
+    expect(res.status).toBe(400);
+  });
+});
+
+import { getTemplateLayers } from "@/lib/db/mappings";
+import { ED_FIELDS, ED_INSTRUCTION } from "@/lib/render/ed";
+
+describe("the user's own order passport reaches extraction", () => {
+  const call = (body: unknown) =>
+    POST(new Request("http://t/api/extract", { method: "POST", body: JSON.stringify(body) }));
+  const mockLayers = vi.mocked(getTemplateLayers);
+
+  it("sends the user's saved instruction and fields", async () => {
+    const fields = ED_FIELDS.map((f) => (f.id === "e2" ? { ...f, hint_ru: "моя подсказка" } : f));
+    mockLayers.mockResolvedValueOnce({ fields, instruction: "моя инструкция", skeleton: null });
+    await call({ templateId: "ed", model: "m", docs: [] });
+    expect(mockLayers).toHaveBeenLastCalledWith("t@t.ru", "ed");
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    expect(last[4]?.prompt?.instruction).toBe("моя инструкция");
+    const sent = last[2] as Array<{ id: string; hint_ru?: string }>;
+    expect(sent.find((f) => f.id === "e2")?.hint_ru).toBe("моя подсказка");
+  });
+
+  it("a guest gets the repository passport — its own catalog, not PT's — without a DB lookup", async () => {
+    mockLayers.mockClear();
+    vi.mocked(auth).mockResolvedValueOnce({ user: { role: "guest" } } as never);
+    await call({ templateId: "ed", model: "m", docs: [] });
+    expect(mockLayers).not.toHaveBeenCalled();
+    const last = vi.mocked(extractFields).mock.calls.at(-1)!;
+    expect(last[4]?.prompt?.instruction).toBe(ED_INSTRUCTION);
+    expect((last[2] as Array<{ id: string }>).map((f) => f.id)).toEqual(ED_FIELDS.map((f) => f.id));
+  });
+
+  it("a DB failure is an error, not a silent fall back to the repository passport", async () => {
+    mockLayers.mockRejectedValueOnce(new Error("db down"));
+    const res = await call({ templateId: "ed", model: "m", docs: [] });
+    expect(res.status).toBe(500);
   });
 });

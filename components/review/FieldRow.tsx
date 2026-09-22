@@ -29,6 +29,11 @@ export default function FieldRow({ f, val, onChange, confLabel, hover, setHover,
       <div>
         <label htmlFor={inputId} style={{ fontSize: 13, fontWeight: 600 }}>{lang === "ru" ? f.label_ru : f.label_en}</label>
         <div className="mono dim" style={{ fontSize: 10.5, marginTop: 2 }}>{f.cell}</div>
+        {attention === "awaiting" && (
+          // Пусто здесь — не провал извлечения: документов поставщика на это поле
+          // просто не хватает, ход за человеком.
+          <div className="mono" style={{ fontSize: 10.5, marginTop: 3, color: "var(--warn)" }}>{t("fld_awaiting")}</div>
+        )}
       </div>
       <div>
         <FieldInput f={f} val={val} onChange={onChange} invalid={attention === "invalid"}

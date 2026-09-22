@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isGuest, unauthorized } from "@/lib/auth/guard";
 import { extractFields } from "@/lib/extract/extract";
-import { parseFieldList } from "@/lib/templates/validate";
+import { parseFieldList, parseUserNote } from "@/lib/templates/validate";
 import { PT_FIELDS } from "@/lib/extract/fields";
+import { builtinTemplate } from "@/lib/templates/builtins";
 import { DEFAULT_MODEL } from "@/lib/extract/llm/catalog";
 import type { OnAttempt, ExtractionModel } from "@/lib/extract/llm/types";
 import type { ParsedDoc } from "@/lib/parse/types";
@@ -12,11 +13,13 @@ import { getModelById } from "@/lib/db/user-models";
 import { decryptSecret } from "@/lib/crypto/secrets";
 import { openaiCompatModel } from "@/lib/extract/llm/openai-compat";
 import { assertSafeBaseUrl } from "@/lib/extract/llm/providers";
+import { ED_TEMPLATE_ID } from "@/lib/render/ed";
+import { effectiveEd } from "@/lib/templates/ed-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-type Body = { templateId?: string; model: string; docs: ParsedDoc[]; fields?: unknown };
+type Body = { templateId?: string; model: string; docs: ParsedDoc[]; fields?: unknown; note?: unknown };
 
 export async function POST(req: Request): Promise<Response> {
   const session = await auth();
@@ -31,13 +34,37 @@ export async function POST(req: Request): Promise<Response> {
   if (!body || typeof body.model !== "string" || !Array.isArray(body.docs)) {
     return NextResponse.json({ error: "Ожидаются поля model: string и docs: []" }, { status: 400 });
   }
+  const builtin = builtinTemplate(body.templateId);
+
+  // Каталог из тела не разбирается только у шаблона с запертым каталогом (ЭД):
+  // там режимы рендера решают, сколько разметки даёт значение. У ПТ карта полей
+  // пользователя обязана доходить до извлечения — иначе правки в редакторе карты
+  // молча теряются, а заполнение и извлечение разъезжаются.
   let fields: ExtractField[] | null | undefined;
-  if (body.fields !== undefined) {
+  if (!builtin?.fieldsLocked && body.fields !== undefined) {
     fields = parseFieldList(body.fields);
     if (!fields) return NextResponse.json({ error: "Некорректный список полей" }, { status: 400 });
   }
+  const note = parseUserNote(body.note);
+  if (!note.ok) return NextResponse.json({ error: "Слишком длинная заметка" }, { status: 400 });
+
+  // «Паспорт» пользователя берётся из БД, а не из тела: каталог и инструкцию
+  // решает сервер. Гость получает репозиторный — со своим каталогом, не ПТ.
+  let instruction = builtin?.instruction;
+  let builtinFields = builtin?.fields;
+  if (body.templateId === ED_TEMPLATE_ID && !guest) {
+    try {
+      const ed = await effectiveEd(session.user.email ?? null);
+      instruction = ed.instruction;
+      builtinFields = ed.fields;
+    } catch {
+      return NextResponse.json({ error: "Не удалось загрузить шаблон" }, { status: 500 });
+    }
+  }
+
   const effModel = guest ? DEFAULT_MODEL : body.model;
-  const effFields = guest ? PT_FIELDS : (fields ?? undefined);
+  const effFields = guest ? (builtin?.fieldsLocked ? builtin.fields : PT_FIELDS) : (fields ?? builtinFields ?? undefined);
+  const prompt = { instruction, userNote: note.note || undefined };
 
   let modelOverride: ExtractionModel | undefined;
   if (!guest && body.model.startsWith("custom:")) {
@@ -67,7 +94,7 @@ export async function POST(req: Request): Promise<Response> {
       };
       try {
         const { values, warnings, llmFailed, usedModel } =
-          await extractFields(body.docs, effModel, effFields, onAttempt, { freeOnly: guest, modelOverride });
+          await extractFields(body.docs, effModel, effFields, onAttempt, { freeOnly: guest, modelOverride, prompt });
         write({ type: "result", values, warnings, llmFailed, usedModel });
       } catch (e) {
         // extractFields degrades internally and shouldn't throw for LLM failure, but guard the stream.

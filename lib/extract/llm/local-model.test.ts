@@ -41,3 +41,31 @@ describe("localCompatModel", () => {
     await expect(model.extract(FIELDS, "t")).rejects.toMatchObject({ code: "bad_response" });
   });
 });
+
+describe("the local path carries the template's rules and the run note", () => {
+  beforeEach(() => invokeLlmChat.mockReset());
+
+  it("sends the instruction and the user note to the local runtime", async () => {
+    invokeLlmChat.mockResolvedValueOnce('{"fields":[{"fieldId":"f1","value":"ACME","confidence":"high"}]}');
+    const model = localCompatModel("http://127.0.0.1:11434/v1", "llama3.1:8b");
+    await model.extract(FIELDS, "ACME Corp invoice", undefined, {
+      instruction: "ИНСТРУКЦИЯ ШАБЛОНА",
+      userNote: "закупка по проекту 1905",
+    });
+    const { prompt } = invokeLlmChat.mock.calls[0][0] as { prompt: string };
+    expect(prompt.startsWith("ИНСТРУКЦИЯ ШАБЛОНА")).toBe(true);
+    expect(prompt).toContain("Контекст пользователя");
+    expect(prompt).toContain("закупка по проекту 1905");
+    // The local path keeps its own guidance block alongside the template's rules.
+    expect(prompt).toContain("верни КАЖДОЕ поле");
+  });
+
+  it("sends neither section when the template carries none", async () => {
+    invokeLlmChat.mockResolvedValueOnce('{"fields":[{"fieldId":"f1","value":"ACME","confidence":"high"}]}');
+    const model = localCompatModel("http://127.0.0.1:11434/v1", "llama3.1:8b");
+    await model.extract(FIELDS, "ACME Corp invoice");
+    const { prompt } = invokeLlmChat.mock.calls[0][0] as { prompt: string };
+    expect(prompt).not.toContain("Контекст пользователя");
+    expect(prompt).not.toContain("Платёжного требования");
+  });
+});
